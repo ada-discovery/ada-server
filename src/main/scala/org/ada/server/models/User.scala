@@ -1,7 +1,7 @@
 package org.ada.server.models
 
 import org.ada.server.dataaccess.BSONObjectIdentity
-import org.ada.server.models.json.SerializableFormat
+import org.ada.server.json.SerializableFormat
 import play.api.libs.json.{Json, _}
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONFormats._

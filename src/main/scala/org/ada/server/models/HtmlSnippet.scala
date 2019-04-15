@@ -4,7 +4,7 @@ import reactivemongo.bson.BSONObjectID
 import java.util.Date
 
 import org.ada.server.dataaccess.BSONObjectIdentity
-import org.ada.server.models.json.{EnumFormat, SerializableFormat}
+import org.ada.server.json.{EnumFormat, SerializableFormat}
 import play.api.libs.json.Json
 import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 

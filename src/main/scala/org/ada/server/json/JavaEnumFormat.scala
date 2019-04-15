@@ -1,4 +1,4 @@
-package org.ada.server.models.json
+package org.ada.server.json
 
 import org.incal.core.util.ReflectionUtil
 import play.api.libs.json._

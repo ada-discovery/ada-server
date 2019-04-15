@@ -1,7 +1,7 @@
 package org.ada.server.dataaccess.elastic.format
 
 import org.ada.server.models.DataSetFormattersAndIds.JsObjectIdentity
-import org.ada.server.models.json.RenameFieldFormat
+import org.ada.server.json.RenameFieldFormat
 import play.api.libs.json._
 
 class ElasticIdRenameFormat[T](format: Format[T]) extends  Format[T] {

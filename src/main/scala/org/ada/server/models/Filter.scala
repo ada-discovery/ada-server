@@ -3,7 +3,7 @@ package org.ada.server.models
 import java.util.Date
 
 import org.ada.server.dataaccess.BSONObjectIdentity
-import org.ada.server.models.json.EnumFormat
+import org.ada.server.json.EnumFormat
 import org.incal.core.{ConditionType, FilterCondition}
 import play.api.libs.json.{Format, Json, __}
 import play.api.libs.functional.syntax._

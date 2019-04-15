@@ -5,7 +5,7 @@ import reactivemongo.bson.BSONObjectID
 import org.ada.server.models.DataSetFormattersAndIds.widgetSpecFormat
 import java.util.Date
 
-import org.ada.server.models.json.{EitherFormat, EnumFormat}
+import org.ada.server.json.{EitherFormat, EnumFormat}
 import org.ada.server.dataaccess.BSONObjectIdentity
 import org.incal.core.FilterCondition
 import org.ada.server.models.Filter._

@@ -1,4 +1,4 @@
-package org.ada.server.models.json
+package org.ada.server.json
 
 import org.ada.server.dataaccess.AdaConversionException
 import org.ada.server.field.FieldType

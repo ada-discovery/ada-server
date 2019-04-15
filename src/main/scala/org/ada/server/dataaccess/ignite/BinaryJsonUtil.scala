@@ -8,7 +8,7 @@ import org.apache.ignite.internal.binary.BinaryObjectImpl
 import play.api.libs.json.Json
 import java.util.Date
 
-import org.ada.server.models.json.EnumFormat
+import org.ada.server.json.EnumFormat
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
