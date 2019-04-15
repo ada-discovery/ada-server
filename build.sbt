@@ -2,7 +2,7 @@ organization := "org.adada"
 
 name := "ada-server"
 
-version := "0.7.3.RC.2"
+version := "0.7.3.RC.3"
 
 description := "Server side of Ada Discovery Analytics containing a persistence layer, stats and data import/transformation services, and util classes."
 
