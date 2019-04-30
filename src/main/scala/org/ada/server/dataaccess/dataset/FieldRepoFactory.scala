@@ -1,13 +1,13 @@
-package org.ada.server.dataaccess
+package org.ada.server.dataaccess.dataset
 
 import com.google.inject.ImplementedBy
-import org.incal.core.dataaccess.Criterion.Infix
-import org.ada.server.models.{Field, DataSetFormattersAndIds}
-import DataSetFormattersAndIds.CategoryIdentity
 import org.ada.server.dataaccess.RepoTypes._
 import org.ada.server.dataaccess.ignite.FieldCacheCrudRepoFactory
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.ada.server.models.DataSetFormattersAndIds.CategoryIdentity
+import org.ada.server.models.Field
+import org.incal.core.dataaccess.Criterion.Infix
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 @ImplementedBy(classOf[FieldCacheCrudRepoFactory])

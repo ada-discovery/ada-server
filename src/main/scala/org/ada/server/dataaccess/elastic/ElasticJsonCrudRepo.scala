@@ -32,6 +32,11 @@ class ElasticJsonCrudRepo @Inject()(
   private val fieldNamesAndTypeWithId = fieldNamesAndTypes ++ Seq((ElasticIdRenameUtil.newIdName, FieldTypeSpec(FieldTypeId.Json)))
   private val includeInAll = false
 
+  override protected lazy val fieldDefs: Iterable[TypedFieldDefinition] =
+    fieldNamesAndTypeWithId.map { case (fieldName, fieldTypeSpec) =>
+      toElasticFieldType(fieldName, fieldTypeSpec)
+    }
+
   // TODO: should be called as a post-init method, since all vals must be instantiated (i.e. the order matters)
   createIndexIfNeeded()
 
@@ -94,11 +99,6 @@ class ElasticJsonCrudRepo @Inject()(
     val stringSource = Json.stringify(jsonIdRenameFormat.writes(entity))
     ElasticDsl.update id id in indexAndType doc JsonDocumentSource(stringSource)
   }
-
-  override protected val fieldDefs: Iterable[TypedFieldDefinition] =
-    fieldNamesAndTypeWithId.map { case (fieldName, fieldTypeSpec) =>
-      toElasticFieldType(fieldName, fieldTypeSpec)
-    }
 
   private def toElasticFieldType(fieldName: String, fieldTypeSpec: FieldTypeSpec): TypedFieldDefinition =
     if (fieldName.equals(ElasticIdRenameUtil.newIdName)) {

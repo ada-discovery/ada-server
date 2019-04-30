@@ -1,13 +1,14 @@
-package org.ada.server.dataaccess
+package org.ada.server.dataaccess.dataset
 
 import com.google.inject.ImplementedBy
 import org.ada.server.dataaccess.RepoTypes._
-import org.ada.server.models.User.UserIdentity
 import org.ada.server.dataaccess.ignite.DataViewCacheCrudRepoFactory
 import org.ada.server.models.DataView
+import org.ada.server.models.User.UserIdentity
 import org.incal.core.dataaccess.Criterion.Infix
-import scala.concurrent.Future
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 @ImplementedBy(classOf[DataViewCacheCrudRepoFactory])
 trait DataViewRepoFactory {

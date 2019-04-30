@@ -1,17 +1,16 @@
-package org.ada.server.dataaccess
+package org.ada.server.dataaccess.dataset
 
 import com.google.inject.ImplementedBy
-import org.ada.server.dataaccess.RepoTypes.{FilterRepo, JsonCrudRepo, UserRepo}
-import org.ada.server.models.User.UserIdentity
+import org.ada.server.dataaccess.RepoTypes.{FilterRepo, UserRepo}
 import org.ada.server.dataaccess.ignite.FilterCacheCrudRepoFactory
-
-import scala.concurrent.Future
 import org.ada.server.models.Filter
-import org.incal.core.dataaccess.Criterion.Infix
 import org.ada.server.models.Filter.FilterOrId
+import org.ada.server.models.User.UserIdentity
 import org.incal.core.ConditionType
+import org.incal.core.dataaccess.Criterion.Infix
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 @ImplementedBy(classOf[FilterCacheCrudRepoFactory])
 trait FilterRepoFactory {

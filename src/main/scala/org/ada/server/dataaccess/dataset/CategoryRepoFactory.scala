@@ -1,12 +1,12 @@
-package org.ada.server.dataaccess
+package org.ada.server.dataaccess.dataset
 
 import com.google.inject.ImplementedBy
 import org.ada.server.dataaccess.RepoTypes.CategoryRepo
 import org.ada.server.dataaccess.ignite.CategoryCacheCrudRepoFactory
 import org.ada.server.models.Category
 import reactivemongo.bson.BSONObjectID
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 @ImplementedBy(classOf[CategoryCacheCrudRepoFactory])

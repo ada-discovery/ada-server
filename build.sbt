@@ -2,7 +2,7 @@ organization := "org.adada"
 
 name := "ada-server"
 
-version := "0.7.3.RC.3"
+version := "0.7.3.RC.4"
 
 description := "Server side of Ada Discovery Analytics containing a persistence layer, stats and data import/transformation services, and util classes."
 
@@ -30,9 +30,11 @@ libraryDependencies ++= Seq(
   "org.apache.ignite" % "ignite-indexing" % "1.6.0",
   "org.apache.ignite" % "ignite-scalar" % "1.6.0",
   "org.in-cal" %% "incal-spark_ml" % "0.1.3"  exclude("com.fasterxml.jackson.core", "jackson-databind"),
+  "org.in-cal" %% "incal-core" % "0.1.4",
+  "org.clapper" % "classutil_2.11" % "1.0.6",  // class finder (old - remove)
+  "org.reflections" % "reflections" % "0.9.10" exclude("com.google.code.findbugs", "annotations"),  // class finder
   "org.scalactic" %% "scalactic" % "3.0.0",
-  "org.scalatest" %% "scalatest" % "3.0.0" % "test",
-  "org.in-cal" %% "incal-core" % "0.1.4"
+  "org.scalatest" %% "scalatest" % "3.0.0" % "test"
 )
 
 // POM settings for Sonatype

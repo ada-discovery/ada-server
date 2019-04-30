@@ -1,9 +1,9 @@
 package org.ada.server.dataaccess.ignite
 
 import javax.inject.Inject
-
 import org.ada.server.dataaccess.RepoTypes.FilterRepo
 import org.ada.server.dataaccess._
+import org.ada.server.dataaccess.dataset.FilterRepoFactory
 import org.ada.server.dataaccess.mongo.dataset.FilterMongoAsyncCrudRepoFactory
 import org.ada.server.models.Filter.FilterIdentity
 import play.api.Configuration

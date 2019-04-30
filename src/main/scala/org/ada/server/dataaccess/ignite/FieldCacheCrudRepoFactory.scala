@@ -1,11 +1,11 @@
 package org.ada.server.dataaccess.ignite
 
 import javax.inject.Inject
-
 import org.ada.server.models.DataSetFormattersAndIds
 import DataSetFormattersAndIds.FieldIdentity
 import org.ada.server.dataaccess.RepoTypes.FieldRepo
 import org.ada.server.dataaccess._
+import org.ada.server.dataaccess.dataset.FieldRepoFactory
 import org.ada.server.dataaccess.mongo.dataset.FieldMongoAsyncCrudRepoFactory
 import play.api.Configuration
 
