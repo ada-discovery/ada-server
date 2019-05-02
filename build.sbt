@@ -2,7 +2,7 @@ organization := "org.adada"
 
 name := "ada-server"
 
-version := "0.7.3.RC.4"
+version := "0.7.3.RC.4.1"
 
 description := "Server side of Ada Discovery Analytics containing a persistence layer, stats and data import/transformation services, and util classes."
 
@@ -33,6 +33,12 @@ libraryDependencies ++= Seq(
   "org.in-cal" %% "incal-core" % "0.1.4",
   "org.clapper" % "classutil_2.11" % "1.0.6",  // class finder (old - remove)
   "org.reflections" % "reflections" % "0.9.10" exclude("com.google.code.findbugs", "annotations"),  // class finder
+  "com.typesafe.play" %% "play-java-ws" % playVersion,   // WS
+  "com.unboundid" % "unboundid-ldapsdk" % "2.3.8",   // LDAP (in-memory)
+  "com.github.lejon.T-SNE-Java" % "tsne" % "v2.5.0"	,// t-SNE Java
+  "org.scalanlp" %% "breeze" % "0.13.2",        // linear algebra and stuff
+  "org.scalanlp" %% "breeze-natives" % "0.13.2",  // linear algebra and stuff (native)
+  //  "org.scalanlp" %% "breeze-viz" % "0.13.2",    // breeze visualization
   "org.scalactic" %% "scalactic" % "3.0.0",
   "org.scalatest" %% "scalatest" % "3.0.0" % "test"
 )
