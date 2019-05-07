@@ -10,6 +10,7 @@ import org.ada.server.dataaccess.RepoTypes.FieldRepo
 import org.ada.server.field.{FieldType, FieldTypeHelper}
 import org.ada.server.models.DataSetFormattersAndIds.FieldIdentity
 import org.incal.core.util.ReflectionUtil
+import org.incal.core.util.ReflectionUtil.currentThreadClassLoader
 import org.ada.server.models.FieldTypeSpec
 import org.incal.core.FilterCondition
 import org.incal.core.FilterCondition.toCriterion
@@ -74,11 +75,16 @@ object FieldUtil {
     excludedFieldSet: Set[String] = Set(),
     treatEnumAsString: Boolean = false
   ): Traversable[(String, FieldTypeSpec)] = {
+
+    // collect member names and types
     val memberNamesAndTypes = ReflectionUtil.getCaseClassMemberNamesAndTypes(typ).filter(x => !excludedFieldSet.contains(x._1))
+
+    // create a new mirror using the current thread for reflection
+    val currentMirror = ReflectionUtil.newMirror(currentThreadClassLoader)
 
     memberNamesAndTypes.map { case (fieldName, memberType) =>
       try {
-        val fieldTypeSpec = toFieldTypeSpec(memberType, treatEnumAsString)
+        val fieldTypeSpec = toFieldTypeSpec(memberType, treatEnumAsString, currentMirror)
         Seq((fieldName, fieldTypeSpec))
       } catch {
         case e: AdaException => {
@@ -169,16 +175,16 @@ object FieldUtil {
         (optionInnerType.isDefined && types.exists(optionInnerType.get <:< _))
   }
 
-  private def getEnumOrdinalValues(typ: Type): Map[Int, String] = {
+  private def getEnumOrdinalValues(typ: Type, mirror: Mirror): Map[Int, String] = {
     val enumValueType = unwrapIfOption(typ)
-    val enum = ReflectionUtil.enum(enumValueType)
+    val enum = ReflectionUtil.enum(enumValueType, mirror)
 
     (0 until enum.maxId).map(ordinal => (ordinal, enum.apply(ordinal).toString)).toMap
   }
 
-  private def getJavaEnumOrdinalValues[E <: Enum[E]](typ: Type): Map[Int, String] = {
+  private def getJavaEnumOrdinalValues[E <: Enum[E]](typ: Type, mirror: Mirror): Map[Int, String] = {
     val enumType = unwrapIfOption(typ)
-    val clazz = ReflectionUtil.typeToClass(enumType).asInstanceOf[Class[E]]
+    val clazz = ReflectionUtil.typeToClass(enumType, mirror).asInstanceOf[Class[E]]
     val enumValues = ReflectionUtil.javaEnumOrdinalValues(clazz)
     enumValues.map { case (ordinal, value) => (ordinal, value.toString) }
   }
@@ -189,7 +195,8 @@ object FieldUtil {
   @throws(classOf[AdaException])
   private def toFieldTypeSpec(
     typ: Type,
-    treatEnumAsString: Boolean
+    treatEnumAsString: Boolean,
+    mirror: Mirror
   ): FieldTypeSpec =
     typ match {
       // double
@@ -210,7 +217,7 @@ object FieldUtil {
           FieldTypeSpec(FieldTypeId.String)
         else {
           // note that for Scala Enumerations we directly use ordinal values for encoding
-          val enumMap = getEnumOrdinalValues(t)
+          val enumMap = getEnumOrdinalValues(t, mirror)
           FieldTypeSpec(FieldTypeId.Enum, false, Some(enumMap))
         }
 
@@ -220,7 +227,7 @@ object FieldUtil {
           FieldTypeSpec(FieldTypeId.String)
         else {
           // note that for Java Enumerations we directly use ordinal values for encoding
-          val enumMap = getJavaEnumOrdinalValues(t)
+          val enumMap = getJavaEnumOrdinalValues(t, mirror)
           FieldTypeSpec(FieldTypeId.Enum, false, Some(enumMap))
         }
 
@@ -240,7 +247,7 @@ object FieldUtil {
       case t if t subMatches (typeOf[Seq[_]], typeOf[Set[_]]) =>
         val innerType = t.typeArgs.head
         try {
-          toFieldTypeSpec(innerType, treatEnumAsString).copy(isArray = true)
+          toFieldTypeSpec(innerType, treatEnumAsString, mirror).copy(isArray = true)
         } catch {
           case e: AdaException => FieldTypeSpec(FieldTypeId.Json, true)
         }

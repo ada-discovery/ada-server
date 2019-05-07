@@ -9,9 +9,6 @@ import org.apache.ignite.Ignite
 class ServiceModule extends ScalaModule {
 
   override def configure = {
-    bind[Ignite].toProvider(classOf[IgniteFactory]).asEagerSingleton
-
-    bind[DataSetImportScheduler].to(classOf[DataSetImportSchedulerImpl]).asEagerSingleton
 
     install(new FactoryModuleBuilder()
       .implement(classOf[SynapseService], classOf[SynapseServiceWSImpl])
@@ -24,5 +21,7 @@ class ServiceModule extends ScalaModule {
     install(new FactoryModuleBuilder()
       .implement(classOf[RedCapService], classOf[RedCapServiceWSImpl])
       .build(classOf[RedCapServiceFactory]))
+
+    bind[DataSetImportScheduler].to(classOf[DataSetImportSchedulerImpl]).asEagerSingleton
   }
 }

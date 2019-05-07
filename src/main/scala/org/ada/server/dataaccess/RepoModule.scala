@@ -5,7 +5,7 @@ import com.google.inject.{Key, TypeLiteral}
 import com.google.inject.assistedinject.FactoryModuleBuilder
 import com.sksamuel.elastic4s.ElasticClient
 import org.ada.server.dataaccess.elastic.{ElasticJsonCrudRepo, PlayElasticClientProvider}
-import org.ada.server.dataaccess.ignite.{CacheAsyncCrudRepoProvider, JsonBinaryCacheAsyncCrudRepoFactory}
+import org.ada.server.dataaccess.ignite.{CacheAsyncCrudRepoProvider, IgniteFactory, JsonBinaryCacheAsyncCrudRepoFactory}
 import org.incal.spark_ml.models.classification.Classifier
 import org.incal.spark_ml.models.regression.Regressor
 import org.ada.server.dataaccess._
@@ -25,6 +25,7 @@ import org.ada.server.models.ml.unsupervised.UnsupervisedLearning.unsupervisedLe
 import org.ada.server.dataaccess.dataset._
 import reactivemongo.bson.BSONObjectID
 import org.ada.server.dataaccess.RepoDef.Repo
+import org.apache.ignite.Ignite
 
 private object RepoDef extends Enumeration {
   abstract class AbstractRepo[T: Manifest] extends super.Val {
@@ -83,6 +84,8 @@ class RepoModule extends ScalaModule {
   import org.ada.server.models.HtmlSnippet.{serializableHtmlSnippetFormat, HtmlSnippetIdentity}
 
   def configure = {
+
+    bind[Ignite].toProvider(classOf[IgniteFactory]).asEagerSingleton
 
     implicit val formatId = serializableBSONObjectIDFormat
 

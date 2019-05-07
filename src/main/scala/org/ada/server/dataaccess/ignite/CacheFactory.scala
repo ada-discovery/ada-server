@@ -8,7 +8,7 @@ import javax.cache.configuration.Factory
 import javax.inject.Inject
 
 import org.incal.core.dataaccess.AsyncCrudRepo
-import org.incal.core.util.ReflectionUtil._
+import org.incal.core.util.ReflectionUtil.getCaseClassMemberAndTypeNames
 import org.apache.ignite.cache._
 import org.apache.ignite.configuration.{BinaryConfiguration, CacheConfiguration}
 import org.apache.ignite.{Ignite, IgniteCache}

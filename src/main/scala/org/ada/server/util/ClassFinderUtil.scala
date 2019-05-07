@@ -5,6 +5,7 @@ import java.lang.reflect.Modifier
 
 import org.ada.server.calc.json.JsonInputConverter
 import org.clapper.classutil.{ClassFinder, ClassInfo}
+import org.incal.core.util.ReflectionUtil
 import play.api.Logger
 import org.reflections.Reflections
 
@@ -38,7 +39,7 @@ object ClassFinderUtil {
     className: Option[String],
     libFolder: Option[String]
   )(implicit m: ClassTag[T]): Stream[Class[T]] = {
-    val cls = Thread.currentThread().getContextClassLoader()
+    val cls = ReflectionUtil.currentThreadClassLoader
 
     val filteredClassInfos = findClassInfos[T](cls, libPrefix, packageName, packageFullMatch, className, libFolder)
 
