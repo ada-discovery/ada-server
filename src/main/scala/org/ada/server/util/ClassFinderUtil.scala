@@ -20,8 +20,8 @@ object ClassFinderUtil {
       !currentClazz.isPrimitive && !Modifier.isAbstract(currentClazz.getModifiers) && !currentClazz.isInterface
     ).map(_.asInstanceOf[Class[T]])
 
-    if (exactPackageMatch) {
-      classes.filter(_.getPackage.getName.equals(packageName))
+    if (exactPackageMatch && packageName.isDefined) {
+      classes.filter(_.getPackage.getName.equals(packageName.get))
     } else
       classes
   }
