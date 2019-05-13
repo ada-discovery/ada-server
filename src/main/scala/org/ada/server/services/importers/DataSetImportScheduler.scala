@@ -38,20 +38,22 @@ protected[services] class DataSetImportSchedulerImpl @Inject() (
     implicit ec: ExecutionContext
   ) extends DataSetImportScheduler {
 
+
   private val scheduledImports = MMap[BSONObjectID, Cancellable]()
   private val logger = Logger
-  private val timeout = 120000 millis
 
-  // initialize when created
-  init()
+  // schedule initial imports after five seconds
+  system.scheduler.scheduleOnce(5 seconds) {
+    init.recover {
+      case e: Exception => logger.error(s"Initial data set import scheduling failed due to: ${e.getMessage}.")
+    }
+  }
 
-  protected def init() {
-    val initScheduleFuture = dataSetImportRepo.find().map( _.map{ importInfo =>
+  protected def init =
+    dataSetImportRepo.find().map(_.map { importInfo =>
       if (importInfo.scheduled && importInfo.scheduledTime.isDefined)
         schedule(importInfo.scheduledTime.get)(importInfo._id.get)
-    })
-    result(initScheduleFuture, timeout)
-  }
+    }).map(_ => ())
 
   override def schedule(
     initialDelay: FiniteDuration,

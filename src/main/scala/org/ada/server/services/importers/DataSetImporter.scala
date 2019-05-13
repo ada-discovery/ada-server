@@ -25,7 +25,7 @@ trait DataSetImporter[T <: DataSetImport] {
   def apply(importInfo: T): Future[Unit]
 }
 
-private abstract class AbstractDataSetImporter[T <: DataSetImport] extends DataSetImporter[T] {
+private[importers] abstract class AbstractDataSetImporter[T <: DataSetImport] extends DataSetImporter[T] {
 
   @Inject var messageRepo: MessageRepo = _
   @Inject var dataSetService: DataSetService = _

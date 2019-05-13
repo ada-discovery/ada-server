@@ -7,7 +7,7 @@ import org.ada.server.field.FieldTypeHelper
 import org.ada.server.models._
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
-import org.ada.server.services.importers.EGaitServiceFactory
+import org.incal.core.util.GroupMapList
 import org.ada.server.models.egait.EGaitKineticData.eGaitSessionFormat
 import org.ada.server.models.egait.EGaitKineticData
 import org.ada.server.models.dataimport.EGaitDataSetImport
@@ -101,27 +101,36 @@ private class EGaitDataSetImporter @Inject()(
         getSessionCsvs(eGaitService)
       }
 
-      lines: Iterator[String] =
-        csvs.map(_.split(eol)) match {
-          case Nil => Seq[String]().iterator
-          case csvLines =>
-            // skip the header from all but the first csv
-            val tailLines = csvLines.tail.map(_.tail).flatten
-            val all = csvLines.head ++ tailLines
-//            println(all.mkString("\n"))
-            all.iterator
+      // parse lines
+      (columnNameLabels, mergedValues) =
+      csvs.map(_.split(eol)) match {
+        case Nil => (Seq[(String, String)](), Seq(Seq[String]()).iterator)
+        case csvFiles =>
+          logger.info(s"Parsing lines...")
+
+          val columnsAndLines = csvFiles.map { csvFile =>
+            // collect the column names and lines
+            val csvFileIterator = csvFile.toIterator
+            val columnNameLabels = dataSetService.getColumnNameLabels(delimiter.toString, csvFileIterator)
+            val lines = dataSetService.parseLines(columnNameLabels.size, csvFileIterator, delimiter.toString, true, prefixSuffixSeparators)
+            (columnNameLabels, lines)
           }
 
-      // collect the column names and labels
-      columnNameLabels =  dataSetService.getColumnNameLabels(delimiter.toString, lines)
+          val columnNamesAndLabelsInOrder = columnsAndLines.flatMap(_._1).toGroupMap.map { case (columnName, labels) => (columnName, labels.head) }.toSeq
 
-      // parse lines
-      values = {
-        logger.info(s"Parsing lines...")
-        dataSetService.parseLines(columnNameLabels.size, lines, delimiter.toString, true, prefixSuffixSeparators)
+          val values = columnsAndLines.flatMap { case (columns, lines) =>
+            lines.map { line =>
+              val columnNameValueMap = line.zip(columns).map { case (value, (columnName, _)) => (columnName, value) }.toMap
+              columnNamesAndLabelsInOrder.map { case (columnName, _) =>
+                columnNameValueMap.getOrElse(columnName, "")
+              }
+            }
+          }
+
+          (columnNamesAndLabelsInOrder, values.toIterator)
       }
 
-      _ <- saveStringsAndDictionaryWithTypeInference(dsa, columnNameLabels, values, Some(saveBatchSize), Some(fti))
+      _ <- saveStringsAndDictionaryWithTypeInference(dsa, columnNameLabels, mergedValues, Some(saveBatchSize), Some(fti))
     } yield
       ()
 
