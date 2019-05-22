@@ -2,7 +2,7 @@ package org.ada.server.dataaccess.elastic
 
 import javax.inject.Inject
 import com.sksamuel.elastic4s.ElasticClient
-import org.incal.access_elastic.ElasticClientProvider
+import org.incal.access.elastic.ElasticClientProvider
 import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
 

@@ -1,10 +1,11 @@
 package org.ada.server.dataaccess.elastic.format
 
 import com.sksamuel.elastic4s.ElasticClient
-import org.incal.access_elastic.ElasticSetting
-import org.incal.access_elastic.format.ElasticFormatAsyncReadonlyRepo
+import org.incal.access.elastic.ElasticSetting
 import play.api.libs.json.Format
 import reactivemongo.bson.BSONObjectID
+
+import scala.reflect.runtime.universe.TypeTag
 
 final class ElasticBSONObjectIDFormatAsyncReadonlyRepo[E, ID](
   indexName: String,
@@ -12,10 +13,12 @@ final class ElasticBSONObjectIDFormatAsyncReadonlyRepo[E, ID](
   identityName : String,
   val client: ElasticClient,
   setting: ElasticSetting)(
-  implicit coreFormat: Format[E], manifest: Manifest[E]
+  implicit typeTag: TypeTag[E], coreFormat: Format[E], manifest: Manifest[E]
 ) extends ElasticFormatAsyncReadonlyRepo[E, ID](
   indexName, typeName, identityName, setting
-)(format = new ElasticIdRenameFormat(coreFormat), manifest) {
+) {
+
+  override implicit val format = new ElasticIdRenameFormat(coreFormat)
 
   override protected def toDBValue(value: Any): Any =
     value match {

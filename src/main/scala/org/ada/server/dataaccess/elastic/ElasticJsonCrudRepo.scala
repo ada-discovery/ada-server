@@ -13,7 +13,7 @@ import org.ada.server.models.{FieldTypeId, FieldTypeSpec}
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONObjectIDFormat
-import org.incal.access_elastic.{CoerceDoubleFieldDefinition, ElasticAsyncCrudRepo, ElasticSetting}
+import org.incal.access.elastic.{CoerceDoubleFieldDefinition, ElasticAsyncCrudRepo, ElasticSetting}
 import javax.inject.Inject
 import play.api.Configuration
 
@@ -25,7 +25,10 @@ class ElasticJsonCrudRepo @Inject()(
   ) extends ElasticAsyncCrudRepo[JsObject, BSONObjectID](
     collectionName,
     collectionName,
-    ElasticSetting(scrollBatchSize = configuration.getInt("elastic.scroll.batch.size").getOrElse(1000))
+    ElasticSetting(
+      useDocScrollSort = configuration.getBoolean("elastic.scroll.doc_sort.use").getOrElse(true),
+      scrollBatchSize = configuration.getInt("elastic.scroll.batch.size").getOrElse(1000)
+    )
   ) with JsonCrudRepo {
 
   private implicit val jsonIdRenameFormat = ElasticIdRenameUtil.createFormat

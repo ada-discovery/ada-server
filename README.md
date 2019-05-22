@@ -1,4 +1,4 @@
-# Ada Server [![version](https://img.shields.io/badge/version-0.7.3.RC.6-green.svg)](https://ada-discovery.org)
+# Ada Server [![version](https://img.shields.io/badge/version-0.7.3.RC.7-green.svg)](https://ada-discovery.org)
 
 This is a server part of Ada Discovery Analytics.
 
@@ -7,7 +7,7 @@ This is a server part of Ada Discovery Analytics.
 All you need is **Scala 2.11**. To pull the library you have to add the following dependency to *build.sbt*
 
 ```
-"org.adada" %% "ada-server % "0.7.3.RC.6"
+"org.adada" %% "ada-server % "0.7.3.RC.7"
 ```
 
 or to *pom.xml* (if you use maven)
@@ -16,6 +16,6 @@ or to *pom.xml* (if you use maven)
 <dependency>
     <groupId>org.adada</groupId>
     <artifactId>ada-server_2.11</artifactId>
-    <version>0.7.3.RC.6</version>
+    <version>0.7.3.RC.7</version>
 </dependency>
 ```

@@ -1,21 +1,24 @@
 package org.ada.server.dataaccess.elastic.format
 
 import com.sksamuel.elastic4s.ElasticClient
-import org.incal.access_elastic.ElasticSetting
-import org.incal.access_elastic.format.ElasticFormatAsyncCrudRepo
+import org.incal.access.elastic.ElasticSetting
 import org.incal.core.Identity
 import play.api.libs.json.Format
 import reactivemongo.bson.BSONObjectID
+
+import scala.reflect.runtime.universe.TypeTag
 
 final class ElasticBSONObjectIDFormatAsyncRepo[E, ID](
   indexName: String,
   typeName: String,
   val client: ElasticClient,
   setting: ElasticSetting)(
-  implicit coreFormat: Format[E], manifest: Manifest[E], identity: Identity[E, ID]
+  implicit typeTag: TypeTag[E], coreFormat: Format[E], manifest: Manifest[E], identity: Identity[E, ID]
 ) extends ElasticFormatAsyncCrudRepo[E, ID](
   indexName, typeName, setting
-)(format = new ElasticIdRenameFormat(coreFormat), manifest, identity) {
+) {
+
+  override implicit val format = new ElasticIdRenameFormat(coreFormat)
 
   override protected def toDBValue(value: Any): Any =
     value match {
