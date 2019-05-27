@@ -1,11 +1,11 @@
-
+package field
 
 import java.text.SimpleDateFormat
 import java.{util => ju}
 
-import dataaccess._
-import field.{FieldType, FieldTypeHelper}
-import models.{FieldTypeId, FieldTypeSpec}
+import org.ada.server.dataaccess.AdaConversionException
+import org.ada.server.field.{FieldType, FieldTypeHelper}
+import org.ada.server.models.{FieldTypeId, FieldTypeSpec}
 import org.scalatest._
 import play.api.libs.json._
 

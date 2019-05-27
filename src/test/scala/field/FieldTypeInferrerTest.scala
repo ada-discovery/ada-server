@@ -1,8 +1,8 @@
-import dataaccess._
-import field.FieldTypeHelper
-import models.{FieldTypeId, FieldTypeSpec}
+package field
+
+import org.ada.server.field.FieldTypeHelper
+import org.ada.server.models.{FieldTypeId, FieldTypeSpec}
 import org.scalatest._
-import play.api.libs.json.{JsString, Json}
 
 class FieldTypeInferrerTest extends FlatSpec with Matchers {
 
