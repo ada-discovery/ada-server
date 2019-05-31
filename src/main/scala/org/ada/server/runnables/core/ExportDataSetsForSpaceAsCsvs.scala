@@ -8,7 +8,7 @@ import org.apache.commons.lang3.StringEscapeUtils
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.Logger
 import reactivemongo.bson.BSONObjectID
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.incal.core.util.{seqFutures, writeStringAsStream}
 
 import scala.reflect.runtime.universe.typeOf
@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class ExportDataSetsForSpaceAsCsvs @Inject() (
     dsaf: DataSetAccessorFactory,
     dataSpaceMetaInfoRepo: DataSpaceMetaInfoRepo
-  ) extends InputFutureRunnable[ExportDataSetsForSpaceAsCsvsSpec] {
+  ) extends InputFutureRunnableExt[ExportDataSetsForSpaceAsCsvsSpec] {
 
   private val eol = "\n"
   private val logger = Logger
@@ -57,8 +57,6 @@ class ExportDataSetsForSpaceAsCsvs @Inject() (
       writeStringAsStream(csvString, new java.io.File(exportFolder + "/" + dataSetId + ".csv"))
     }
   }
-
-  override def inputType = typeOf[ExportDataSetsForSpaceAsCsvsSpec]
 }
 
 case class ExportDataSetsForSpaceAsCsvsSpec(

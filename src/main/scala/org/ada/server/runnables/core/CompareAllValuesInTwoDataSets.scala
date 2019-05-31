@@ -1,12 +1,11 @@
 package org.ada.server.runnables.core
 
 import javax.inject.Inject
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.libs.json._
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.{InputFutureRunnable, InputFutureRunnableExt}
 import org.ada.server.services.DataSetService
 import org.ada.server.dataaccess.ignite.BinaryJsonUtil.getValueFromJson
 import org.ada.server.models.DataSetFormattersAndIds.{FieldIdentity, JsObjectIdentity}
@@ -23,7 +22,7 @@ import play.api.Logger
 class CompareAllValuesInTwoDataSets @Inject()(
     dsaf: DataSetAccessorFactory,
     dataSetService: DataSetService
-  ) extends InputFutureRunnable[CompareAllValuesInTwoDataSetsSpec] {
+  ) extends InputFutureRunnableExt[CompareAllValuesInTwoDataSetsSpec] {
 
   private val logger = Logger
   private implicit val system = ActorSystem()
@@ -117,8 +116,6 @@ class CompareAllValuesInTwoDataSets @Inject()(
       logger.info("No error found in a row...")
     errors
   }
-
-  override def inputType = typeOf[CompareAllValuesInTwoDataSetsSpec]
 }
 
 case class CompareAllValuesInTwoDataSetsSpec(

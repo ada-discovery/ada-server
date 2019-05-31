@@ -1,10 +1,10 @@
 package org.ada.server.services
 
 import com.google.inject.assistedinject.FactoryModuleBuilder
-import org.ada.server.dataaccess.ignite.IgniteFactory
 import net.codingwell.scalaguice.ScalaModule
+import org.ada.server.services.ServiceTypes.{DataSetCentralImporter, DataSetCentralTransformer, DataSetImportScheduler, DataSetTransformationScheduler}
 import org.ada.server.services.importers._
-import org.apache.ignite.Ignite
+import org.ada.server.services.transformers.{DataSetCentralTransformerImpl, DataSetTransformationSchedulerImpl}
 
 class ServiceModule extends ScalaModule {
 
@@ -22,6 +22,11 @@ class ServiceModule extends ScalaModule {
       .implement(classOf[RedCapService], classOf[RedCapServiceWSImpl])
       .build(classOf[RedCapServiceFactory]))
 
+
+    bind[DataSetCentralImporter].to(classOf[DataSetCentralImporterImpl]).asEagerSingleton
     bind[DataSetImportScheduler].to(classOf[DataSetImportSchedulerImpl]).asEagerSingleton
+
+    bind[DataSetCentralTransformer].to(classOf[DataSetCentralTransformerImpl]).asEagerSingleton
+    bind[DataSetTransformationScheduler].to(classOf[DataSetTransformationSchedulerImpl]).asEagerSingleton
   }
 }

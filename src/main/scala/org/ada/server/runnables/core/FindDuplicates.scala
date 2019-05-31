@@ -33,8 +33,6 @@ class FindDuplicates extends DsaInputFutureRunnable[FindDuplicatesSpec] {
       logger.info(duplicates.mkString(", ") + "\n")
     }
   }
-
-  override def inputType = typeOf[FindDuplicatesSpec]
 }
 
 case class FindDuplicatesSpec(dataSetId: String, fieldNames: Seq[String])

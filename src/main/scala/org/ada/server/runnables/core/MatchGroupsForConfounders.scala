@@ -1,14 +1,13 @@
 package org.ada.server.runnables.core
 
 import javax.inject.Inject
-
-import org.ada.server.models.DerivedDataSetSpec
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.incal.core.FilterCondition.toCriteria
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import reactivemongo.bson.BSONObjectID
 import org.ada.server.services.DataSetService
 import org.ada.server.field.FieldUtil.valueConverters
+import org.ada.server.models.datatrans.ResultDataSetSpec
 
 import scala.concurrent.Future
 import scala.reflect.runtime.universe.typeOf
@@ -17,7 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class MatchGroupsForConfounders @Inject() (
   dsaf: DataSetAccessorFactory,
   dataSetService: DataSetService
-) extends InputFutureRunnable[MatchGroupsForConfoundersSpec] {
+) extends InputFutureRunnableExt[MatchGroupsForConfoundersSpec] {
 
   override def runAsFuture(
     input: MatchGroupsForConfoundersSpec
@@ -52,13 +51,11 @@ class MatchGroupsForConfounders @Inject() (
     } yield
       ()
   }
-
-  override def inputType = typeOf[MatchGroupsForConfoundersSpec]
 }
 
 case class MatchGroupsForConfoundersSpec(
   dataSetId: String,
-  derivedDataSetSpec: DerivedDataSetSpec,
+  derivedDataSetSpec: ResultDataSetSpec,
   filterId: Option[BSONObjectID],
   targetGroupFieldName: String,
   confoundingFieldNames: Seq[String],

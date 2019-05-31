@@ -1,7 +1,6 @@
 package org.ada.server.services.importers
 
 import java.nio.charset.{Charset, MalformedInputException, UnsupportedCharsetException}
-import java.text.DecimalFormat
 
 import javax.inject.Inject
 import org.ada.server.models.dataimport.DataSetImport
@@ -13,33 +12,29 @@ import org.ada.server.dataaccess.dataset.{DataSetAccessor, DataSetAccessorFactor
 import org.ada.server.services.DataSetService
 import org.ada.server.util.MessageLogger
 import org.ada.server.field.FieldUtil.specToField
+import org.incal.core.runnables.InputFutureRunnable
 import org.incal.core.util.seqFutures
 import play.api.libs.json.{JsNumber, JsObject, Json}
 import play.api.Logger
 
 import scala.concurrent.Future
 import scala.io.Source
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait DataSetImporter[T <: DataSetImport] {
-  def apply(importInfo: T): Future[Unit]
-}
+trait DataSetImporter[T <: DataSetImport] extends InputFutureRunnable[T]
 
-private[importers] abstract class AbstractDataSetImporter[T <: DataSetImport] extends DataSetImporter[T] {
+private[importers] abstract class AbstractDataSetImporter[T <: DataSetImport](implicit val typeTag: TypeTag[T]) extends DataSetImporter[T] {
 
   @Inject var messageRepo: MessageRepo = _
   @Inject var dataSetService: DataSetService = _
   @Inject var dsaf: DataSetAccessorFactory = _
 
   protected val logger = Logger
-  protected lazy val messageLogger = MessageLogger(logger, messageRepo)
 
   protected val defaultFti = FieldTypeHelper.fieldTypeInferrer
   protected val ftf = FieldTypeHelper.fieldTypeFactory()
   protected val defaultCharset = "UTF-8"
-
-  private val df = new DecimalFormat("#")
-  df.setMaximumIntegerDigits(40)
 
   protected def createDataSetAccessor(
     importInfo: DataSetImport

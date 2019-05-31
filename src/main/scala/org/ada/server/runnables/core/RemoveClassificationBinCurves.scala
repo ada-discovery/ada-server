@@ -2,14 +2,14 @@ package org.ada.server.runnables.core
 
 import javax.inject.Inject
 import play.api.Logger
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.incal.spark_ml.models.result.{ClassificationResult, StandardClassificationResult, TemporalClassificationResult}
 import org.ada.server.dataaccess.dataset.ClassificationResultRepoFactory
 
 import scala.reflect.runtime.universe.typeOf
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class RemoveClassificationBinCurves @Inject()(repoFactory: ClassificationResultRepoFactory) extends InputFutureRunnable[RemoveClassificationBinCurvesSpec] {
+class RemoveClassificationBinCurves @Inject()(repoFactory: ClassificationResultRepoFactory) extends InputFutureRunnableExt[RemoveClassificationBinCurvesSpec] {
 
   private val logger = Logger // (this.getClass())
 
@@ -32,8 +32,6 @@ class RemoveClassificationBinCurves @Inject()(repoFactory: ClassificationResultR
     } yield
       ()
   }
-
-  override def inputType = typeOf[RemoveClassificationBinCurvesSpec]
 }
 
 case class RemoveClassificationBinCurvesSpec(dataSetId: String)

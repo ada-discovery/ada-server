@@ -10,8 +10,6 @@ import scala.util.Random
 
 class CreateDefaultMainView extends DsaInputFutureRunnable[CreateDefaultMainViewSpec] {
 
-  private val logger = Logger // (this.getClass())
-
   override def runAsFuture(input: CreateDefaultMainViewSpec) = {
     val dsa_ = createDsa(input.dataSetId)
     val fieldRepo = dsa_.fieldRepo
@@ -79,8 +77,6 @@ class CreateDefaultMainView extends DsaInputFutureRunnable[CreateDefaultMainView
       true
     )
   }
-
-  override def inputType = typeOf[CreateDefaultMainViewSpec]
 }
 
 case class CreateDefaultMainViewSpec(

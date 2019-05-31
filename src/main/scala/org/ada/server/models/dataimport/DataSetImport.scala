@@ -1,27 +1,26 @@
 package org.ada.server.models.dataimport
 
-import org.ada.server.models.{DataSetFormattersAndIds, DataSetSetting, DataView}
+import org.ada.server.models._
 import org.ada.server.dataaccess.BSONObjectIdentity
 import org.ada.server.json.{ManifestedFormat, SubTypeFormat}
 import reactivemongo.bson.BSONObjectID
 import java.util.Date
+
 import reactivemongo.play.json.BSONFormats._
 import play.api.libs.json._
 
-abstract class DataSetImport {
+trait DataSetImport extends Schedulable {
   val _id: Option[BSONObjectID]
   val timeCreated: Date
-  var timeLastExecuted: Option[Date]
+  val timeLastExecuted: Option[Date]
+
   val dataSpaceName: String
   val dataSetId: String
   val dataSetName: String
-  val scheduled: Boolean
-  val scheduledTime: Option[ScheduledTime]
   val setting: Option[DataSetSetting]
+
   val dataView: Option[DataView]
 }
-
-case class ScheduledTime(hour: Option[Int], minute: Option[Int], second: Option[Int])
 
 object DataSetImport {
   implicit val scheduleTimeFormat = Json.format[ScheduledTime]
@@ -53,13 +52,16 @@ object DataSetImport {
       }
   }
 
-  def copyWithoutTimestamps(entity: DataSetImport) =
-    entity match {
-      case x: CsvDataSetImport => x.copy(timeCreated = new Date(), timeLastExecuted = None)
-      case x: JsonDataSetImport => x.copy(timeCreated = new Date(), timeLastExecuted = None)
-      case x: SynapseDataSetImport => x.copy(timeCreated = new Date(), timeLastExecuted = None)
-      case x: TranSmartDataSetImport => x.copy(timeCreated = new Date(), timeLastExecuted = None)
-      case x: RedCapDataSetImport => x.copy(timeCreated = new Date(), timeLastExecuted = None)
-      case x: EGaitDataSetImport => x.copy(timeCreated = new Date(), timeLastExecuted = None)
-    }
+  implicit class DataSetImportExt(val dataSetImport: DataSetImport) extends AnyVal {
+
+    def copyWithTimestamps(timeCreated: Date, timeLastExecuted: Option[Date]): DataSetImport =
+      dataSetImport match {
+        case x: CsvDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
+        case x: JsonDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
+        case x: SynapseDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
+        case x: TranSmartDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
+        case x: RedCapDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
+        case x: EGaitDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
+      }
+  }
 }

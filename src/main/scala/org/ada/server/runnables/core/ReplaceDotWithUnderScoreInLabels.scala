@@ -24,8 +24,6 @@ class ReplaceDotWithUnderScoreInLabels extends DsaInputFutureRunnable[ReplaceDot
     } yield
       ()
   }
-
-  override def inputType = typeOf[ReplaceDotWithUnderScoreInLabelsSpec]
 }
 
 case class ReplaceDotWithUnderScoreInLabelsSpec(dataSetId: String)

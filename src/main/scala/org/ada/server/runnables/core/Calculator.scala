@@ -1,10 +1,8 @@
 package org.ada.server.runnables.core
 
-import org.incal.core.runnables.{InputRunnable, RunnableHtmlOutput}
+import org.incal.core.runnables.{InputRunnableExt, RunnableHtmlOutput}
 
-import scala.reflect.runtime.universe.typeOf
-
-class Calculator extends InputRunnable[CalculatorSpec] with RunnableHtmlOutput {
+class Calculator extends InputRunnableExt[CalculatorSpec] with RunnableHtmlOutput {
   import Operator._
 
   override def run(input: CalculatorSpec) = {
@@ -19,8 +17,6 @@ class Calculator extends InputRunnable[CalculatorSpec] with RunnableHtmlOutput {
 
     addParagraph(s"${input.a} ${input.operator} ${input.b} = ${bold(fun(input.a, input.b).toString)}")
   }
-
-  override def inputType = typeOf[CalculatorSpec]
 }
 
 object Operator extends Enumeration {

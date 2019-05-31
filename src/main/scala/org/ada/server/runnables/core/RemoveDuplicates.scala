@@ -48,8 +48,6 @@ class RemoveDuplicates extends DsaInputFutureRunnable[RemoveDuplicatesSpec] {
     } yield
       ()
   }
-
-  override def inputType = typeOf[RemoveDuplicatesSpec]
 }
 
 case class RemoveDuplicatesSpec(dataSetId: String, fieldNames: Seq[String])

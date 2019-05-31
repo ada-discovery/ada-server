@@ -1,12 +1,12 @@
 package runnables
 
 import javax.inject.Inject
-
 import org.ada.server.AdaException
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
+import scala.reflect.runtime.universe.TypeTag
 
-trait DsaInputFutureRunnable[I] extends InputFutureRunnable[I] {
+abstract class DsaInputFutureRunnable[I](implicit override val typeTag: TypeTag[I]) extends InputFutureRunnableExt[I] {
 
   @Inject var dsaf: DataSetAccessorFactory = _
 

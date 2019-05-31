@@ -26,10 +26,10 @@ class ExportDictionary extends DsaInputFutureRunnable[ExportDictionarySpec] {
       // collect all the lines
       val lines = fields.map { field =>
         val enumValuesString =
-          field.numValues.map { pairs =>
-            val fields = pairs.map { case (a, b) => a -> JsString(b)}
+          if (field.numValues.nonEmpty) {
+            val fields = field.numValues.map { case (a, b) => a -> JsString(b)}
             Json.stringify(JsObject(fields))
-          }.getOrElse("")
+          } else ""
 
         Seq(JsonUtil.unescapeKey(field.name), field.label.getOrElse(""), field.fieldType.toString, enumValuesString).mkString(delimiter)
       }
@@ -44,8 +44,6 @@ class ExportDictionary extends DsaInputFutureRunnable[ExportDictionarySpec] {
       pw.close
     }
   }
-
-  override def inputType = typeOf[ExportDictionarySpec]
 }
 
 case class ExportDictionarySpec(dataSetId: String)

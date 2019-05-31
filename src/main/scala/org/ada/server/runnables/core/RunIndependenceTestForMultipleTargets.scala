@@ -9,7 +9,7 @@ import org.ada.server.models.DataSetFormattersAndIds.FieldIdentity
 import org.apache.commons.lang3.StringEscapeUtils
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.Logger
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.services.StatsService
 import org.incal.core.util.writeStringAsStream
 
@@ -21,7 +21,7 @@ class RunIndependenceTestForMultipleTargets @Inject()(
     dsaf: DataSetAccessorFactory,
     dataSpaceMetaInfoRepo: DataSpaceMetaInfoRepo,
     statsService: StatsService
-  ) extends InputFutureRunnable[RunIndependenceTestForMultipleTargetsSpec] {
+  ) extends InputFutureRunnableExt[RunIndependenceTestForMultipleTargetsSpec] {
 
   private val eol = "\n"
   private val logger = Logger
@@ -59,8 +59,6 @@ class RunIndependenceTestForMultipleTargets @Inject()(
       }
     }
   }
-
-  override def inputType = typeOf[RunIndependenceTestForMultipleTargetsSpec]
 }
 
 case class RunIndependenceTestForMultipleTargetsSpec(

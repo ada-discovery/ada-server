@@ -10,7 +10,7 @@ import org.ada.server.dataaccess.RepoTypes.RegressorRepo
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import reactivemongo.bson.BSONObjectID
 import org.ada.server.services.ml.MachineLearningService
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.incal.spark_ml.models.ValueOrSeq.ValueOrSeq
 import org.incal.spark_ml.models.ReservoirSpec
 import org.incal.spark_ml.models.regression.RegressionEvalMetric
@@ -24,7 +24,7 @@ class RunTimeSeriesRCRegression @Inject() (
     dsaf: DataSetAccessorFactory,
     mlService: MachineLearningService,
     regressionRepo: RegressorRepo
-  ) extends InputFutureRunnable[RunTimeSeriesRCRegressionSpec] with TimeSeriesResultsHelper {
+  ) extends InputFutureRunnableExt[RunTimeSeriesRCRegressionSpec] with TimeSeriesResultsHelper {
 
   override def runAsFuture(
     input: RunTimeSeriesRCRegressionSpec
@@ -70,8 +70,6 @@ class RunTimeSeriesRCRegression @Inject() (
     } yield
       resultsHolder.foreach(exportResults)
   }
-
-  override def inputType = typeOf[RunTimeSeriesRCRegressionSpec]
 }
 
 case class RunTimeSeriesRCRegressionSpec(

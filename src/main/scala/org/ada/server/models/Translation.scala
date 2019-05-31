@@ -5,6 +5,7 @@ import play.api.libs.json.Json
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 
+@Deprecated
 case class Translation(
   _id : Option[BSONObjectID],
   original : String,

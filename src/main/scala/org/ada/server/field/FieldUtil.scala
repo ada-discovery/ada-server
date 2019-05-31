@@ -218,7 +218,7 @@ object FieldUtil {
         else {
           // note that for Scala Enumerations we directly use ordinal values for encoding
           val enumMap = getEnumOrdinalValues(t, mirror)
-          FieldTypeSpec(FieldTypeId.Enum, false, Some(enumMap))
+          FieldTypeSpec(FieldTypeId.Enum, false, enumMap)
         }
 
       // Java enum
@@ -228,7 +228,7 @@ object FieldUtil {
         else {
           // note that for Java Enumerations we directly use ordinal values for encoding
           val enumMap = getJavaEnumOrdinalValues(t, mirror)
-          FieldTypeSpec(FieldTypeId.Enum, false, Some(enumMap))
+          FieldTypeSpec(FieldTypeId.Enum, false, enumMap)
         }
 
       // string
@@ -329,7 +329,7 @@ object FieldUtil {
       label,
       typeSpec.fieldType,
       typeSpec.isArray,
-      typeSpec.enumValues.map(_.map { case (a,b) => (a.toString, b)}),
+      typeSpec.enumValues.map { case (a,b) => (a.toString, b)},
       typeSpec.displayDecimalPlaces,
       typeSpec.displayTrueValue,
       typeSpec.displayFalseValue

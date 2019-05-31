@@ -5,12 +5,12 @@ import javax.inject.Inject
 import org.ada.server.dataaccess.RepoTypes.DataSpaceMetaInfoRepo
 import org.ada.server.models.DataSpaceMetaInfo
 import reactivemongo.bson.BSONObjectID
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.runtime.universe.typeOf
 
-class CreateDataSpace @Inject() (repo: DataSpaceMetaInfoRepo) extends InputFutureRunnable[DataSpaceSpec] {
+class CreateDataSpace @Inject() (repo: DataSpaceMetaInfoRepo) extends InputFutureRunnableExt[DataSpaceSpec] {
 
   override def runAsFuture(input: DataSpaceSpec) = {
     val sortOrder = input.sortOrder.getOrElse(0)
@@ -21,8 +21,6 @@ class CreateDataSpace @Inject() (repo: DataSpaceMetaInfoRepo) extends InputFutur
     // save
     repo.save(dataSpace).map(_ => ())
   }
-
-  override def inputType = typeOf[DataSpaceSpec]
 }
 
 case class DataSpaceSpec(name: String, sortOrder: Option[Int], parentId: Option[BSONObjectID])

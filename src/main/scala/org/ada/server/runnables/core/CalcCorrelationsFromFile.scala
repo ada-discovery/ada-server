@@ -1,17 +1,15 @@
 package org.ada.server.runnables.core
 
 import javax.inject.Inject
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import org.apache.commons.lang3.StringEscapeUtils
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.services.StatsService
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.reflect.runtime.universe.typeOf
 
-class CalcCorrelationsFromFile @Inject() (statsService: StatsService) extends InputFutureRunnable[CalcCorrelationsFromFileSpec] {
+class CalcCorrelationsFromFile @Inject() (statsService: StatsService) extends InputFutureRunnableExt[CalcCorrelationsFromFileSpec] {
 
   private implicit val system = ActorSystem()
   private implicit val materializer = ActorMaterializer()
@@ -35,8 +33,6 @@ class CalcCorrelationsFromFile @Inject() (statsService: StatsService) extends In
         delimiter
       )
   }
-
-  override def inputType = typeOf[CalcCorrelationsFromFileSpec]
 }
 
 case class CalcCorrelationsFromFileSpec(

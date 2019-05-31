@@ -12,7 +12,6 @@ import org.ada.server.models.redcap.{Metadata, FieldType => RCFieldType}
 import org.ada.server.models.dataimport.RedCapDataSetImport
 import org.ada.server.{AdaException, AdaParseException}
 import org.ada.server.field.FieldUtil.FieldOps
-import org.ada.server.services.importers.RedCapServiceFactory
 import org.incal.core.dataaccess.Criterion.Infix
 import org.incal.core.util.{hasNonAlphanumericUnderscore, seqFutures}
 
@@ -35,7 +34,7 @@ private class RedCapDataSetImporter @Inject() (
 
   private val defaultSaveBatchSize = 20
 
-  override def apply(importInfo: RedCapDataSetImport): Future[Unit] = {
+  override def runAsFuture(importInfo: RedCapDataSetImport): Future[Unit] = {
     logger.info(new Date().toString)
 
     if (importInfo.importDictionaryFlag)
@@ -161,10 +160,7 @@ private class RedCapDataSetImporter @Inject() (
       // save the records
       _ <- dataSetService.saveOrUpdateRecords(dataRepo, inheritedRecords.toSeq, batchSize = Some(batchSize))
     } yield
-      if (importInfo.importDictionaryFlag)
-        messageLogger.info(s"Import of data set and dictionary '${importInfo.dataSetName}' successfully finished.")
-      else
-        messageLogger.info(s"Import of data set '${importInfo.dataSetName}' successfully finished.")
+      ()
   }
 
   private def importOrGetDictionary(
@@ -180,7 +176,7 @@ private class RedCapDataSetImporter @Inject() (
       val fieldsFuture = importAndInferRedCapDictionary(importInfo.dataSetId, redCapService, fieldRepo, categoryRepo, records)
 
       fieldsFuture.map { fields =>
-        messageLogger.info(s"RedCap dictionary inference and import for data set '${importInfo.dataSetId}' successfully finished.")
+        logger.info(s"RedCap dictionary inference and import for data set '${importInfo.dataSetId}' successfully finished.")
         fields
       }
     } else {
@@ -212,7 +208,7 @@ private class RedCapDataSetImporter @Inject() (
           }
         } else {
           val message = s"No dictionary found for the data set '${importInfo.dataSetId}'. Run the REDCap data set import again with the 'import dictionary' option."
-          messageLogger.error(message)
+          logger.error(message)
           throw new AdaException(message)
         }
     }
@@ -335,11 +331,11 @@ private class RedCapDataSetImporter @Inject() (
 
           val (fieldTypeSpec, isRedCapEnum) = getRedCapFixedType(metadata).getOrElse(inferredType)
 
-          val stringEnumValues = fieldTypeSpec.enumValues.map(_.map { case (from, to) => (from.toString, to) })
+          val stringEnumValues = fieldTypeSpec.enumValues.map { case (from, to) => (from.toString, to) }
           val field = Field(fieldName, Some(metadata.field_label), fieldTypeSpec.fieldType, fieldTypeSpec.isArray, stringEnumValues, None, None, None, Nil, categoryId)
           Seq((field, isRedCapEnum))
         } else {
-          val choices = getEnumValues(metadata).getOrElse(Nil)
+          val choices = getEnumValues(metadata)
           choices.map { case (suffix, label) =>
             val field = Field(s"${fieldName}___$suffix", Some(metadata.field_label + " " + label), FieldTypeId.Boolean, categoryId = categoryId)
             (field, false)
@@ -374,7 +370,7 @@ private class RedCapDataSetImporter @Inject() (
         // also add redcap_event_name
         inferredFieldNameTypeMap.get(visitFieldName).map(_.spec) match {
           case Some(visitFieldTypeSpec) =>
-            val stringEnums = visitFieldTypeSpec.enumValues.map(_.map { case (from, to) => (from.toString, to) })
+            val stringEnums = visitFieldTypeSpec.enumValues.map { case (from, to) => (from.toString, to) }
             val visitField = Field(visitFieldName, Some(visitLabel), visitFieldTypeSpec.fieldType, visitFieldTypeSpec.isArray, stringEnums)
             fields ++ Seq((visitField, false))
 
@@ -422,12 +418,12 @@ private class RedCapDataSetImporter @Inject() (
         }
     }
 
-  private def getEnumValues(metadata: Metadata): Option[Map[Int, String]] = {
+  private def getEnumValues(metadata: Metadata): Map[Int, String] = {
     val choices = metadata.select_choices_or_calculations.trim
 
     if (choices.nonEmpty) {
       try {
-        val keyValueMap = choices.split(choicesDelimiter).map { choice =>
+        choices.split(choicesDelimiter).map { choice =>
           val keyValueString = choice.split(choiceKeyValueDelimiter, 2)
 
           val stringKey = keyValueString(0).trim
@@ -435,12 +431,11 @@ private class RedCapDataSetImporter @Inject() (
 
           (stringKey.toInt, value)
         }.toMap
-        Some(keyValueMap)
       } catch {
         case e: NumberFormatException => throw new AdaParseException(s"RedCap Metadata '${metadata.field_name}' has non-parseable choices '${metadata.select_choices_or_calculations}'.")
       }
     } else
-      None
+      Map()
   }
 
   private def getDoubles(metadata: Metadata): Option[Traversable[Double]] = {

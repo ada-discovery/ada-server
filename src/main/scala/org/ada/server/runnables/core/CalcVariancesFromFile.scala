@@ -3,14 +3,13 @@ package org.ada.server.runnables.core
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import org.apache.commons.lang3.StringEscapeUtils
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.calc.CalculatorExecutors
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.reflect.runtime.universe.typeOf
 import org.ada.server.calc.CalculatorHelper._
 
-class CalcVariancesFromFile extends InputFutureRunnable[CalcVariancesFromFileSpec] with CalculatorExecutors {
+class CalcVariancesFromFile extends InputFutureRunnableExt[CalcVariancesFromFileSpec] with CalculatorExecutors {
 
   private implicit val system = ActorSystem()
   private implicit val materializer = ActorMaterializer()
@@ -38,8 +37,6 @@ class CalcVariancesFromFile extends InputFutureRunnable[CalcVariancesFromFileSpe
         delimiter
       )
   }
-
-  override def inputType = typeOf[CalcVariancesFromFileSpec]
 }
 
 case class CalcVariancesFromFileSpec(

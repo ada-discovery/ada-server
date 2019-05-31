@@ -7,7 +7,7 @@ case class Field(
   label: Option[String] = None,
   fieldType: FieldTypeId.Value = FieldTypeId.String,
   isArray: Boolean = false,
-  numValues: Option[Map[String, String]] = None, // TODO: rename to enumValues // also rename FieldCacheCrudRepoFactory fieldsToExclude
+  numValues: Map[String, String] = Map(), // TODO: rename to enumValues // also rename FieldCacheCrudRepoFactory fieldsToExclude
   displayDecimalPlaces: Option[Int] = None,
   displayTrueValue: Option[String] = None,
   displayFalseValue: Option[String] = None,
@@ -19,7 +19,7 @@ case class Field(
     FieldTypeSpec(
       fieldType,
       isArray,
-      numValues.map(_.map{ case (a,b) => (a.toInt, b)}),
+      numValues.map { case (a,b) => (a.toInt, b) },
       displayDecimalPlaces,
       displayTrueValue,
       displayFalseValue
@@ -35,7 +35,7 @@ object FieldTypeId extends Enumeration {
 case class FieldTypeSpec(
   fieldType: FieldTypeId.Value,
   isArray: Boolean = false,
-  enumValues: Option[Map[Int, String]] = None,
+  enumValues: Map[Int, String] = Map(),
   displayDecimalPlaces: Option[Int] = None,
   displayTrueValue: Option[String] = None,
   displayFalseValue: Option[String] = None

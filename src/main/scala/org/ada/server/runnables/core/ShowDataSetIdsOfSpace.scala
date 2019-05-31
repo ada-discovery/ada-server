@@ -5,14 +5,14 @@ import javax.inject.Inject
 import org.ada.server.dataaccess.RepoTypes.DataSpaceMetaInfoRepo
 import play.api.Logger
 import reactivemongo.bson.BSONObjectID
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 
 import scala.reflect.runtime.universe.typeOf
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ShowDataSetIdsOfSpace @Inject()(
     dataSpaceMetaInfoRepo: DataSpaceMetaInfoRepo
-  ) extends InputFutureRunnable[ShowDataSetIdsOfSpaceSpec] {
+  ) extends InputFutureRunnableExt[ShowDataSetIdsOfSpaceSpec] {
 
   private val logger = Logger
 
@@ -23,8 +23,6 @@ class ShowDataSetIdsOfSpace @Inject()(
       val ids = dataSpace.dataSetMetaInfos.map(_.id)
       logger.info("Data set ids: " + ids.mkString(", "))
     }
-
-  override def inputType = typeOf[ShowDataSetIdsOfSpaceSpec]
 }
 
 case class ShowDataSetIdsOfSpaceSpec(

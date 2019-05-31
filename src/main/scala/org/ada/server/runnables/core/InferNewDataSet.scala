@@ -5,12 +5,12 @@ import javax.inject.Inject
 import org.ada.server.field.{FieldTypeHelper, FieldTypeInferrerFactory}
 import org.ada.server.models.StorageType
 import org.ada.server.models.DataSetSetting
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.services.DataSetService
 
 import scala.reflect.runtime.universe.typeOf
 
-class InferNewDataSet @Inject()(dataSetService: DataSetService) extends InputFutureRunnable[InferNewDataSetSpec] {
+class InferNewDataSet @Inject()(dataSetService: DataSetService) extends InputFutureRunnableExt[InferNewDataSetSpec] {
 
   override def runAsFuture(spec: InferNewDataSetSpec) = {
     val fieldTypeInferrerFactory = FieldTypeInferrerFactory(
@@ -34,8 +34,6 @@ class InferNewDataSet @Inject()(dataSetService: DataSetService) extends InputFut
       Some(fieldTypeInferrerFactory.applyJson)
     )
   }
-
-  override def inputType = typeOf[InferNewDataSetSpec]
 }
 
 case class InferNewDataSetSpec(

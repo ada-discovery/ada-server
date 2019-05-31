@@ -79,8 +79,6 @@ class DropExtraMiliSecsPoints extends DsaInputFutureRunnable[DropExtraMiliSecsPo
     } yield
       ()
   }
-
-  override def inputType = typeOf[DropExtraMiliSecsPointsSpec]
 }
 
 case class DropExtraMiliSecsPointsSpec(dataSetId: String, fieldName: String, batchSize: Int)

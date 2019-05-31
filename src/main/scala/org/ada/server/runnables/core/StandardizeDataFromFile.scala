@@ -4,13 +4,13 @@ import javax.inject.Inject
 
 import org.apache.commons.lang3.StringEscapeUtils
 import play.api.Logger
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.services.StatsService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.runtime.universe.typeOf
 
-class StandardizeDataFromFile @Inject() (statsService: StatsService) extends InputFutureRunnable[StandardizeDataFromFileSpec] {
+class StandardizeDataFromFile @Inject() (statsService: StatsService) extends InputFutureRunnableExt[StandardizeDataFromFileSpec] {
 
   private val logger = Logger
   private val defaultDelimiter = ","
@@ -44,8 +44,6 @@ class StandardizeDataFromFile @Inject() (statsService: StatsService) extends Inp
       )
     }
   }
-
-  override def inputType = typeOf[StandardizeDataFromFileSpec]
 }
 
 case class StandardizeDataFromFileSpec(

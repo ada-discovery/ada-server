@@ -5,12 +5,12 @@ import javax.inject.Inject
 import org.ada.server.field.{FieldTypeHelper, FieldTypeInferrerFactory}
 import org.ada.server.models.StorageType
 import org.ada.server.models.DataSetSetting
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.services.DataSetService
 
 import scala.reflect.runtime.universe.typeOf
 
-class TranslateNewDataSet @Inject()(dataSetService: DataSetService) extends InputFutureRunnable[TranslateNewDataSetSpec] {
+class TranslateNewDataSet @Inject()(dataSetService: DataSetService) extends InputFutureRunnableExt[TranslateNewDataSetSpec] {
 
   override def runAsFuture(spec: TranslateNewDataSetSpec) = {
 
@@ -25,8 +25,6 @@ class TranslateNewDataSet @Inject()(dataSetService: DataSetService) extends Inpu
       spec.saveBatchSize
     )
   }
-
-  override def inputType = typeOf[TranslateNewDataSetSpec]
 }
 
 case class TranslateNewDataSetSpec(

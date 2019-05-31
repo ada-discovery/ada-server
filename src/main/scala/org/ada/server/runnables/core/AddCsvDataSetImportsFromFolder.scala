@@ -1,19 +1,17 @@
 package org.ada.server.runnables.core
 
 import javax.inject.Inject
-
 import org.ada.server.models.{DataSetSetting, StorageType}
 import org.ada.server.models.dataimport.CsvDataSetImport
 import org.ada.server.dataaccess.RepoTypes.DataSetImportRepo
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.incal.core.util.listFiles
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.reflect.runtime.universe.typeOf
 
 class AddCsvDataSetImportsFromFolder @Inject()(
     dataSetImportRepo: DataSetImportRepo
-  ) extends InputFutureRunnable[AddCsvDataSetImportsFromFolderSpec] {
+  ) extends InputFutureRunnableExt[AddCsvDataSetImportsFromFolderSpec] {
 
   override def runAsFuture(spec: AddCsvDataSetImportsFromFolderSpec) = {
     val csvImports = listFiles(spec.folderPath).map { importFile =>
@@ -44,8 +42,6 @@ class AddCsvDataSetImportsFromFolder @Inject()(
 
     dataSetImportRepo.save(csvImports).map(_ => ())
   }
-
-  override def inputType = typeOf[AddCsvDataSetImportsFromFolderSpec]
 }
 
 case class AddCsvDataSetImportsFromFolderSpec(

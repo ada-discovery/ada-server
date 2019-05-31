@@ -1,17 +1,11 @@
 package org.ada.server.runnables.core
 
 import javax.inject.Inject
+import org.ada.server.models.datatrans.DropFieldsTransformation
+import org.incal.core.runnables.{InputFutureRunnable, InputFutureRunnableExt}
+import org.ada.server.services.transformers.DropFieldsTransformer
 
-import org.ada.server.models.{DerivedDataSetSpec, DropFieldsSpec, RenameFieldsSpec}
-import org.incal.core.runnables.InputFutureRunnable
-import org.ada.server.services.DataSetService
+class DropFields @Inject() (transformer: DropFieldsTransformer) extends InputFutureRunnableExt[DropFieldsTransformation] {
 
-import scala.reflect.runtime.universe.typeOf
-
-class DropFields @Inject() (dataSetService: DataSetService) extends InputFutureRunnable[DropFieldsSpec] {
-
-  override def runAsFuture(input: DropFieldsSpec) =
-    dataSetService.dropFields(input)
-
-  override def inputType = typeOf[DropFieldsSpec]
+  override def runAsFuture(input: DropFieldsTransformation) = transformer.runAsFuture(input)
 }

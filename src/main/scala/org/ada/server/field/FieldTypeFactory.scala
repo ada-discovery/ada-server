@@ -19,7 +19,7 @@ trait FieldTypeFactory {
   def apply(
     fieldType: FieldTypeId.Value,
     isArray: Boolean = false,
-    enumValues: Option[Map[Int, String]] = None
+    enumValues: Map[Int, String] = Map()
   ): FieldType[_] =
     apply(FieldTypeSpec(fieldType, isArray, enumValues))
 
@@ -37,7 +37,7 @@ private case class EnumFieldType(
     enumValueMap: Map[Int, String]
   ) extends FormatFieldType[Int] {
 
-  val spec = FieldTypeSpec(FieldTypeId.Enum, false, Some(enumValueMap))
+  val spec = FieldTypeSpec(FieldTypeId.Enum, false, enumValueMap)
 
   override val valueTypeTag = typeTag[Int]
 
@@ -459,8 +459,7 @@ private class FieldTypeFactoryImpl(
     // handle dynamic types (e.g. enum)
     fieldTypeId match {
       case FieldTypeId.Enum =>
-        val intEnumMap = fieldTypeSpec.enumValues.getOrElse(Map[Int, String]())
-        val scalarType = EnumFieldType(nullValues, intEnumMap)
+        val scalarType = EnumFieldType(nullValues, fieldTypeSpec.enumValues)
         arrayOrElseScalar(scalarType)
 
       case FieldTypeId.Double =>

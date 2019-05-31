@@ -66,8 +66,6 @@ class ReplaceNumericValuesWithNull extends DsaInputFutureRunnable[ReplaceNumeric
     } yield
       ()
   }
-
-  override def inputType = typeOf[ReplaceNumericValuesWithNullSpec]
 }
 
 case class ReplaceNumericValuesWithNullSpec(

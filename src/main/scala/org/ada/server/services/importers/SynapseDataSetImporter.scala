@@ -48,7 +48,7 @@ private class SynapseDataSetImporter @Inject() (
     throw new AdaException(s"Configuration entry '$key' not specified.")
   )
 
-  override def apply(importInfo: SynapseDataSetImport): Future[Unit] = {
+  override def runAsFuture(importInfo: SynapseDataSetImport): Future[Unit] = {
     try {
       val synapseService = synapseServiceFactory(synapseUsername, synapsePassword)
 
@@ -146,9 +146,8 @@ private class SynapseDataSetImporter @Inject() (
           val keys = JsonUtil.project(jsons, keyFieldName).map(keyFieldType.jsonToValue)
           dataSetService.deleteRecordsExcept(dataRepo, keyFieldName, keys.flatten.toSeq)
         }
-      } yield {
-        messageLogger.info(s"Import of data set '${importInfo.dataSetName}' successfully finished.")
-      }
+      } yield
+        ()
     } catch {
       case e: Exception => Future.failed(e)
     }
@@ -312,14 +311,14 @@ private class SynapseDataSetImporter @Inject() (
     val newTypeSpec = newType.spec
 
     if (oldTypeSpec.fieldType == FieldTypeId.Enum && newTypeSpec.fieldType == FieldTypeId.Enum) {
-        val newValues = newTypeSpec.enumValues.get.map(_._2).toBuffer
-        val oldValues = oldTypeSpec.enumValues.get.map(_._2)
+        val newValues = newTypeSpec.enumValues.map(_._2).toBuffer
+        val oldValues = oldTypeSpec.enumValues.map(_._2)
 
         val extraValues = newValues.--(oldValues).sorted
-        val maxKey = oldTypeSpec.enumValues.get.map(_._1).max
+        val maxKey = oldTypeSpec.enumValues.map(_._1).max
         val extraEnumMap = extraValues.zipWithIndex.map { case (value, index) => (maxKey + index + 1, value)}
 
-        val mergedFieldTypeSpec = oldTypeSpec.copy(enumValues = Some(oldTypeSpec.enumValues.get ++ extraEnumMap))
+        val mergedFieldTypeSpec = oldTypeSpec.copy(enumValues = oldTypeSpec.enumValues ++ extraEnumMap)
         ftf(mergedFieldTypeSpec)
     } else
       oldType

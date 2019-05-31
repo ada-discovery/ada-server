@@ -3,10 +3,9 @@ package org.ada.server.runnables.core
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import com.google.inject.Inject
-import org.ada.server.models.DataSetFormattersAndIds.FieldIdentity
 import org.ada.server.models.FieldTypeId
 import org.apache.commons.lang3.StringEscapeUtils
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.{InputFutureRunnable, InputFutureRunnableExt}
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.Logger
 import org.ada.server.runnables.core.CalcUtil._
@@ -18,7 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class CalcMatthewsBinaryClassCorrelations @Inject()(
     dsaf: DataSetAccessorFactory
-  ) extends InputFutureRunnable[CalcMatthewsBinaryClassCorrelationsSpec] with CalculatorExecutors {
+  ) extends InputFutureRunnableExt[CalcMatthewsBinaryClassCorrelationsSpec] with CalculatorExecutors {
 
   private val logger = Logger
 
@@ -58,8 +57,6 @@ class CalcMatthewsBinaryClassCorrelations @Inject()(
       )
     }
   }
-
-  override def inputType = typeOf[CalcMatthewsBinaryClassCorrelationsSpec]
 }
 
 case class CalcMatthewsBinaryClassCorrelationsSpec(

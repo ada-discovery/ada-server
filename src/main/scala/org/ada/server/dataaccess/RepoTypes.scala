@@ -3,6 +3,7 @@ package org.ada.server.dataaccess
 import org.ada.server.dataaccess.mongo.MongoAsyncCrudExtraRepo
 import org.ada.server.models._
 import org.ada.server.models.dataimport.DataSetImport
+import org.ada.server.models.datatrans.DataSetTransformation
 import org.ada.server.models.ml.unsupervised.UnsupervisedLearning
 import play.api.libs.json.JsObject
 import reactivemongo.bson.BSONObjectID
@@ -42,6 +43,7 @@ object RepoTypes {
   type MessageRepo = AsyncStreamRepo[Message, BSONObjectID]
 
   type DataSetImportRepo = AsyncCrudRepo[DataSetImport, BSONObjectID]
+  type DataSetTransformationRepo = AsyncCrudRepo[DataSetTransformation, BSONObjectID]
 
   type ClassifierRepo = AsyncCrudRepo[Classifier, BSONObjectID]
   type RegressorRepo = AsyncCrudRepo[Regressor, BSONObjectID]

@@ -1,18 +1,14 @@
 package org.ada.server.runnables.core
 
 import javax.inject.Inject
-
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import org.apache.commons.lang3.StringEscapeUtils
 import play.api.Logger
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.services.StatsService
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.reflect.runtime.universe.typeOf
 
-class CalcMetricMDSFromFile @Inject() (statsService: StatsService) extends InputFutureRunnable[CalcMetricMDSFromFileSpec] {
+class CalcMetricMDSFromFile @Inject() (statsService: StatsService) extends InputFutureRunnableExt[CalcMetricMDSFromFileSpec] {
 
   private val logger = Logger
   private val defaultDelimiter = ","
@@ -39,8 +35,6 @@ class CalcMetricMDSFromFile @Inject() (statsService: StatsService) extends Input
       )
     }
   }
-
-  override def inputType = typeOf[CalcMetricMDSFromFileSpec]
 }
 
 case class CalcMetricMDSFromFileSpec(

@@ -7,7 +7,7 @@ import org.ada.server.dataaccess.RepoTypes.RegressorRepo
 import org.ada.server.dataaccess.dataset.{DataSetAccessor, DataSetAccessorFactory}
 import reactivemongo.bson.BSONObjectID
 import org.ada.server.services.ml.MachineLearningService
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.incal.core.dataaccess.Criterion.Infix
 import org.incal.core.dataaccess.NotEqualsNullCriterion
 import org.incal.spark_ml.models.setting.{TemporalGroupIOSpec, TemporalRegressionLearningSetting}
@@ -21,7 +21,7 @@ class RunRowTimeSeriesDLRegression @Inject() (
     dsaf: DataSetAccessorFactory,
     mlService: MachineLearningService,
     regressionRepo: RegressorRepo
-  ) extends InputFutureRunnable[RunRowTimeSeriesDLRegressionSpec] with TimeSeriesResultsHelper {
+  ) extends InputFutureRunnableExt[RunRowTimeSeriesDLRegressionSpec] with TimeSeriesResultsHelper {
 
   private val ftf = FieldTypeHelper.fieldTypeFactory()
 
@@ -96,8 +96,6 @@ class RunRowTimeSeriesDLRegression @Inject() (
       }
     } yield
       criteria
-
-  override def inputType = typeOf[RunRowTimeSeriesDLRegressionSpec]
 }
 
 case class RunRowTimeSeriesDLRegressionSpec(

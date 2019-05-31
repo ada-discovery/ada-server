@@ -6,19 +6,18 @@ import org.ada.server.field.FieldTypeHelper
 import org.ada.server.AdaException
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.Logger
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.incal.core.util.writeStringAsStream
 import org.ada.server.runnables.core.CalcUtil._
 import org.ada.server.services.{StatsService, TSNESetting}
 import org.ada.server.calc.impl.JsonFieldUtil._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.reflect.runtime.universe.typeOf
 
 class CalcTSNEProjectionForRows @Inject()(
     dsaf: DataSetAccessorFactory,
     statsService: StatsService
-  ) extends InputFutureRunnable[CalcTSNEProjectionForRowsSpec] {
+  ) extends InputFutureRunnableExt[CalcTSNEProjectionForRowsSpec] {
 
   import statsService._
 
@@ -94,8 +93,6 @@ class CalcTSNEProjectionForRows @Inject()(
       )
     }
   }
-
-  override def inputType = typeOf[CalcTSNEProjectionForRowsSpec]
 }
 
 case class CalcTSNEProjectionForRowsSpec(

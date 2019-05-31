@@ -36,8 +36,6 @@ class CountDistinct extends DsaInputFutureRunnable[CountDistinctSpec] {
       }
     }
   }
-
-  override def inputType = typeOf[CountDistinctSpec]
 }
 
 case class CountDistinctSpec(dataSetId: String, fieldNames: Seq[String])

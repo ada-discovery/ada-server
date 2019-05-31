@@ -58,8 +58,6 @@ class ReplaceNumber extends DsaInputFutureRunnable[ReplaceNumberSpec] {
       _ <- repo.updateAsStream(replacedStream.via(flatFlow), spec.updateStreamSpec)
     } yield
       ()
-
-  override def inputType = typeOf[ReplaceNumberSpec]
 }
 
 case class ReplaceNumberSpec(dataSetId: String, fieldName: String, from: Double, to: Double, updateStreamSpec: StreamSpec)

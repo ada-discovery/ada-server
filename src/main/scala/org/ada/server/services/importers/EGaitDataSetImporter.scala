@@ -68,7 +68,7 @@ private class EGaitDataSetImporter @Inject()(
     Field("leftGyroscopePoints", None, FieldTypeId.Json, true)
   )
 
-  override def apply(importInfo: EGaitDataSetImport): Future[Unit] = {
+  override def runAsFuture(importInfo: EGaitDataSetImport): Future[Unit] = {
     logger.info(new Date().toString)
     logger.info(s"Import of data set '${importInfo.dataSetName}' initiated.")
 
@@ -82,9 +82,8 @@ private class EGaitDataSetImporter @Inject()(
         else
           importFeatures(importInfo, eGaitService, dsa)
 
-      } yield {
-        messageLogger.info(s"Import of data set '${importInfo.dataSetName}' successfully finished.")
-      }
+      } yield
+        ()
     } catch {
       case e: Exception => Future.failed(e)
     }

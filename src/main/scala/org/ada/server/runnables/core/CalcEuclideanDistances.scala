@@ -1,7 +1,5 @@
 package org.ada.server.runnables.core
 
-import java.{util => ju}
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import com.google.inject.Inject
@@ -12,7 +10,7 @@ import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.Logger
 import play.api.libs.json.JsObject
 import reactivemongo.bson.BSONObjectID
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.{InputFutureRunnable, InputFutureRunnableExt}
 import org.ada.server.services.StatsService
 import org.ada.server.runnables.core.CalcUtil._
 
@@ -23,7 +21,7 @@ import scala.reflect.runtime.universe.typeOf
 class CalcEuclideanDistances @Inject()(
     val dsaf: DataSetAccessorFactory,
     val statsService: StatsService
-  ) extends InputFutureRunnable[CalcEuclideanDistancesSpec] {
+  ) extends InputFutureRunnableExt[CalcEuclideanDistancesSpec] {
 
   private implicit val system = ActorSystem()
   private implicit val materializer = ActorMaterializer()
@@ -102,8 +100,6 @@ class CalcEuclideanDistances @Inject()(
 
     exec(parallelism, (), withProjection, fields)(dataRepo, criteria)
   }
-
-  override def inputType = typeOf[CalcEuclideanDistancesSpec]
 }
 
 case class CalcEuclideanDistancesSpec(

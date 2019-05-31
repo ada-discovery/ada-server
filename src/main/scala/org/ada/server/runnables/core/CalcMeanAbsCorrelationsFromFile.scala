@@ -4,14 +4,12 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
 import org.apache.commons.lang3.StringEscapeUtils
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.calc.CalculatorExecutors
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.reflect.runtime.universe.typeOf
-import org.ada.server.calc.CalculatorHelper._
 
-class CalcMeanAbsCorrelationsFromFile extends InputFutureRunnable[CalcMeanAbsCorrelationsFromFileSpec] with CalculatorExecutors {
+class CalcMeanAbsCorrelationsFromFile extends InputFutureRunnableExt[CalcMeanAbsCorrelationsFromFileSpec] with CalculatorExecutors {
 
   private implicit val system = ActorSystem()
   private implicit val materializer = ActorMaterializer()
@@ -39,8 +37,6 @@ class CalcMeanAbsCorrelationsFromFile extends InputFutureRunnable[CalcMeanAbsCor
         delimiter
       )
   }
-
-  override def inputType = typeOf[CalcMeanAbsCorrelationsFromFileSpec]
 }
 
 case class CalcMeanAbsCorrelationsFromFileSpec(

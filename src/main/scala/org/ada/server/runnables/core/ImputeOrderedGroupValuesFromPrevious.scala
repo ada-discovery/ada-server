@@ -1,16 +1,14 @@
 package org.ada.server.runnables.core
 
 import javax.inject.Inject
-
 import akka.NotUsed
 import akka.stream.scaladsl.Source
 import org.ada.server.dataaccess.StreamSpec
 import org.ada.server.field.FieldTypeHelper
 import org.ada.server.AdaException
 import org.ada.server.models.DataSetFormattersAndIds.JsObjectIdentity
-import org.ada.server.models.DerivedDataSetSpec
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.incal.core.dataaccess.Criterion.Infix
 import org.incal.core.dataaccess.NotEqualsNullCriterion
 import play.api.Logger
@@ -18,6 +16,7 @@ import play.api.libs.json.{JsNull, JsObject}
 import org.ada.server.services.DataSetService
 import org.ada.server.calc.impl.JsonFieldUtil
 import org.ada.server.field.FieldUtil.{FieldOps, JsonFieldOps}
+import org.ada.server.models.datatrans.ResultDataSetSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.runtime.universe.typeOf
@@ -26,7 +25,7 @@ import scala.concurrent.Future
 class ImputeOrderedGroupValuesFromPrevious @Inject() (
     dsaf: DataSetAccessorFactory,
     dataSetService: DataSetService
-  ) extends InputFutureRunnable[ImputeOrderedGroupValuesFromPreviousSpec] {
+  ) extends InputFutureRunnableExt[ImputeOrderedGroupValuesFromPreviousSpec] {
 
   private val logger = Logger
 
@@ -119,13 +118,11 @@ class ImputeOrderedGroupValuesFromPrevious @Inject() (
         JsObject(newFields)
       }
     }
-
-  override def inputType = typeOf[ImputeOrderedGroupValuesFromPreviousSpec]
 }
 
 case class ImputeOrderedGroupValuesFromPreviousSpec(
   sourceDataSetId: String,
-  derivedDataSetSpec: DerivedDataSetSpec,
+  derivedDataSetSpec: ResultDataSetSpec,
   groupIdFieldName: String,
   orderFieldName: String,
   enumOrderedStringValues: Seq[String],

@@ -260,7 +260,7 @@ class StatsServiceImpl extends StatsService with OneWayAnovaHelper with ChiSquar
     field.fieldType match {
       // repo optimized unique distribution counts can be fully utilized only for enum and boolean types for which the (distinct) values are known
       case FieldTypeId.Enum =>
-        val values = spec.enumValues.map(_.map(_._1).toSeq.sorted).getOrElse(Nil)
+        val values = spec.enumValues.map(_._1).toSeq.sorted
         calcUniqueCountsFromRepo(field.name, values, dataRepo, criteria)
 
       case FieldTypeId.Boolean =>
@@ -419,7 +419,7 @@ class StatsServiceImpl extends StatsService with OneWayAnovaHelper with ChiSquar
     groupFieldSpec.fieldType match {
 
       case FieldTypeId.Enum =>
-        val values = groupFieldSpec.enumValues.map(_.map(_._1)).getOrElse(Nil)
+        val values = groupFieldSpec.enumValues.map(_._1)
         Future(values)
 
       case FieldTypeId.Boolean =>

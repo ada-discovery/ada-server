@@ -1,23 +1,16 @@
-package org.ada.server.models
+package org.ada.server.models.datatrans
 
-import org.ada.server.dataaccess.StreamSpec
-import org.ada.server.models.StorageType
 import org.ada.server.json.EnumFormat
+import org.ada.server.models.{ScheduledTime, StorageType}
 import org.incal.spark_ml.models.VectorScalerType
 import play.api.libs.json.Json
 
-trait DataSetTransformation {
-  val resultDataSetSpec: DerivedDataSetSpec
+trait DataSetTransformation2 {
+  val resultDataSetSpec: ResultDataSetSpec
   def resultDataSetId = resultDataSetSpec.id
   def resultDataSetName = resultDataSetSpec.name
   def resultStorageType = resultDataSetSpec.storageType
 }
-
-case class DerivedDataSetSpec(
-  id: String,
-  name: String,
-  storageType: StorageType.Value
-)
 
 case class SeriesProcessingSpec(
   fieldPath: String,
@@ -35,22 +28,23 @@ case class SeriesProcessingSpec(
 
 case class DataSetSeriesProcessingSpec(
   sourceDataSetId: String,
-  resultDataSetSpec: DerivedDataSetSpec,
+  resultDataSetSpec: ResultDataSetSpec,
   seriesProcessingSpecs: Seq[SeriesProcessingSpec],
   preserveFieldNames: Seq[String],
   processingBatchSize: Option[Int],
   saveBatchSize: Option[Int]
-) extends DataSetTransformation
+) extends DataSetTransformation2
+
 
 // TODO: This should be merged with DataSetSeriesProcessingSpec
 case class DataSetSeriesTransformationSpec(
   sourceDataSetId: String,
-  resultDataSetSpec: DerivedDataSetSpec,
+  resultDataSetSpec: ResultDataSetSpec,
   seriesTransformationSpecs: Seq[SeriesTransformationSpec],
   preserveFieldNames: Seq[String],
   processingBatchSize: Option[Int],
   saveBatchSize: Option[Int]
-) extends DataSetTransformation
+) extends DataSetTransformation2
 
 case class SeriesTransformationSpec(
   fieldPath: String,
@@ -68,12 +62,12 @@ case class DataSetLinkSpec(
   leftPreserveFieldNames: Traversable[String],
   rightPreserveFieldNames: Traversable[String],
   addDataSetIdToRightFieldNames: Boolean,
-  resultDataSetSpec: DerivedDataSetSpec,
+  resultDataSetSpec: ResultDataSetSpec,
   processingBatchSize: Option[Int] = None,
   saveBatchSize: Option[Int] = None,
   backpressureBufferSize: Option[Int] = None,
   parallelism: Option[Int] = None
-) extends DataSetTransformation {
+) extends DataSetTransformation2 {
   def linkFieldNames = leftLinkFieldNames.zip(rightLinkFieldNames)
 }
 
@@ -85,43 +79,28 @@ case class MultiDataSetLinkSpec(
   leftPreserveFieldNames: Traversable[String],
   rightPreserveFieldNames: Seq[Traversable[String]],
   addDataSetIdToRightFieldNames: Boolean,
-  resultDataSetSpec: DerivedDataSetSpec,
+  resultDataSetSpec: ResultDataSetSpec,
   processingBatchSize: Option[Int] = None,
   saveBatchSize: Option[Int] = None,
   backpressureBufferSize: Option[Int] = None,
   parallelism: Option[Int] = None
-) extends DataSetTransformation
+) extends DataSetTransformation2
 
 case class SelfLinkSpec(
   dataSetId: String,
   keyFieldNames: Seq[String],
   valueFieldName: String,
   processingBatchSize: Option[Int],
-  resultDataSetSpec: DerivedDataSetSpec
-) extends DataSetTransformation
-
-case class DropFieldsSpec(
-  sourceDataSetId: String,
-  fieldNamesToKeep: Traversable[String],
-  fieldNamesToDrop: Traversable[String],
-  resultDataSetSpec: DerivedDataSetSpec,
-  streamSpec: StreamSpec
-) extends DataSetTransformation
-
-case class RenameFieldsSpec(
-  sourceDataSetId: String,
-  fieldOldNewNames: Traversable[(String, String)],
-  resultDataSetSpec: DerivedDataSetSpec,
-  streamSpec: StreamSpec
-) extends DataSetTransformation
+  resultDataSetSpec: ResultDataSetSpec
+) extends DataSetTransformation2
 
 object SeriesProcessingType extends Enumeration {
   val Diff, RelativeDiff, Ratio, LogRatio, Min, Max, Mean = Value
 }
 
-object DataSetTransformation {
+object DataSetTransformation2 {
   implicit val storageTypeFormat = EnumFormat(StorageType)
-  implicit val coreFormat = Json.format[DerivedDataSetSpec]
+  implicit val coreFormat = Json.format[ResultDataSetSpec]
   implicit val seriesProcessingTypeFormat = EnumFormat(SeriesProcessingType)
   implicit val seriesProcessingSpecFormat = Json.format[SeriesProcessingSpec]
   implicit val vectorTransformTypeFormat = EnumFormat(VectorScalerType)

@@ -2,7 +2,7 @@ package org.ada.server.models.dataimport
 
 import java.util.Date
 
-import org.ada.server.models.{DataSetSetting, DataView}
+import org.ada.server.models.{DataSetSetting, DataView, ScheduledTime}
 import reactivemongo.bson.BSONObjectID
 
 case class TranSmartDataSetImport(
@@ -23,5 +23,5 @@ case class TranSmartDataSetImport(
   setting: Option[DataSetSetting] = None,
   dataView: Option[DataView] = None,
   timeCreated: Date = new Date(),
-  var timeLastExecuted: Option[Date] = None
+  timeLastExecuted: Option[Date] = None
 ) extends DataSetImport

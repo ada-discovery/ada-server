@@ -7,7 +7,7 @@ import org.apache.commons.lang3.StringEscapeUtils
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.Logger
 import reactivemongo.bson.BSONObjectID
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.incal.core.util.{seqFutures, writeStringAsStream}
 import org.ada.server.services.StatsService
 import org.ada.server.calc.impl.{ChiSquareResult, OneWayAnovaResult}
@@ -20,7 +20,7 @@ class RunIndependenceTestForDataSpace @Inject()(
     dsaf: DataSetAccessorFactory,
     dataSpaceMetaInfoRepo: DataSpaceMetaInfoRepo,
     statsService: StatsService
-  ) extends InputFutureRunnable[RunIndependenceTestForDataSpaceSpec] {
+  ) extends InputFutureRunnableExt[RunIndependenceTestForDataSpaceSpec] {
 
   private val eol = "\n"
   private val headerColumnNames = Seq("dataSetId", "pValue", "fValue_or_statistics", "degreeOfFreedom", "testType")
@@ -70,8 +70,6 @@ class RunIndependenceTestForDataSpace @Inject()(
         Seq(dataSetId, "", "", "").mkString(delimiter)
       )
   }
-
-  override def inputType = typeOf[RunIndependenceTestForDataSpaceSpec]
 }
 
 case class RunIndependenceTestForDataSpaceSpec(

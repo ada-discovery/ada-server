@@ -6,7 +6,7 @@ import org.ada.server.dataaccess.RepoTypes.DataSpaceMetaInfoRepo
 import org.ada.server.models.DataSetFormattersAndIds.FieldIdentity
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.Logger
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.{InputFutureRunnable, InputFutureRunnableExt}
 import org.incal.core.util.writeStringAsStream
 import org.incal.core.dataaccess.Criterion._
 import org.ada.server.calc.CalculatorHelper._
@@ -21,7 +21,7 @@ class CalculateMultipleVariances @Inject()(
     dsaf: DataSetAccessorFactory,
     dataSpaceMetaInfoRepo: DataSpaceMetaInfoRepo,
     statsService: StatsService
-  ) extends InputFutureRunnable[CalculateMultipleVariancesSpec] with CalculatorExecutors {
+  ) extends InputFutureRunnableExt[CalculateMultipleVariancesSpec] with CalculatorExecutors {
 
   private val eol = "\n"
   private val logger = Logger
@@ -61,8 +61,6 @@ class CalculateMultipleVariances @Inject()(
       }
     }
   }
-
-  override def inputType = typeOf[CalculateMultipleVariancesSpec]
 }
 
 case class CalculateMultipleVariancesSpec(

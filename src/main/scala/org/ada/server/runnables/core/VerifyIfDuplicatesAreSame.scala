@@ -75,8 +75,6 @@ class VerifyIfDuplicatesAreSame extends DsaInputFutureRunnable[VerifyIfDuplicate
       logger.info(duplicates.map(x => x._1.mkString(",")).mkString("\n"))
     }
   }
-
-  override def inputType = typeOf[VerifyIfDuplicatesAreSameSpec]
 }
 
 case class VerifyIfDuplicatesAreSameSpec(

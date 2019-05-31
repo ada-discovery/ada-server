@@ -78,8 +78,6 @@ class ReplaceZeroWithNull extends DsaInputFutureRunnable[ReplaceZeroWithNullSpec
     } yield
       ()
   }
-
-  override def inputType = typeOf[ReplaceZeroWithNullSpec]
 }
 
 case class ReplaceZeroWithNullSpec(dataSetId: String, fieldName: String, batchSize: Int)

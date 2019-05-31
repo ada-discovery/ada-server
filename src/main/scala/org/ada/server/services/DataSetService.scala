@@ -39,6 +39,7 @@ import org.ada.server.models._
 import scala.collection.Set
 import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 import org.ada.server.calc.impl.{BasicStatsResult, MultiBasicStatsCalc}
+import org.ada.server.models.datatrans._
 import org.ada.server.services.ml.IOSeriesUtil
 
 import scala.util.Random
@@ -156,15 +157,15 @@ trait DataSetService {
 
   def saveDerivedDataSet(
     sourceDsa: DataSetAccessor,
-    derivedDataSetSpec: DerivedDataSetSpec,
+    derivedDataSetSpec: ResultDataSetSpec,
     inputSource: Source[JsObject, _],
-    fields: Seq[Field],
+    fields: Traversable[Field],
     streamSpec: StreamSpec = StreamSpec(),
     saveViewsAndFiltersFlag: Boolean = true
   ): Future[Unit]
 
   def mergeDataSets(
-    resultDataSetSpec: DerivedDataSetSpec,
+    resultDataSetSpec: ResultDataSetSpec,
     dataSetIds: Seq[String],
     fieldNameMappings: Seq[Seq[String]]
   ): Future[Unit]
@@ -173,14 +174,14 @@ trait DataSetService {
     sourceDataSetIds: Seq[String],
     fieldNameMappings: Seq[Seq[Option[String]]],
     addSourceDataSetId: Boolean,
-    resultDataSetSpec: DerivedDataSetSpec,
+    resultDataSetSpec: ResultDataSetSpec,
     streamSpec: StreamSpec
   ): Future[Unit]
 
   def mergeDataSetsFullyWoInference(
     sourceDataSetIds: Seq[String],
     addSourceDataSetId: Boolean,
-    resultDataSetSpec: DerivedDataSetSpec,
+    resultDataSetSpec: ResultDataSetSpec,
     streamSpec: StreamSpec
   ): Future[Unit]
 
@@ -234,17 +235,9 @@ trait DataSetService {
     spec: SelfLinkSpec
   ): Future[Unit]
 
-  def dropFields(
-    spec: DropFieldsSpec
-  ): Future[Unit]
-
-  def renameFields(
-    spec: RenameFieldsSpec
-  ): Future[Unit]
-
   def matchGroups(
     dataSetId: String,
-    derivedDataSetSpec: DerivedDataSetSpec,
+    derivedDataSetSpec: ResultDataSetSpec,
     criteria: Seq[Criterion[Any]],
     targetGroupFieldName: String,
     confoundingFieldNames: Seq[String],
@@ -607,7 +600,7 @@ class DataSetServiceImpl @Inject()(
   }
 
   override def mergeDataSets(
-    resultDataSetSpec: DerivedDataSetSpec,
+    resultDataSetSpec: ResultDataSetSpec,
     dataSetIds: Seq[String],
     fieldNames: Seq[Seq[String]]
   ): Future[Unit] = {
@@ -650,7 +643,7 @@ class DataSetServiceImpl @Inject()(
       _ <- {
         val newFields = newFieldNameAndTypes.map { case (fieldName, fieldType) =>
           val fieldTypeSpec = fieldType.spec
-          val stringEnums = fieldTypeSpec.enumValues.map(_.map { case (from, to) => (from.toString, to)})
+          val stringEnums = fieldTypeSpec.enumValues.map { case (from, to) => (from.toString, to) }
 
           fieldNameMap.get(fieldName).map( field =>
             Field(name = fieldName, label = field.label, fieldType = fieldTypeSpec.fieldType, isArray = fieldTypeSpec.isArray, numValues = stringEnums)
@@ -658,7 +651,7 @@ class DataSetServiceImpl @Inject()(
         }.flatten
 
         val dataSetIdEnumds = dataSetIds.zipWithIndex.map { case (dataSetId, index) => (index.toString, dataSetId) }.toMap
-        val sourceDataSetIdField = Field("source_data_set_id", Some("Source Data Set Id"), FieldTypeId.Enum, false, Some(dataSetIdEnumds))
+        val sourceDataSetIdField = Field("source_data_set_id", Some("Source Data Set Id"), FieldTypeId.Enum, false, dataSetIdEnumds)
 
         newFieldRepo.save(newFields ++ Seq(sourceDataSetIdField))
       }
@@ -708,7 +701,7 @@ class DataSetServiceImpl @Inject()(
   override def mergeDataSetsFullyWoInference(
     sourceDataSetIds: Seq[String],
     addSourceDataSetId: Boolean,
-    resultDataSetSpec: DerivedDataSetSpec,
+    resultDataSetSpec: ResultDataSetSpec,
     streamSpec: StreamSpec
   ): Future[Unit] = {
     val dsafs = sourceDataSetIds.map(dsaf(_).get)
@@ -749,7 +742,7 @@ class DataSetServiceImpl @Inject()(
     sourceDataSetIds: Seq[String],
     fieldNameMappings: Seq[Seq[Option[String]]],
     addSourceDataSetId: Boolean,
-    resultDataSetSpec: DerivedDataSetSpec,
+    resultDataSetSpec: ResultDataSetSpec,
     streamSpec: StreamSpec
   ): Future[Unit] = {
     val dsafs = sourceDataSetIds.map(dsaf(_).get)
@@ -776,8 +769,8 @@ class DataSetServiceImpl @Inject()(
       newFields = allFields.transpose.map { case fields =>
         // check if all the field specs are the same
         def equalFieldTypes(field1: Field)(field2: Field): Boolean = {
-          val enums1 = field1.numValues.map(_.toSeq.sortBy(_._1)).getOrElse(Map())
-          val enums2 = field2.numValues.map(_.toSeq.sortBy(_._1)).getOrElse(Map())
+          val enums1 = field1.numValues.toSeq.sortBy(_._1)
+          val enums2 = field2.numValues.toSeq.sortBy(_._1)
 
           field1.fieldType == field2.fieldType &&
             field1.isArray == field2.isArray &&
@@ -798,7 +791,7 @@ class DataSetServiceImpl @Inject()(
       finalNewFields =
         if (addSourceDataSetId) {
           val dataSetIdEnums = sourceDataSetIds.zipWithIndex.map { case (dataSetId, index) => (index.toString, dataSetId) }.toMap
-          val sourceDataSetIdField = Field("source_data_set_id", Some("Source Data Set Id"), FieldTypeId.Enum, false, Some(dataSetIdEnums))
+          val sourceDataSetIdField = Field("source_data_set_id", Some("Source Data Set Id"), FieldTypeId.Enum, false, dataSetIdEnums)
 
           newFields ++ Seq(sourceDataSetIdField)
         } else
@@ -1545,7 +1538,7 @@ class DataSetServiceImpl @Inject()(
 
   private def registerDerivedDataSet(
     sourceDsa: DataSetAccessor,
-    spec: DerivedDataSetSpec
+    spec: ResultDataSetSpec
   ): Future[DataSetAccessor] = {
     val metaInfoFuture = sourceDsa.metaInfo
     val settingFuture = sourceDsa.setting
@@ -1636,7 +1629,7 @@ class DataSetServiceImpl @Inject()(
     deleteNonReferenced: Boolean
   ): Future[Unit] = {
     val newFields = fieldNameAndTypes.map { case (fieldName, fieldType) =>
-      val stringEnums = fieldType.enumValues.map(_.map { case (from, to) => (from.toString, to)})
+      val stringEnums = fieldType.enumValues.map { case (from, to) => (from.toString, to) }
       Field(fieldName, None, fieldType.fieldType, fieldType.isArray, stringEnums, fieldType.displayDecimalPlaces)
     }
     updateDictionaryFields(fieldRepo, newFields, deleteAndSave, deleteNonReferenced)
@@ -1882,7 +1875,7 @@ class DataSetServiceImpl @Inject()(
 
 //  def standardizeAllNumericFields(
 //    sourceDataSetId: String,
-//    resultDataSetSpec: DerivedDataSetSpec,
+//    resultDataSetSpec: ResultDataSetSpec,
 //    streamSpec: StreamSpec
 //  ): Future[Unit] = {
 //    val sourceDsa = dsaf(sourceDataSetId).get
@@ -1899,73 +1892,11 @@ class DataSetServiceImpl @Inject()(
 //      ()
 //  }
 
-  override def dropFields(
-    spec: DropFieldsSpec
-  ): Future[Unit] = {
-    val sourceDsa = dsaf(spec.sourceDataSetId).get
-
-    if (spec.fieldNamesToKeep.nonEmpty && spec.fieldNamesToDrop.nonEmpty)
-      throw new AdaException("Both 'fields to keep' and 'fields to drop' defined at the same time.")
-
-    // helper function to find fields
-    def findFields(criterion: Option[Criterion[Any]] = None) =
-      sourceDsa.fieldRepo.find(criterion.map(Seq(_)).getOrElse(Nil))
-
-    for {
-      // get the fields to keep
-      fieldsToKeep <-
-        if (spec.fieldNamesToKeep.nonEmpty)
-          findFields(Some(FieldIdentity.name #-> spec.fieldNamesToKeep.toSeq))
-        else if (spec.fieldNamesToDrop.nonEmpty)
-          findFields(Some(FieldIdentity.name #!-> spec.fieldNamesToDrop.toSeq))
-        else
-          findFields()
-
-      // input data stream
-      inputStream <- sourceDsa.dataSetRepo.findAsStream(projection = fieldsToKeep.map(_.name))
-
-      _ <- saveDerivedDataSet(sourceDsa, spec.resultDataSetSpec, inputStream, fieldsToKeep.toSeq, spec.streamSpec, true)
-    } yield
-      ()
-  }
-
-  override def renameFields(
-    spec: RenameFieldsSpec
-  ): Future[Unit] = {
-    val sourceDsa = dsaf(spec.sourceDataSetId).get
-    val oldNewFieldNameMap = spec.fieldOldNewNames.toMap
-
-    for {
-      // all the fields
-      fields <- sourceDsa.fieldRepo.find()
-
-      // new fields with replaced names
-      newFields = fields.map(field =>
-        field.copy(name = oldNewFieldNameMap.getOrElse(field.name, field.name))
-      )
-
-      // full data stream
-      origStream <- sourceDsa.dataSetRepo.findAsStream()
-
-      // replace field names and create a new stream
-      inputStream = origStream.map{ json =>
-        val replacedFieldValues = spec.fieldOldNewNames.map { case (oldFieldName, newFieldName) =>
-          (newFieldName, (json \ oldFieldName).getOrElse(JsNull))
-        }
-        val trimmedJson = spec.fieldOldNewNames.map(_._1).foldLeft(json)(_.-(_))
-        trimmedJson ++ JsObject(replacedFieldValues.toSeq)
-      }
-
-      _ <- saveDerivedDataSet(sourceDsa, spec.resultDataSetSpec, inputStream, newFields.toSeq, spec.streamSpec, true)
-    } yield
-      ()
-  }
-
   override def saveDerivedDataSet(
     sourceDsa: DataSetAccessor,
-    derivedDataSetSpec: DerivedDataSetSpec,
+    derivedDataSetSpec: ResultDataSetSpec,
     inputSource: Source[JsObject, _],
-    fields: Seq[Field],
+    fields: Traversable[Field],
     streamSpec: StreamSpec = StreamSpec(),
     saveViewsAndFiltersFlag: Boolean = true
   ): Future[Unit] = {
@@ -2019,7 +1950,7 @@ class DataSetServiceImpl @Inject()(
   private def saveViewsAndFilters(
     sourceDsa: DataSetAccessor,
     targetDsa: DataSetAccessor,
-    fields: Seq[Field]
+    fields: Traversable[Field]
   ): Future[Unit] =
     for {
       // get the original filters
@@ -2141,7 +2072,7 @@ class DataSetServiceImpl @Inject()(
       _ <- {
         val newFields = newFieldNameAndTypes.map { case (fieldName, fieldType) =>
           val fieldTypeSpec = fieldType.spec
-          val stringEnums = fieldTypeSpec.enumValues.map(_.map { case (from, to) => (from.toString, to)})
+          val stringEnums = fieldTypeSpec.enumValues.map { case (from, to) => (from.toString, to)}
 
           originalFieldNameMap.get(fieldName).map( field =>
             field.copy(fieldType = fieldTypeSpec.fieldType, isArray = fieldTypeSpec.isArray, numValues = stringEnums)
@@ -2573,7 +2504,7 @@ class DataSetServiceImpl @Inject()(
 
   override def matchGroups(
     dataSetId: String,
-    derivedDataSetSpec: DerivedDataSetSpec,
+    derivedDataSetSpec: ResultDataSetSpec,
     criteria: Seq[Criterion[Any]],
     targetGroupFieldName: String,
     confoundingFieldNames: Seq[String],
@@ -2600,7 +2531,7 @@ class DataSetServiceImpl @Inject()(
 
     // aux function to get the list of availble values (boolean, enum supported only)
     def availableValues(targetField: Field) = targetField.fieldType match {
-      case FieldTypeId.Enum => targetField.numValues.map(_.keys.toSeq).getOrElse(Nil)
+      case FieldTypeId.Enum => targetField.numValues.keys.toSeq
       case FieldTypeId.Boolean => Seq(true, false)
       case _ => throw new AdaException(s"Only enum and boolean types are allowed for a target group field. Got ${targetField.fieldType}.")
     }

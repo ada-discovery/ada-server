@@ -221,7 +221,7 @@ object FeaturesDataFrameFactory {
 
 
       val enumLabels = if (spec.fieldType == FieldTypeId.Enum) {
-        spec.enumValues.map(_.map(_._2)).getOrElse(Nil).toSeq.sorted
+        spec.enumValues.map(_._2).toSeq.sorted
       } else
         Nil
 

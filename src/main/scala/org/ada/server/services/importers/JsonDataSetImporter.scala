@@ -15,7 +15,7 @@ import scala.io.Source
 
 private class JsonDataSetImporter extends AbstractDataSetImporter[JsonDataSetImport] {
 
-  override def apply(importInfo: JsonDataSetImport): Future[Unit] = {
+  override def runAsFuture(importInfo: JsonDataSetImport): Future[Unit] = {
     logger.info(new Date().toString)
     logger.info(s"Import of data set '${importInfo.dataSetName}' initiated.")
 

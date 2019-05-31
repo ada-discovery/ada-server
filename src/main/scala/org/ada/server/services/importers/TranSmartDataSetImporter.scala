@@ -23,7 +23,7 @@ private class TranSmartDataSetImporter extends AbstractDataSetImporter[TranSmart
 
   private val quotePrefixSuffix = ("\"", "\"")
 
-  override def apply(importInfo: TranSmartDataSetImport): Future[Unit] = {
+  override def runAsFuture(importInfo: TranSmartDataSetImport): Future[Unit] = {
     logger.info(new Date().toString)
     logger.info(s"Import of data set '${importInfo.dataSetName}' initiated.")
 
@@ -54,9 +54,8 @@ private class TranSmartDataSetImporter extends AbstractDataSetImporter[TranSmart
             saveJsonsWithTypeInference(dsa, columnNamesAndLabels, values, importInfo)
           else
             saveJsonsWithoutTypeInference(dsa, columnNamesAndLabels, values, importInfo)
-      } yield {
-        messageLogger.info(s"Import of data set '${importInfo.dataSetName}' successfully finished.")
-      }
+      } yield
+        ()
     } catch {
       case e: Exception => Future.failed(e)
     }
@@ -236,7 +235,7 @@ private class TranSmartDataSetImporter extends AbstractDataSetImporter[TranSmart
         dataSetService.updateDictionaryFields(fieldRepo, newFields, true, true)
       }
     } yield
-      messageLogger.info(s"TranSMART dictionary inference and import for data set '${dataSetId}' successfully finished.")
+      logger.info(s"TranSMART dictionary inference and import for data set '${dataSetId}' successfully finished.")
   }
 
   private def createFieldLabelCategoryMap(

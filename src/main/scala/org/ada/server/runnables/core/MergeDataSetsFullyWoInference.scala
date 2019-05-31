@@ -1,15 +1,14 @@
 package org.ada.server.runnables.core
 
 import javax.inject.Inject
-
 import org.ada.server.dataaccess.StreamSpec
-import org.ada.server.models.DerivedDataSetSpec
-import org.incal.core.runnables.InputFutureRunnable
+import org.ada.server.models.datatrans.ResultDataSetSpec
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.services.DataSetService
 
 import scala.reflect.runtime.universe.typeOf
 
-class MergeDataSetsFullyWoInference @Inject() (dataSetService: DataSetService) extends InputFutureRunnable[MergeDataSetsFullyWoInferenceSpec] {
+class MergeDataSetsFullyWoInference @Inject() (dataSetService: DataSetService) extends InputFutureRunnableExt[MergeDataSetsFullyWoInferenceSpec] {
 
   override def runAsFuture(input: MergeDataSetsFullyWoInferenceSpec) =
     dataSetService.mergeDataSetsFullyWoInference(
@@ -18,13 +17,11 @@ class MergeDataSetsFullyWoInference @Inject() (dataSetService: DataSetService) e
       input.resultDataSetSpec,
       input.streamSpec
     )
-
-  override def inputType = typeOf[MergeDataSetsFullyWoInferenceSpec]
 }
 
 case class MergeDataSetsFullyWoInferenceSpec(
   sourceDataSetIds: Seq[String],
   addSourceDataSetId: Boolean,
-  resultDataSetSpec: DerivedDataSetSpec,
+  resultDataSetSpec: ResultDataSetSpec,
   streamSpec: StreamSpec
 )

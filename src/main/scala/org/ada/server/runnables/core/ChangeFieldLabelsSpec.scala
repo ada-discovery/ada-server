@@ -1,18 +1,15 @@
 package org.ada.server.runnables.core
 
 import javax.inject.Inject
-
 import org.ada.server.models.DataSetFormattersAndIds.FieldIdentity
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import org.incal.core.dataaccess.Criterion.Infix
 import org.incal.core.util.seqFutures
 
-import scala.reflect.runtime.universe.typeOf
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
-class ChangeFieldLabels @Inject() (dsaf: DataSetAccessorFactory) extends InputFutureRunnable[ChangeFieldLabelsSpec] {
+class ChangeFieldLabels @Inject() (dsaf: DataSetAccessorFactory) extends InputFutureRunnableExt[ChangeFieldLabelsSpec] {
 
   override def runAsFuture(
     input: ChangeFieldLabelsSpec
@@ -40,8 +37,6 @@ class ChangeFieldLabels @Inject() (dsaf: DataSetAccessorFactory) extends InputFu
     } yield
       ()
   }
-
-  override def inputType = typeOf[ChangeFieldLabelsSpec]
 }
 
 case class ChangeFieldLabelsSpec(

@@ -1,17 +1,14 @@
 package org.ada.server.runnables.core
 
-import javax.inject.Inject
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import org.ada.server.calc.CalculatorExecutors
 import org.apache.commons.lang3.StringEscapeUtils
-import org.incal.core.runnables.InputFutureRunnable
-import org.ada.server.services.StatsService
+import org.incal.core.runnables.{InputFutureRunnable, InputFutureRunnableExt}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.reflect.runtime.universe.typeOf
 
-class CalcEuclideanDistancesFromFile extends InputFutureRunnable[CalcEuclideanDistancesFromFileSpec] with CalculatorExecutors {
+class CalcEuclideanDistancesFromFile extends InputFutureRunnableExt[CalcEuclideanDistancesFromFileSpec] with CalculatorExecutors {
 
   private implicit val system = ActorSystem()
   private implicit val materializer = ActorMaterializer()
@@ -35,8 +32,6 @@ class CalcEuclideanDistancesFromFile extends InputFutureRunnable[CalcEuclideanDi
         delimiter
       )
   }
-
-  override def inputType = typeOf[CalcEuclideanDistancesFromFileSpec]
 }
 
 case class CalcEuclideanDistancesFromFileSpec(

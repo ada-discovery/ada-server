@@ -11,7 +11,7 @@ import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.Logger
 import play.api.libs.json.JsObject
 import reactivemongo.bson.BSONObjectID
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.{InputFutureRunnable, InputFutureRunnableExt}
 import org.ada.server.services.StatsService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,7 +21,7 @@ import scala.reflect.runtime.universe.typeOf
 class CalcCorrelations @Inject()(
     dsaf: DataSetAccessorFactory,
     statsService: StatsService
-  ) extends InputFutureRunnable[CalcCorrelationsSpec] {
+  ) extends InputFutureRunnableExt[CalcCorrelationsSpec] {
 
   private val logger = Logger
 
@@ -100,8 +100,6 @@ class CalcCorrelations @Inject()(
 
     exec(parallelism, parallelism, withProjection, fields)(dataRepo, criteria)
   }
-
-  override def inputType = typeOf[CalcCorrelationsSpec]
 }
 
 case class CalcCorrelationsSpec(

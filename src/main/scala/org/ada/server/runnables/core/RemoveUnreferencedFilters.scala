@@ -4,12 +4,12 @@ import javax.inject.Inject
 
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.Logger
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 
 import scala.reflect.runtime.universe.typeOf
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class RemoveUnreferencedFilters @Inject() (dsaf: DataSetAccessorFactory) extends InputFutureRunnable[RemoveUnreferencedFiltersSpec] {
+class RemoveUnreferencedFilters @Inject() (dsaf: DataSetAccessorFactory) extends InputFutureRunnableExt[RemoveUnreferencedFiltersSpec] {
 
   private val logger = Logger
 
@@ -50,8 +50,6 @@ class RemoveUnreferencedFilters @Inject() (dsaf: DataSetAccessorFactory) extends
     } yield
       ()
   }
-
-  override def inputType = typeOf[RemoveUnreferencedFiltersSpec]
 }
 
 case class RemoveUnreferencedFiltersSpec(

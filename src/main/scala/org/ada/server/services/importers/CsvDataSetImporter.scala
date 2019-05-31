@@ -13,7 +13,7 @@ private class CsvDataSetImporter extends AbstractDataSetImporter[CsvDataSetImpor
 
   private val quotePrefixSuffix = ("\"", "\"")
 
-  override def apply(importInfo: CsvDataSetImport): Future[Unit] = {
+  override def runAsFuture(importInfo: CsvDataSetImport): Future[Unit] = {
     logger.info(new Date().toString)
     logger.info(s"Import of data set '${importInfo.dataSetName}' initiated.")
 
@@ -42,9 +42,8 @@ private class CsvDataSetImporter extends AbstractDataSetImporter[CsvDataSetImpor
             saveDataAndDictionaryWithTypeInference(dsa, columnNamesAndLabels, values, importInfo)
           else
             saveStringsAndDictionaryWithoutTypeInference(dsa, columnNamesAndLabels, values, importInfo.saveBatchSize)
-      } yield {
-        messageLogger.info(s"Import of data set '${importInfo.dataSetName}' successfully finished.")
-      }
+      } yield
+        ()
     } catch {
       case e: Exception => Future.failed(e)
     }

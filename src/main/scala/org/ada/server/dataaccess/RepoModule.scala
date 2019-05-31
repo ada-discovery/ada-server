@@ -25,6 +25,7 @@ import org.ada.server.models.ml.unsupervised.UnsupervisedLearning.unsupervisedLe
 import org.ada.server.dataaccess.dataset._
 import reactivemongo.bson.BSONObjectID
 import org.ada.server.dataaccess.RepoDef.Repo
+import org.ada.server.models.datatrans.DataSetTransformation
 import org.apache.ignite.Ignite
 
 private object RepoDef extends Enumeration {
@@ -60,20 +61,14 @@ private object RepoDef extends Enumeration {
   val DictionaryRootRepo = Repo[DictionaryRootRepo](
     new MongoAsyncCrudRepo[Dictionary, BSONObjectID]("dictionaries"))
 
-//  val MongoDataSpaceMetaInfoRepo = Repo[MongoAsyncCrudExtraRepo[DataSpaceMetaInfo, BSONObjectID]](
-//    new MongoAsyncCrudRepo[DataSpaceMetaInfo, BSONObjectID]("dataspace_meta_infos"), true)
-
-  //  val DataSpaceMetaInfoRepo = Repo[MongoAsyncCrudExtraRepo[DataSpaceMetaInfo, BSONObjectID]](
-//    new MongoAsyncCrudRepo[DataSpaceMetaInfo, BSONObjectID]("dataspace_meta_infos"))
-
-//  val DataSetSettingRepo = Repo[DataSetSettingRepo](
-//    new MongoAsyncCrudRepo[DataSetSetting, BSONObjectID]("dataset_settings"))
-
 //  val DataSetImportRepo = Repo[DataSetImportRepo](
 //    new ElasticFormatAsyncCrudRepo[DataSetImport, BSONObjectID]("dataset_imports", "dataset_imports", true, true, true, true))
 
   val DataSetImportRepo = Repo[DataSetImportRepo](
     new MongoAsyncCrudRepo[DataSetImport, BSONObjectID]("dataset_imports"))
+
+  val DataSetTransformationRepo = Repo[DataSetTransformationRepo](
+    new MongoAsyncCrudRepo[DataSetTransformation, BSONObjectID]("dataset_transformations"))
 }
 
 // repo module used to bind repo types/instances withing Guice IoC container
@@ -132,22 +127,6 @@ class RepoModule extends ScalaModule {
     install(new FactoryModuleBuilder()
       .implement(new TypeLiteral[RegressionResultRepo]{}, classOf[RegressionResultMongoAsyncCrudRepo])
       .build(classOf[RegressionResultRepoFactory]))
-
-    // install data set meta info repo factory
-//    install(new FactoryModuleBuilder()
-//      .implement(new TypeLiteral[DataSetMetaInfoRepo]{}, classOf[DataSetMetaInfoSubordinateMongoAsyncCrudRepo])
-//      .build(classOf[DataSetMetaInfoRepoFactory]))
-
-    // install dictionary field repo factory
-
-//    install(new FactoryModuleBuilder()
-//      .implement(new TypeLiteral[FieldRepo]{}, classOf[DictionaryFieldMongoAsyncCrudRepo])
-//      .build(classOf[FieldRepoFactory]))
-
-    // install dictionary category repo factory
-//    install(new FactoryModuleBuilder()
-//      .implement(new TypeLiteral[CategoryRepo]{}, classOf[DictionaryCategoryMongoAsyncCrudRepo])
-//      .build(classOf[CategoryRepoFactory]))
   }
 
   private def bindRepo[T](repo : Repo[T]) = {

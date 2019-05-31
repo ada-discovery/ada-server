@@ -15,7 +15,7 @@ object CaseClassFieldRepo {
     val excludedFieldSet = excludedFieldNames.toSet ++ Set("_id")
     val fieldTypes = caseClassToFlatFieldTypes[T]("-", excludedFieldSet, treatEnumAsString)
     val fields = fieldTypes.map { case (name, spec) =>
-      val enumValues = spec.enumValues.map(_.map { case (a, b) => (a.toString, b)})
+      val enumValues = spec.enumValues.map { case (a, b) => (a.toString, b)}
       Field(name, Some(toHumanReadableCamel(name)), spec.fieldType, spec.isArray, enumValues)
     }.toSeq
 

@@ -26,8 +26,6 @@ class CopyRecord extends DsaInputFutureRunnable[RecordSpec] {
     } yield
       ()
   }
-
-  override def inputType = typeOf[RecordSpec]
 }
 
 case class RecordSpec(dataSetId: String, recordId: BSONObjectID)

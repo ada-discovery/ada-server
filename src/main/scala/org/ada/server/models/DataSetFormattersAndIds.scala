@@ -18,23 +18,23 @@ object DataSetFormattersAndIds {
   implicit val enumTypeFormat = EnumFormat(FieldTypeId)
   implicit val categoryFormat: Format[Category] = (
     (__ \ "_id").formatNullable[BSONObjectID] and
-      (__ \ "name").format[String] and
-      (__ \ "label").formatNullable[String] and
-      (__ \ "parentId").formatNullable[BSONObjectID]
-    )(Category(_, _, _, _), (item: Category) =>  (item._id, item.name, item.label, item.parentId))
+    (__ \ "name").format[String] and
+    (__ \ "label").formatNullable[String] and
+    (__ \ "parentId").formatNullable[BSONObjectID]
+  )(Category(_, _, _, _), (item: Category) =>  (item._id, item.name, item.label, item.parentId))
 
   implicit val fieldFormat: Format[Field] = (
     (__ \ "name").format[String] and
-      (__ \ "label").formatNullable[String] and
-      (__ \ "fieldType").format[FieldTypeId.Value] and
-      (__ \ "isArray").format[Boolean] and
-      (__ \ "numValues").formatNullable[Map[String, String]] and
-      (__ \ "displayDecimalPlaces").formatNullable[Int] and
-      (__ \ "displayTrueValue").formatNullable[String] and
-      (__ \ "displayFalseValue").formatNullable[String] and
-      (__ \ "aliases").format[Seq[String]] and
-      (__ \ "categoryId").formatNullable[BSONObjectID]
-    )(
+    (__ \ "label").formatNullable[String] and
+    (__ \ "fieldType").format[FieldTypeId.Value] and
+    (__ \ "isArray").format[Boolean] and
+    (__ \ "numValues").format[Map[String, String]] and
+    (__ \ "displayDecimalPlaces").formatNullable[Int] and
+    (__ \ "displayTrueValue").formatNullable[String] and
+    (__ \ "displayFalseValue").formatNullable[String] and
+    (__ \ "aliases").format[Seq[String]] and
+    (__ \ "categoryId").formatNullable[BSONObjectID]
+  )(
     Field(_, _, _, _, _, _, _, _, _, _),
     (item: Field) =>  (
       item.name, item.label, item.fieldType, item.isArray, item.numValues, item.displayDecimalPlaces,

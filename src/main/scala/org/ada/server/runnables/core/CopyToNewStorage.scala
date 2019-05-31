@@ -1,14 +1,11 @@
 package org.ada.server.runnables.core
 
 import javax.inject.Inject
-
 import org.ada.server.models.StorageType
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.ada.server.services.DataSetService
 
-import scala.reflect.runtime.universe.typeOf
-
-class CopyToNewStorage @Inject()(dataSetService: DataSetService) extends InputFutureRunnable[CopyToNewStorageSpec]{
+class CopyToNewStorage @Inject()(dataSetService: DataSetService) extends InputFutureRunnableExt[CopyToNewStorageSpec]{
 
   override def runAsFuture(input: CopyToNewStorageSpec) =
     dataSetService.copyToNewStorage(
@@ -19,8 +16,6 @@ class CopyToNewStorage @Inject()(dataSetService: DataSetService) extends InputFu
       input.saveDeltaOnly,
       input.targetStorageType
     )
-
-  override def inputType = typeOf[CopyToNewStorageSpec]
 }
 
 case class CopyToNewStorageSpec(

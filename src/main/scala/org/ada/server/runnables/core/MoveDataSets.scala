@@ -7,7 +7,7 @@ import org.ada.server.dataaccess.RepoTypes.DataSpaceMetaInfoRepo
 import org.ada.server.AdaException
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import reactivemongo.bson.BSONObjectID
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.InputFutureRunnableExt
 import org.incal.core.util.seqFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,7 +18,7 @@ class MoveDataSets @Inject() (
     dataSetMetaInfoRepoFactory: DataSetMetaInfoRepoFactory,
     dataSpaceMetaInfoRepo: DataSpaceMetaInfoRepo,
     dsaf: DataSetAccessorFactory
-  ) extends InputFutureRunnable[MoveDataSetsSpec] {
+  ) extends InputFutureRunnableExt[MoveDataSetsSpec] {
 
   override def runAsFuture(input: MoveDataSetsSpec) = {
     val dataSetIds =
@@ -92,8 +92,6 @@ class MoveDataSets @Inject() (
     } yield
       ()
   }
-
-  override def inputType = typeOf[MoveDataSetsSpec]
 }
 
 case class MoveDataSetsSpec(newDataSpaceId: BSONObjectID, dataSetId: String, suffixFrom: Option[Int], suffixTo: Option[Int])

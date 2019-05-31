@@ -15,7 +15,7 @@ import org.ada.server.services.DataSetService
 import org.ada.server.services.ml.MachineLearningService
 import org.ada.server.services.StatsService
 import org.ada.server.field.FieldUtil
-import org.incal.core.runnables.InputFutureRunnable
+import org.incal.core.runnables.{InputFutureRunnable, InputFutureRunnableExt}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -27,7 +27,7 @@ class ClassifyRCResults @Inject() (
     statsService: StatsService,
     dataSetService: DataSetService,
     classificationRepo: ClassifierRepo
-  ) extends InputFutureRunnable[ClassifyRCResultsSpec] {
+  ) extends InputFutureRunnableExt[ClassifyRCResultsSpec] {
 
   private val logger = Logger // (this.getClass())
 
@@ -138,8 +138,6 @@ class ClassifyRCResults @Inject() (
     } yield
       ()
   }
-
-  override def inputType = typeOf[ClassifyRCResultsSpec]
 
   private def loadCriteria(dsa: DataSetAccessor, filter: Option[Filter]) =
     filter match {

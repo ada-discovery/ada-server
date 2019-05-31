@@ -10,19 +10,19 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 import org.apache.hadoop.fs._
 import play.api.Logger
-import org.incal.core.runnables.InputRunnable
+import org.incal.core.runnables.{InputRunnable, InputRunnableExt}
 import org.ada.server.services.SparkApp
 import org.ada.server.services.ml.MachineLearningService
 
 import collection.JavaConverters._
 import scala.reflect.runtime.universe.typeOf
 import scala.util.Random
-import org.incal.core.util.{writeStringAsStream, listFiles}
+import org.incal.core.util.{listFiles, writeStringAsStream}
 
 class CalcKMeansFromFile @Inject()(
     val sparkApp: SparkApp,
     val machineLearningService: MachineLearningService
-  ) extends InputRunnable[CalcKMeansFromFileSpec] with CalcKMeansHelper {
+  ) extends InputRunnableExt[CalcKMeansFromFileSpec] with CalcKMeansHelper {
 
   def run(input: CalcKMeansFromFileSpec) = {
     val model =
@@ -34,14 +34,12 @@ class CalcKMeansFromFile @Inject()(
     val exportPlotFileName = if (input.exportPlot) Some(input.exportFileName + ".png") else None
     calcKMeansAux(input.inputFileName, input.delimiter, input.exportFileName, exportPlotFileName, model)
   }
-
-  override def inputType = typeOf[CalcKMeansFromFileSpec]
 }
 
 class CalcKMeansFromFolder @Inject()(
     val sparkApp: SparkApp,
     val machineLearningService: MachineLearningService
-  ) extends InputRunnable[CalcKMeansFromFolderSpec] with CalcKMeansHelper {
+  ) extends InputRunnableExt[CalcKMeansFromFolderSpec] with CalcKMeansHelper {
 
   def run(input: CalcKMeansFromFolderSpec) = {
     val model =
@@ -64,8 +62,6 @@ class CalcKMeansFromFolder @Inject()(
       calcKMeansAux(input.inputFolderName + "/" + inputFileName, input.delimiter, exportFileName, exportPlotFileName, model)
     }
   }
-
-  override def inputType = typeOf[CalcKMeansFromFolderSpec]
 }
 
 case class CalcKMeansFromFileSpec(
