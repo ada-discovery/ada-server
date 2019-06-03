@@ -646,7 +646,7 @@ class DataSetServiceImpl @Inject()(
           val stringEnums = fieldTypeSpec.enumValues.map { case (from, to) => (from.toString, to) }
 
           fieldNameMap.get(fieldName).map( field =>
-            Field(name = fieldName, label = field.label, fieldType = fieldTypeSpec.fieldType, isArray = fieldTypeSpec.isArray, numValues = stringEnums)
+            Field(name = fieldName, label = field.label, fieldType = fieldTypeSpec.fieldType, isArray = fieldTypeSpec.isArray, enumValues = stringEnums)
           )
         }.flatten
 
@@ -769,8 +769,8 @@ class DataSetServiceImpl @Inject()(
       newFields = allFields.transpose.map { case fields =>
         // check if all the field specs are the same
         def equalFieldTypes(field1: Field)(field2: Field): Boolean = {
-          val enums1 = field1.numValues.toSeq.sortBy(_._1)
-          val enums2 = field2.numValues.toSeq.sortBy(_._1)
+          val enums1 = field1.enumValues.toSeq.sortBy(_._1)
+          val enums2 = field2.enumValues.toSeq.sortBy(_._1)
 
           field1.fieldType == field2.fieldType &&
             field1.isArray == field2.isArray &&
@@ -1665,7 +1665,7 @@ class DataSetServiceImpl @Inject()(
               oldField.copy(
                 fieldType = newField.fieldType,
                 isArray = newField.isArray,
-                numValues = newField.numValues,
+                enumValues = newField.enumValues,
                 label = oldField.label match {
                   case Some(label) => Some(label)
                   case None => newField.label
@@ -2075,7 +2075,7 @@ class DataSetServiceImpl @Inject()(
           val stringEnums = fieldTypeSpec.enumValues.map { case (from, to) => (from.toString, to)}
 
           originalFieldNameMap.get(fieldName).map( field =>
-            field.copy(fieldType = fieldTypeSpec.fieldType, isArray = fieldTypeSpec.isArray, numValues = stringEnums)
+            field.copy(fieldType = fieldTypeSpec.fieldType, isArray = fieldTypeSpec.isArray, enumValues = stringEnums)
           )
         }.flatten
         newFieldRepo.save(newFields)
@@ -2531,7 +2531,7 @@ class DataSetServiceImpl @Inject()(
 
     // aux function to get the list of availble values (boolean, enum supported only)
     def availableValues(targetField: Field) = targetField.fieldType match {
-      case FieldTypeId.Enum => targetField.numValues.keys.toSeq
+      case FieldTypeId.Enum => targetField.enumValues.keys.toSeq
       case FieldTypeId.Boolean => Seq(true, false)
       case _ => throw new AdaException(s"Only enum and boolean types are allowed for a target group field. Got ${targetField.fieldType}.")
     }

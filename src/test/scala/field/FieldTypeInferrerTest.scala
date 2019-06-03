@@ -51,7 +51,7 @@ class FieldTypeInferrerTest extends FlatSpec with Matchers {
   }
 
   "Enum field type" should "should be inferred only for enum values" in {
-    def shouldBeEnumType(enumValues: Map[Int, String]) = shouldBeInferredType(FieldTypeSpec(FieldTypeId.Enum, false, Some(enumValues)))_
+    def shouldBeEnumType(enumValues: Map[Int, String]) = shouldBeInferredType(FieldTypeSpec(FieldTypeId.Enum, false, enumValues))_
 
     shouldBeEnumType(Map(0 -> "Male")) (Seq("Male", " Male"))
     shouldBeEnumType(Map(0 -> "Both", 1 -> "Female", 2 -> "Male")) (Seq(" Male", "Female", "Male ", "na", null, "Both", "Female"))
@@ -122,7 +122,7 @@ class FieldTypeInferrerTest extends FlatSpec with Matchers {
   }
 
   "Enum array field type" should "should be inferred only for enum array values" in {
-    def shouldBeEnumArrayType(enumValues: Map[Int, String]) = shouldBeInferredType(FieldTypeSpec(FieldTypeId.Enum, true, Some(enumValues)))_
+    def shouldBeEnumArrayType(enumValues: Map[Int, String]) = shouldBeInferredType(FieldTypeSpec(FieldTypeId.Enum, true, enumValues))_
 
     shouldBeEnumArrayType(Map(0 -> "Male")) (Seq(
       "Male,", "Male, Male", "Male,null", "Male,na", "na", "Male,Male,Male,na,Male", ",,,Male", "Male,Male,,,", ",,,,",

@@ -197,7 +197,7 @@ private class RedCapDataSetImporter @Inject() (
             val redcapEnum = redCapFieldNameMap.get(field.name).map { case (fieldType, isRedCapEnum) =>
               if (field.isEnum) {
                 // TODO: we should do some comparison / validation + enum values update
-                //                field.numValues.get.toSeq.sorted
+                //                field.enumValues.get.toSeq.sorted
                 isRedCapEnum
               } else
                 false

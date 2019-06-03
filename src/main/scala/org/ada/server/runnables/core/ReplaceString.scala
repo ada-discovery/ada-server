@@ -79,8 +79,8 @@ class ReplaceString extends DsaInputFutureRunnable[ReplaceStringSpec] {
     field: Field,
     spec: ReplaceStringSpec
   ) = {
-    val newNumValue = field.numValues.map { case (key, value) => (key, value.replaceAllLiterally(spec.from, spec.to))}
-    repo.update(field.copy(numValues = newNumValue))
+    val newNumValue = field.enumValues.map { case (key, value) => (key, value.replaceAllLiterally(spec.from, spec.to))}
+    repo.update(field.copy(enumValues = newNumValue))
   }
 }
 

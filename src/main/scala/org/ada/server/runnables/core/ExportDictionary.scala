@@ -26,8 +26,8 @@ class ExportDictionary extends DsaInputFutureRunnable[ExportDictionarySpec] {
       // collect all the lines
       val lines = fields.map { field =>
         val enumValuesString =
-          if (field.numValues.nonEmpty) {
-            val fields = field.numValues.map { case (a, b) => a -> JsString(b)}
+          if (field.enumValues.nonEmpty) {
+            val fields = field.enumValues.map { case (a, b) => a -> JsString(b)}
             Json.stringify(JsObject(fields))
           } else ""
 

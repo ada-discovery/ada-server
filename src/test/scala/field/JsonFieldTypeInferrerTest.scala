@@ -54,7 +54,7 @@ class JsonFieldTypeInferrerTest extends FlatSpec with Matchers {
   }
 
   "Enum field type" should "should be inferred only for enum values" in {
-    def shouldBeEnumType(enumValues: Map[Int, String]) = shouldBeInferredType(FieldTypeSpec(FieldTypeId.Enum, false, Some(enumValues)))_
+    def shouldBeEnumType(enumValues: Map[Int, String]) = shouldBeInferredType(FieldTypeSpec(FieldTypeId.Enum, false, enumValues))_
 
     shouldBeEnumType(Map(0 -> "Male"))
       (Seq(JsString("Male")))

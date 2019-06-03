@@ -35,7 +35,7 @@ object DataSetTransformation {
   implicit val resultDataSetSpecFormat = Json.format[ResultDataSetSpec]
   implicit val streamSpecFormat = Json.format[StreamSpec]
   implicit val tupleFormat = TupleFormat[String, String]
-  implicit val tupleFormat2 = TupleFormat[String, Seq[(String, String)]]
+  implicit val tupleFormat2 = TupleFormat[String, String, String]
 
   implicit val dataSetTransformationFormat: Format[DataSetTransformation] = new SubTypeFormat[DataSetTransformation](
     Seq(

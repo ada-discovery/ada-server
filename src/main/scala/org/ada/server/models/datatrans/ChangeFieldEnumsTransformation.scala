@@ -9,7 +9,7 @@ import reactivemongo.bson.BSONObjectID
 case class ChangeFieldEnumsTransformation(
   _id: Option[BSONObjectID] = None,
   sourceDataSetId: String,
-  fieldNameOldNewEnums: Seq[(String, Seq[(String, String)])],
+  fieldNameOldNewEnums: Seq[(String, String, String)],
   resultDataSetSpec: ResultDataSetSpec,
   streamSpec: StreamSpec,
   scheduled: Boolean = false,

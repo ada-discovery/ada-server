@@ -2,6 +2,8 @@ package org.ada.server.services.transformers
 
 import org.ada.server.models.datatrans.ChangeFieldEnumsTransformation
 
+import org.incal.core.util.GroupMapList3
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ChangeFieldEnumsTransformer extends AbstractDataSetTransformer[ChangeFieldEnumsTransformation] {
@@ -10,8 +12,7 @@ class ChangeFieldEnumsTransformer extends AbstractDataSetTransformer[ChangeField
     spec: ChangeFieldEnumsTransformation
   ) = {
     val sourceDsa = dsaf(spec.sourceDataSetId).get
-    val fieldNameEnumMap = spec.fieldNameOldNewEnums.toMap
-
+    val fieldNameEnumMap = spec.fieldNameOldNewEnums.toGroupMap
     for {
       // all the fields
       fields <- sourceDsa.fieldRepo.find()
@@ -21,12 +22,12 @@ class ChangeFieldEnumsTransformer extends AbstractDataSetTransformer[ChangeField
         fieldNameEnumMap.get(field.name).map { newEnums =>
           val newEnumMap = newEnums.toMap
 
-          val newNumValues = field.numValues.map { case (index, value) =>
+          val newNumValues = field.enumValues.map { case (index, value) =>
             val newValue = newEnumMap.get(value).getOrElse(value)
             (index, newValue)
           }
 
-          field.copy(numValues = newNumValues)
+          field.copy(enumValues = newNumValues)
         }.getOrElse(
           field
         )

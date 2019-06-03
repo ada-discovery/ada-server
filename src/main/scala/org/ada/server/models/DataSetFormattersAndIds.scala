@@ -4,7 +4,6 @@ import java.util.UUID
 
 import org.ada.server.dataaccess.BSONObjectIdentity
 import org.ada.server.json.{EnumFormat, ManifestedFormat, SerializableFormat, SubTypeFormat}
-import org.ada.server.models.DataSetFormattersAndIds.JsObjectIdentity.name
 import org.incal.core.Identity
 import play.api.libs.functional.syntax._
 import reactivemongo.play.json.BSONFormats._
@@ -28,7 +27,7 @@ object DataSetFormattersAndIds {
     (__ \ "label").formatNullable[String] and
     (__ \ "fieldType").format[FieldTypeId.Value] and
     (__ \ "isArray").format[Boolean] and
-    (__ \ "numValues").format[Map[String, String]] and
+    (__ \ "enumValues").format[Map[String, String]] and
     (__ \ "displayDecimalPlaces").formatNullable[Int] and
     (__ \ "displayTrueValue").formatNullable[String] and
     (__ \ "displayFalseValue").formatNullable[String] and
@@ -37,7 +36,7 @@ object DataSetFormattersAndIds {
   )(
     Field(_, _, _, _, _, _, _, _, _, _),
     (item: Field) =>  (
-      item.name, item.label, item.fieldType, item.isArray, item.numValues, item.displayDecimalPlaces,
+      item.name, item.label, item.fieldType, item.isArray, item.enumValues, item.displayDecimalPlaces,
       item.displayTrueValue, item.displayFalseValue, item.aliases, item.categoryId
     )
   )
@@ -73,12 +72,12 @@ object DataSetFormattersAndIds {
 
   val dataSpaceMetaInfoFormat: Format[DataSpaceMetaInfo] = (
     (__ \ "_id").formatNullable[BSONObjectID] and
-      (__ \ "name").format[String] and
-      (__ \ "sortOrder").format[Int] and
-      (__ \ "timeCreated").format[java.util.Date] and
-      (__ \ "dataSetMetaInfos").format[Seq[DataSetMetaInfo]] and
-      (__ \ "parentId").formatNullable[BSONObjectID]
-    )(
+    (__ \ "name").format[String] and
+    (__ \ "sortOrder").format[Int] and
+    (__ \ "timeCreated").format[java.util.Date] and
+    (__ \ "dataSetMetaInfos").format[Seq[DataSetMetaInfo]] and
+    (__ \ "parentId").formatNullable[BSONObjectID]
+  )(
     DataSpaceMetaInfo(_, _, _, _, _, _),
     (item: DataSpaceMetaInfo) =>  (
       item._id, item.name, item.sortOrder, item.timeCreated, item.dataSetMetaInfos, item.parentId

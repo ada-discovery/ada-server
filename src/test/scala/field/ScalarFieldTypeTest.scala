@@ -421,7 +421,7 @@ class ScalarFieldTypeTest extends FlatSpec with Matchers {
 
   "Enum field type" should "should accept only enums " in {
     val enumValues = Map(0 -> "Male", 1 -> "Female", 2 -> "Both", 3 -> "None")
-    val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Enum, false, Some(enumValues))).asInstanceOf[FieldType[Int]]
+    val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Enum, false, enumValues)).asInstanceOf[FieldType[Int]]
 
     fieldType.displayStringToValue("") should be (None)
     fieldType.displayStringToValue(" Male") should be (Some(0))

@@ -17,6 +17,6 @@ protected[dataaccess] class FieldCacheCrudRepoFactory @Inject()(
   def apply(dataSetId: String): FieldRepo = {
     val cacheName = "Field_" + dataSetId.replaceAll("[\\.-]", "_")
     val mongoRepoFactory = new FieldMongoAsyncCrudRepoFactory(dataSetId, configuration, new SerializableApplicationLifecycle())
-    cacheRepoFactory(mongoRepoFactory, cacheName, Set("numValues"))
+    cacheRepoFactory(mongoRepoFactory, cacheName, Set("enumValues"))
   }
 }
