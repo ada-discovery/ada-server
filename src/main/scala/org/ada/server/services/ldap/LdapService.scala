@@ -7,6 +7,7 @@ import org.ada.server.AdaException
 import org.ada.server.models.{LdapUser, UserGroup}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
+import org.ada.server.services.ldap.LDAPInterfaceFactory._
 
 import scala.collection.JavaConversions._
 
@@ -29,7 +30,8 @@ protected class LdapServiceImpl @Inject()(
 ) extends LdapService {
 
   // interface for use
-  private val interface: Option[LDAPInterface] = setupInterface()
+  private val interface: Option[LDAPInterface] = setupInterface
+  private val connectionOptions = createConnectionOptions
   private val logger = Logger
 
   override def listUsers: Traversable[LdapUser] = {
@@ -75,33 +77,34 @@ protected class LdapServiceImpl @Inject()(
   private def entryToUserGroup(entry: Entry): Option[UserGroup] =
     Option(entry) match {
       case None => None
-      case _ => {
+      case _ =>
         val name: String = entry.getAttributeValue("cn")
         val members: Array[String] = Option(entry.getAttributeValues("member")).getOrElse(Array())
         val description: Option[String] = Option(entry.getAttributeValue("description"))
         val nested: Array[String] = Option(entry.getAttributeValues("memberof")).getOrElse(Array())
         Some(UserGroup(None, name, description, members, nested))
-      }
     }
 
   /**
     * Creates either a server or a connection, depending on the configuration.
     * @return LDAPInterface, either of type InMemoryDirectoryServer or LDAPConnection.
     */
-  private def setupInterface(): Option[LDAPInterface] =
+  private def setupInterface: Option[LDAPInterface] =
     settings.mode match {
 
       case "local" =>
-        Some(LDAPInterfaceFactory.local(settings.dit, settings.port, applicationLifecycle))
+        Some(
+          LDAPInterfaceFactory.createLocalServer(settings.dit, settings.port, applicationLifecycle)
+        )
 
       case "remote" =>
         val password = settings.bindPassword.getOrElse(
           throw new AdaException("Environmental variable 'ADA_LDAP_BIND_PASSWORD' or a conf entry 'ldap.bindPassword' not set but expected.")
         )
 
-        LDAPInterfaceFactory.remote(
+        LDAPInterfaceFactory.createConnectionPool(
           settings.host, settings.port, settings.encryption, settings.trustStore, settings.bindDN, password, applicationLifecycle,
-          settings.connectTimeout, settings.responseTimeout, settings.pooledSchemaTimeout, settings.abandonOnTimeout
+          connectionOptions
         )
 
       case _ => None
@@ -126,16 +129,35 @@ protected class LdapServiceImpl @Inject()(
 
   private def canBindAux(userDN: String, password: String): Boolean = {
     logger.info(s"Checking the user credentials for $userDN in LDAP.")
-    val (connection, _) = LDAPInterfaceFactory.createConnection(settings.host, settings.port, settings.encryption, settings.trustStore)
 
-    val result: ResultCode = try {
-      connection.bind(userDN, password).getResultCode
-    } catch {
-      case _: LDAPException => ResultCode.NO_SUCH_OBJECT
+    val connection = settings.mode match {
+
+      case "local" =>
+        Some(
+          createConnection("localhost", settings.port, settings.encryption, settings.trustStore, connectionOptions)._1
+        )
+
+      case "remote" =>
+        Some(
+          createConnection(settings.host, settings.port, settings.encryption, settings.trustStore, connectionOptions)._1
+        )
+
+      case _ =>
+        None
     }
 
-    // Close the connection
-    connection.close()
+    val result: ResultCode = connection.map { connection =>
+      try {
+        connection.bind(userDN, password).getResultCode
+      } catch {
+        case _: LDAPException => ResultCode.NO_SUCH_OBJECT
+      } finally {
+        // Close the connection
+        connection.close()
+      }
+    }.getOrElse(
+      ResultCode.AUTH_UNKNOWN
+    )
 
     // Log the outcome
     val successfulWord = if (result == ResultCode.SUCCESS) "successful" else "unsuccessful"
@@ -207,4 +229,26 @@ protected class LdapServiceImpl @Inject()(
     } catch {
       case e: Throwable => Nil
     }
+
+  private def createConnectionOptions: LDAPConnectionOptions = {
+    val options = new LDAPConnectionOptions()
+
+    settings.connectTimeout.foreach(
+      options.setConnectTimeoutMillis(_)
+    )
+
+    settings.responseTimeout.foreach(
+      options.setResponseTimeoutMillis(_)
+    )
+
+    settings.pooledSchemaTimeout.foreach(
+      options.setPooledSchemaTimeoutMillis(_)
+    )
+
+    settings.abandonOnTimeout.foreach(
+      options.setAbandonOnTimeout(_)
+    )
+
+    options
+  }
 }

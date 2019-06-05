@@ -3,7 +3,7 @@ package org.ada.server.services.ldap
 import javax.net.ssl.{SSLContext, SSLSocketFactory}
 import com.unboundid.ldap.listener.{InMemoryDirectoryServer, InMemoryDirectoryServerConfig, InMemoryListenerConfig}
 import com.unboundid.ldap.sdk.extensions.StartTLSExtendedRequest
-import com.unboundid.ldap.sdk.{LDAPConnectionOptions, _}
+import com.unboundid.ldap.sdk.{LDAPConnection, LDAPConnectionOptions, _}
 import com.unboundid.util.ssl.{SSLUtil, TrustAllTrustManager, TrustStoreTrustManager}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
@@ -13,15 +13,13 @@ import scala.concurrent.Future
 
 object LDAPInterfaceFactory {
 
-  private val logger = Logger
-
   /**
     * Creates an LDAP in-memory server for testing.
     * Builds user permissions and roles from PermissionCache and RoleCache.
     * Feed users from user database into server.
     * @return dummy server
     */
-  def local(
+  def createLocalServer(
     dit: String,
     port: Int,
     applicationLifecycle: ApplicationLifecycle
@@ -55,15 +53,15 @@ object LDAPInterfaceFactory {
   }
 
   /**
-    * Creates a connection to an existing LDAP server instance.
+    * Creates a connection pool to an existing LDAP server instance.
     * We use ConnectionPools for better performance.
     * Uses the options defined in the configuation.
     * Used options from configuration are ldap.encryption, ldap.host, ldap.prt, ldap.bindDN, ldap.bindPassword
     * @param bindDN custom bindDn
     * @param password custom bind password
-    * @return LDAPConnection object  with specified credentials. None, if no connection could be established.
+    * @return LDAPConnectionPool object with specified credentials. None, if no connection could be established.
     */
-  def remote(
+  def createConnectionPool(
     host: String,
     port: Int,
     encryption: String,
@@ -71,12 +69,8 @@ object LDAPInterfaceFactory {
     bindDN: String,
     password: String,
     applicationLifecycle: ApplicationLifecycle,
-    connectTimeout: Option[Int],
-    responseTimeout: Option[Long],
-    pooledSchemaTimeout : Option[Long],
-    abandonOnTimeout: Option[Boolean]
+    options: LDAPConnectionOptions = new LDAPConnectionOptions()
   ): Option[LDAPConnectionPool] = {
-    val options = createConnectionOptions(connectTimeout, responseTimeout, pooledSchemaTimeout, abandonOnTimeout)
     val (connection, processor) = createConnection(host, port, encryption, trustStore, options)
 
     val result: ResultCode = try {
@@ -88,47 +82,13 @@ object LDAPInterfaceFactory {
     if (result == ResultCode.SUCCESS) {
       Logger.info(s"${encryption} LDAP connection to " + host + ":" + port + " established")
 
-      val connectionPool = processor.map(
-        new LDAPConnectionPool(connection, 1, 10, _)
-      ).getOrElse(
-        new LDAPConnectionPool(connection, 1, 10)
+      Some(
+        createConnectionPool(connection, processor, applicationLifecycle)
       )
-
-      // hook interface in lifecycle for proper cleanup
-      applicationLifecycle.addStopHook( () => Future(terminateInterface(connectionPool)))
-
-      Some(connectionPool)
     } else {
       Logger.warn("Failed to establish connection to " + host + ":" + port)
       None
     }
-  }
-
-  private def createConnectionOptions(
-    connectTimeout: Option[Int],
-    responseTimeout: Option[Long],
-    pooledSchemaTimeout : Option[Long],
-    abandonOnTimeout: Option[Boolean]
-  ) = {
-    val options = new LDAPConnectionOptions()
-
-    connectTimeout.foreach(
-      options.setConnectTimeoutMillis(_)
-    )
-
-    responseTimeout.foreach(
-      options.setResponseTimeoutMillis(_)
-    )
-
-    pooledSchemaTimeout.foreach(
-      options.setPooledSchemaTimeoutMillis(_)
-    )
-
-    abandonOnTimeout.foreach(
-      options.setAbandonOnTimeout(_)
-    )
-
-    options
   }
 
   /**
@@ -167,6 +127,23 @@ object LDAPInterfaceFactory {
     }
   }
 
+  private def createConnectionPool(
+    connection: LDAPConnection,
+    processor: Option[PostConnectProcessor],
+    applicationLifecycle: ApplicationLifecycle
+  ) = {
+    val connectionPool = processor.map(
+      new LDAPConnectionPool(connection, 1, 10, _)
+    ).getOrElse(
+      new LDAPConnectionPool(connection, 1, 10)
+    )
+
+    // hook interface in lifecycle for proper cleanup
+    applicationLifecycle.addStopHook( () => Future(terminateInterface(connectionPool)))
+
+    connectionPool
+  }
+
   /**
     * Setup SSL context (e.g for use with startTLS).
     * If a truststore file has been defined in the config, it will be loaded.
@@ -186,7 +163,7 @@ object LDAPInterfaceFactory {
     * @param interface Interface to be disconnected or shut down.
     */
   private def terminateInterface(interface: LDAPInterface) =
-    interface match{
+    interface match {
       case server: InMemoryDirectoryServer => server.shutDown(true)
       case connection: LDAPConnection => connection.close()
       case connectionPool: LDAPConnectionPool => connectionPool.close()

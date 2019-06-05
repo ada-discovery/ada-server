@@ -30,8 +30,14 @@ protected[services] class DataSetCentralTransformerImpl @Inject()(
     input: DataSetTransformation,
     exec: DataSetTransformer[DataSetTransformation]
   ): Future[Unit] = {
-    val updatedInput = input.copyWithTimestamps(timeCreated = input.timeCreated, timeLastExecuted = Some(new Date()))
-    repo.update(updatedInput).map(_ =>
+    val futureUpdate =
+      if (input._id.isDefined) {
+        // update if id exists, i.e., it's a persisted transformation
+        val updatedInput = input.copyWithTimestamps(timeCreated = input.timeCreated, timeLastExecuted = Some(new Date()))
+        repo.update(updatedInput)
+      } else Future(())
+
+    futureUpdate.map(_ =>
       messageLogger.info(s"Transformation of data set(s) '${input.sourceDataSetIds.mkString(", ")}' successfully finished.")
     )
   }

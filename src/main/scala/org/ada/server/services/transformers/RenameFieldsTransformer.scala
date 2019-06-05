@@ -7,6 +7,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class RenameFieldsTransformer extends AbstractDataSetTransformer[RenameFieldsTransformation] {
 
+  override protected val saveViewsAndFiltersFlag = false
+
   override protected def execInternal(
     spec: RenameFieldsTransformation
   ) = {
