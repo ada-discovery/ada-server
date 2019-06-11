@@ -2,7 +2,7 @@ organization := "org.adada"
 
 name := "ada-server"
 
-version := "0.7.3.RC.9.SNAPSHOT.3"
+version := "0.7.3.RC.9.SNAPSHOT.5"
 
 description := "Server side of Ada Discovery Analytics containing a persistence layer, stats and data import/transformation services, and util classes."
 
@@ -37,7 +37,6 @@ libraryDependencies ++= Seq(
   "org.scalanlp" %% "breeze" % "0.13.2",                                                            // linear algebra and stuff
   "org.scalanlp" %% "breeze-natives" % "0.13.2",                                                    // linear algebra and stuff (native)
   //  "org.scalanlp" %% "breeze-viz" % "0.13.2",    // breeze visualization
-  "org.scalactic" %% "scalactic" % "3.0.0",
   "org.scalatest" %% "scalatest" % "3.0.0" % "test"
 )
 

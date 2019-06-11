@@ -21,7 +21,7 @@ class PearsonCorrelationTest extends AsyncFlatSpec with Matchers {
   private val calc = PearsonCorrelationCalc
   private val allDefinedCalc = AllDefinedPearsonCorrelationCalc
 
-//  private val injector = TestApp.apply.injector
+//  private val injector = GuicePlayTestApp().injector
 //  private val statsService = injector.instanceOf[StatsService]
 
   private implicit val system = ActorSystem()

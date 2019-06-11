@@ -26,12 +26,18 @@ trait RedCapServiceFactory {
 trait RedCapService {
 
   /**
-    * Retrieve all fields matching the filtering criterion and order them according to a reference field.
+    * Retrieve all the records
     *
-    * @return Sorted records matching filter criterion.
+    * @return Records
     */
   def listAllRecords: Future[Seq[JsObject]]
 
+  /**
+    * List all the records for given events iteratively.
+    *
+    * @param events
+    * @return
+    */
   def listEventRecords(events: Seq[String]): Future[Seq[JsObject]]
 
   /**
@@ -78,6 +84,26 @@ trait RedCapService {
     * @return Sequence of field(s) matching id.
     */
   def getExportField(id: String) : Future[Seq[JsObject]]
+
+  /**
+    * Lock a given record
+    *
+    * @param record
+    * @param event
+    * @param instrument
+    * @param instance
+    */
+  def lock(
+    action: RedCapLockAction.Value,
+    record: String,
+    event: Option[String] = None,
+    instrument: Option[String] = None,
+    instance: Option[Int] = None
+  ): Future[Seq[JsObject]]
+}
+
+object RedCapLockAction extends Enumeration {
+  val lock, unlock, status = Value
 }
 
 protected[services] class RedCapServiceWSImpl @Inject() (
@@ -87,7 +113,7 @@ protected[services] class RedCapServiceWSImpl @Inject() (
     configuration: Configuration
   ) extends RedCapService {
 
-  private val timeout = configuration.getLong("redcap.request.timeout").get
+  private val timeout = configuration.getLong("redcap.request.timeout").getOrElse(600000l)
   private val createUnsecuredClient = configuration.getBoolean("redcap.create_unsecured_client").getOrElse(false)
 
   private val wsClient: WSClient =
@@ -123,7 +149,6 @@ protected[services] class RedCapServiceWSImpl @Inject() (
     baseRequestData ++ Map("content" -> "record", "type" -> "flat") ++ eventsParam
   }
 
-
   private val metadataRequestData = baseRequestData ++ Map("content" -> "metadata")
   private val fieldNamesRequestData = baseRequestData ++ Map("content" -> "exportFieldNames")
 
@@ -131,7 +156,6 @@ protected[services] class RedCapServiceWSImpl @Inject() (
 
   override def listAllRecords =
     runRedCapQuery(recordRequest())
-
 
   override def listEventRecords(events: Seq[String]) =
     runRedCapQuery(recordRequest(events))
@@ -153,15 +177,37 @@ protected[services] class RedCapServiceWSImpl @Inject() (
 
   override def getRecord(id: String) =
     runRedCapQuery(recordRequest()).map { items =>
-      findBy(items, id, "cdisc_dm_usubjd")}
+      findBy(items, id, "cdisc_dm_usubjd")
+    }
 
   override def getMetadata(id: String) =
     runRedCapQuery(metadataRequestData).map { items =>
-      findBy(items, id, "field_name")}
+      findBy(items, id, "field_name")
+    }
 
   override def getExportField(id: String) =
     runRedCapQuery(fieldNamesRequestData).map { items =>
-      findBy(items, id, "export_field_name")}
+      findBy(items, id, "export_field_name")
+    }
+
+  override def lock(
+    action: RedCapLockAction.Value,
+    record: String,
+    event: Option[String],
+    instrument: Option[String],
+    instance: Option[Int]
+  ): Future[Seq[JsObject]] = {
+    val requestData = baseRequestData ++ Map(
+      "type" -> "module", "prefix" -> "locking_api", "page" -> action.toString,
+      "record" -> record
+    ) ++ Seq(
+      event.map("event" -> _),
+      instrument.map("instrument" -> _),
+      instance.map("instance" -> _.toString)
+    ).flatten.toMap
+
+    runRedCapQuery(requestData)
+  }
 
   // Helper methods
 

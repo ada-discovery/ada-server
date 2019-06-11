@@ -686,7 +686,7 @@ class ArrayFieldTypeTest extends FlatSpec with Matchers {
 
   "Enum array field type" should "should accept only enums " in {
     val enumValues = Map(0 -> "Male", 1 -> "Female", 2 -> "Both", 3 -> "None")
-    val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Enum, true, Some(enumValues))).asInstanceOf[FieldType[Array[Option[Int]]]]
+    val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Enum, true, enumValues)).asInstanceOf[FieldType[Array[Option[Int]]]]
 
     fieldType.displayStringToValue("") should be (None)
     fieldType.displayStringToValue(",").get should be (Array(None, None))

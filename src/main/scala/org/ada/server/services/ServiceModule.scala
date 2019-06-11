@@ -6,7 +6,21 @@ import org.ada.server.services.ServiceTypes.{DataSetCentralImporter, DataSetCent
 import org.ada.server.services.importers._
 import org.ada.server.services.transformers.{DataSetCentralTransformerImpl, DataSetTransformationSchedulerImpl}
 
-class ServiceModule extends ScalaModule {
+class ServiceModule extends WebServiceModule {
+
+  override def configure = {
+
+    super.configure
+
+    bind[DataSetCentralImporter].to(classOf[DataSetCentralImporterImpl]).asEagerSingleton
+    bind[DataSetImportScheduler].to(classOf[DataSetImportSchedulerImpl]).asEagerSingleton
+
+    bind[DataSetCentralTransformer].to(classOf[DataSetCentralTransformerImpl]).asEagerSingleton
+    bind[DataSetTransformationScheduler].to(classOf[DataSetTransformationSchedulerImpl]).asEagerSingleton
+  }
+}
+
+class WebServiceModule extends ScalaModule {
 
   override def configure = {
 
@@ -21,12 +35,5 @@ class ServiceModule extends ScalaModule {
     install(new FactoryModuleBuilder()
       .implement(classOf[RedCapService], classOf[RedCapServiceWSImpl])
       .build(classOf[RedCapServiceFactory]))
-
-
-    bind[DataSetCentralImporter].to(classOf[DataSetCentralImporterImpl]).asEagerSingleton
-    bind[DataSetImportScheduler].to(classOf[DataSetImportSchedulerImpl]).asEagerSingleton
-
-    bind[DataSetCentralTransformer].to(classOf[DataSetCentralTransformerImpl]).asEagerSingleton
-    bind[DataSetTransformationScheduler].to(classOf[DataSetTransformationSchedulerImpl]).asEagerSingleton
   }
 }

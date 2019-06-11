@@ -2,7 +2,7 @@ package stats
 
 import akka.stream.scaladsl.Source
 import org.scalatest._
-import org.ada.server.services.{StatsService, TestApp}
+import org.ada.server.services.{StatsService, GuicePlayTestApp}
 
 import scala.concurrent.Future
 import scala.util.Random
@@ -31,7 +31,7 @@ class MetricMDSTest extends AsyncFlatSpec with Matchers with ExtraMatchers {
   private val randomInputSize = 2000
   private val precision = 0.001
 
-  private val injector = TestApp().injector
+  private val injector = GuicePlayTestApp().injector
   private val statsService = injector.instanceOf[StatsService]
 
   "Metric MDS" should "match the static example" in {

@@ -31,8 +31,6 @@ trait UserManager {
       }
     )
 
-  def updateUser(user: User): Future[Boolean]
-
   def synchronizeRepos: Future[Unit]
 
   def purgeMissing: Future[Unit]
@@ -147,13 +145,4 @@ private class UserManagerImpl @Inject()(
     */
   override def findById(id: String): Future[Option[User]] =
     userRepo.find(Seq("ldapDn" #== id)).map(_.headOption)
-
-  /**
-    * Update the user by looking up the username in the database and changing the other fields.
- *
-    * @param user
-    * @return
-    */
-  override def updateUser(user: User): Future[Boolean] =
-    userRepo.update(user).map(_ => true)
 }

@@ -1,7 +1,7 @@
 package stats
 
 import org.scalatest._
-import org.ada.server.services.{StatsService, TestApp}
+import org.ada.server.services.{StatsService, GuicePlayTestApp}
 
 import scala.util.Random
 
@@ -23,7 +23,7 @@ class EigenVectorsTest extends AsyncFlatSpec with Matchers with ExtraMatchers {
   private val randomInputSize = 100
   private val precision = 0.0001
 
-  private val injector = TestApp().injector
+  private val injector = GuicePlayTestApp().injector
   private val statsService = injector.instanceOf[StatsService]
 
   "Eigen vectors" should "match a static example" in {

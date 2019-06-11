@@ -3,7 +3,7 @@ package org.ada.server.services
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
-object TestApp {
+object GuicePlayTestApp {
 
   def apply(moduleNames: Seq[String] = Nil): Application = {
     val env = play.api.Environment.simple(mode = play.api.Mode.Test)
