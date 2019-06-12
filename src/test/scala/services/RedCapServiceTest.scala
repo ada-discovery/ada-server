@@ -1,7 +1,7 @@
 package services
 
 import org.ada.server.services.importers.{RedCapLockAction, RedCapServiceFactory}
-import org.ada.server.services.{GuiceApp, GuicePlayApp}
+import org.ada.server.services.GuiceApp
 import net.codingwell.scalaguice.InjectorExtensions._
 import org.scalatest._
 import play.api.Configuration

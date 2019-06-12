@@ -98,7 +98,8 @@ trait RedCapService {
     record: String,
     event: Option[String] = None,
     instrument: Option[String] = None,
-    instance: Option[Int] = None
+    instance: Option[Int] = None,
+    projectId: Option[Int] = None
   ): Future[Seq[JsObject]]
 }
 
@@ -195,10 +196,13 @@ protected[services] class RedCapServiceWSImpl @Inject() (
     record: String,
     event: Option[String],
     instrument: Option[String],
-    instance: Option[Int]
+    instance: Option[Int],
+    projectId: Option[Int]
   ): Future[Seq[JsObject]] = {
-    val requestData = baseRequestData ++ Map(
-      "type" -> "module", "prefix" -> "locking_api", "page" -> action.toString,
+    // post data
+    val requestData: Map[String, String] = Map(
+      "token" -> token,
+      "returnFormat" -> "json",
       "record" -> record
     ) ++ Seq(
       event.map("event" -> _),
@@ -206,13 +210,24 @@ protected[services] class RedCapServiceWSImpl @Inject() (
       instance.map("instance" -> _.toString)
     ).flatten.toMap
 
-    runRedCapQuery(requestData)
+    // query params
+    val queryParams: Map[String, String] = Map(
+      "NOAUTH" -> "",
+      "type" -> "module",
+      "prefix" -> "locking_api",
+      "page" -> action.toString
+    ) ++ Seq(projectId.map("pid" -> _.toString)).flatten.toMap
+
+    runRedCapQuery(requestData, queryParams)
   }
 
   // Helper methods
 
-  private def runRedCapQuery(requestData : Map[String, String]) =
-    req.post(requestData.map { case (a, b) => (a, Seq(b)) }).map { response =>
+  private def runRedCapQuery(
+    requestData : Map[String, String],
+    queryParams: Map[String, String] = Map()
+  ) =
+    req.withQueryString(queryParams.toSeq:_*).post(requestData.map { case (a, b) => (a, Seq(b)) }).map { response =>
       try {
         handleErrorResponse(response)
         response.json.as[JsArray].value.asInstanceOf[Seq[JsObject]]
