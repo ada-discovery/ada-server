@@ -16,7 +16,8 @@ case class DataSetSetting(
   displayItemName: Option[String] = None,
   storageType: StorageType.Value,
   mongoAutoCreateIndexForProjection: Boolean = false,
-  cacheDataSet: Boolean = false
+  cacheDataSet: Boolean = false,
+  ownerId: Option[BSONObjectID] = None
 ) {
   def this(
     dataSetId: String,

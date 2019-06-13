@@ -1740,10 +1740,18 @@ class DataSetServiceImpl @Inject()(
     val originalDictionaryRepo = originalDsa.fieldRepo
 
     for {
-      // get the accessor (data repo and field repo) for the newly registered data set
+      // original data set info
       originalDataSetInfo <- originalDsa.metaInfo
+
+      // get the accessor (data repo and field repo) for the newly registered data set
       newDsa <- dsaf.register(
-        DataSetMetaInfo(None, newDataSetId, newDataSetName, 0, false, originalDataSetInfo.dataSpaceId), newDataSetSetting, newDataView
+        DataSetMetaInfo(
+          id = newDataSetId,
+          name = newDataSetName,
+          dataSpaceId = originalDataSetInfo.dataSpaceId
+        ),
+        newDataSetSetting,
+        newDataView
       )
       newFieldRepo = newDsa.fieldRepo
 
@@ -2056,10 +2064,12 @@ class DataSetServiceImpl @Inject()(
     val inferenceGroupSizeInit = inferenceGroupSize.getOrElse(10)
 
     for {
-      // get the accessor (data repo and field repo) for the newly registered data set
+      // original data set info
       originalDataSetInfo <- originalDsa.metaInfo
+
+      // get the accessor (data repo and field repo) for the newly registered data set
       newDsa <- dsaf.register(
-        DataSetMetaInfo(None, newDataSetId, newDataSetName, 0, false, originalDataSetInfo.dataSpaceId),
+        DataSetMetaInfo(id = newDataSetId, name = newDataSetName, dataSpaceId = originalDataSetInfo.dataSpaceId),
         newDataSetSetting,
         newDataView
       )
@@ -2160,10 +2170,16 @@ class DataSetServiceImpl @Inject()(
     val originalDataRepo = originalDsa.dataSetRepo
 
     for {
-    // get the accessor (data repo and field repo) for the newly registered data set
+      // original data set info
       originalDataSetInfo <- originalDsa.metaInfo
+
+      // get the accessor (data repo and field repo) for the newly registered data set
       newDsa <- dsaf.register(
-        DataSetMetaInfo(None, newDataSetId, newDataSetName, 0, false, originalDataSetInfo.dataSpaceId),
+        DataSetMetaInfo(
+          id = newDataSetId,
+          name = newDataSetName,
+          dataSpaceId = originalDataSetInfo.dataSpaceId
+        ),
         newDataSetSetting,
         newDataView
       )
