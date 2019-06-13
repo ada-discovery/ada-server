@@ -25,7 +25,8 @@ import org.ada.server.models.ml.unsupervised.UnsupervisedLearning.unsupervisedLe
 import org.ada.server.dataaccess.dataset._
 import reactivemongo.bson.BSONObjectID
 import org.ada.server.dataaccess.RepoDef.Repo
-import org.ada.server.models.datatrans.DataSetTransformation
+import org.ada.server.models.datatrans.DataSetMetaTransformation
+import org.ada.server.models.datatrans.DataSetTransformation.{dataSetMetaTransformationFormat, DataSetMetaTransformationIdentity}
 import org.apache.ignite.Ignite
 
 private object RepoDef extends Enumeration {
@@ -68,7 +69,7 @@ private object RepoDef extends Enumeration {
     new MongoAsyncCrudRepo[DataSetImport, BSONObjectID]("dataset_imports"))
 
   val DataSetTransformationRepo = Repo[DataSetTransformationRepo](
-    new MongoAsyncCrudRepo[DataSetTransformation, BSONObjectID]("dataset_transformations"))
+    new MongoAsyncCrudRepo[DataSetMetaTransformation, BSONObjectID]("dataset_transformations"))
 }
 
 // repo module used to bind repo types/instances withing Guice IoC container

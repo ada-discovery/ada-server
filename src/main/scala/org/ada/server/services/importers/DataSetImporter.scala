@@ -140,7 +140,7 @@ private[importers] abstract class AbstractDataSetImporter[T <: DataSetImport](im
 
     for {
       // save, or update the dictionary
-      _ <- dataSetService.updateDictionaryFields(dsa.fieldRepo, fields, true, true)
+      _ <- dataSetService.updateFields(dsa.fieldRepo, fields, true, true)
 
       // since we possible changed the dictionary (the data structure) we need to update the data set repo
       _ <- dsa.updateDataSetRepo
@@ -198,7 +198,7 @@ private[importers] abstract class AbstractDataSetImporter[T <: DataSetImport](im
   ): Future[Unit] =
     for {
       // save, or update the dictionary
-      _ <- dataSetService.updateDictionaryFields(dsa.fieldRepo, fields, true, true)
+      _ <- dataSetService.updateFields(dsa.fieldRepo, fields, true, true)
 
       // since we possible changed the dictionary (the data structure) we need to update the data set repo
       _ <- dsa.updateDataSetRepo

@@ -70,7 +70,7 @@ private class JsonDataSetImporter extends AbstractDataSetImporter[JsonDataSetImp
             // save the fields
             _ <- {
               val fields = fieldNameTypes.map { case (fieldName, fieldType) => specToField(fieldName, Some(fieldName), fieldType.spec) }
-              dataSetService.updateDictionaryFields(importInfo.dataSetId, fields, true, true)
+              dataSetService.updateFields(importInfo.dataSetId, fields, true, true)
             }
 
             // since we possible changed the dictionary (the data structure) we need to update the data set repo

@@ -119,7 +119,7 @@ private class SynapseDataSetImporter @Inject() (
         }
 
         // save, or update the dictionary
-        _ <- dataSetService.updateDictionaryFields(importInfo.dataSetId, newFields, true, true)
+        _ <- dataSetService.updateFields(importInfo.dataSetId, newFields, true, true)
 
         // since we possible changed the dictionary (the data structure) we need to update the data set repo
         _ <- dsa.updateDataSetRepo

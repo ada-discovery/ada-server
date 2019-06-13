@@ -4,7 +4,7 @@ import java.util.Date
 
 import javax.inject.Inject
 import org.ada.server.models.datatrans.DataSetTransformation._
-import org.ada.server.models.datatrans.DataSetTransformation
+import org.ada.server.models.datatrans.DataSetMetaTransformation
 import org.ada.server.dataaccess.RepoTypes.{DataSetTransformationRepo, MessageRepo}
 import org.ada.server.services.LookupCentralExecImpl
 import org.ada.server.util.MessageLogger
@@ -18,7 +18,7 @@ protected[services] class DataSetCentralTransformerImpl @Inject()(
   val injector: Injector,
   repo: DataSetTransformationRepo,
   messageRepo: MessageRepo
-) extends LookupCentralExecImpl[DataSetTransformation, DataSetTransformer[DataSetTransformation]](
+) extends LookupCentralExecImpl[DataSetMetaTransformation, DataSetMetaTransformer[DataSetMetaTransformation]](
   "org.ada.server.services.transformers",
   "data set transformer"
 ) {
@@ -27,8 +27,8 @@ protected[services] class DataSetCentralTransformerImpl @Inject()(
   private val messageLogger = MessageLogger(logger, messageRepo)
 
   override protected def postExec(
-    input: DataSetTransformation,
-    exec: DataSetTransformer[DataSetTransformation]
+    input: DataSetMetaTransformation,
+    exec: DataSetMetaTransformer[DataSetMetaTransformation]
   ): Future[Unit] = {
     val futureUpdate =
       if (input._id.isDefined) {

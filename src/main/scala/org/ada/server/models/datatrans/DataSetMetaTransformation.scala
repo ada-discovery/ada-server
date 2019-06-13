@@ -3,24 +3,26 @@ package org.ada.server.models.datatrans
 import java.util.Date
 
 import org.ada.server.dataaccess.{BSONObjectIdentity, StreamSpec}
-import org.ada.server.json.{EnumFormat, ManifestedFormat, SubTypeFormat, TupleFormat}
+import org.ada.server.json._
 import org.ada.server.models.{Schedulable, ScheduledTime, StorageType}
 import play.api.libs.json.{Format, Json}
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONFormats._
 
-trait DataSetTransformation extends Schedulable {
+trait DataSetMetaTransformation extends Schedulable {
   val _id: Option[BSONObjectID]
   val timeCreated: Date
   val timeLastExecuted: Option[Date]
 
   val sourceDataSetIds: Seq[String]
-  val resultDataSetSpec: ResultDataSetSpec
-  val streamSpec: StreamSpec
+}
 
-  def resultDataSetId = resultDataSetSpec.id
-  def resultDataSetName = resultDataSetSpec.name
-  def resultStorageType = resultDataSetSpec.storageType
+trait DataSetTransformation extends DataSetMetaTransformation {
+  val streamSpec: StreamSpec
+  val resultDataSetSpec: ResultDataSetSpec
+  val resultDataSetId = resultDataSetSpec.id
+  val resultDataSetName = resultDataSetSpec.name
+  val resultStorageType = resultDataSetSpec.storageType
 }
 
 case class ResultDataSetSpec(
@@ -30,35 +32,40 @@ case class ResultDataSetSpec(
 )
 
 object DataSetTransformation {
+
   implicit val scheduleTimeFormat = Json.format[ScheduledTime]
   implicit val storageTypeFormat = EnumFormat(StorageType)
   implicit val resultDataSetSpecFormat = Json.format[ResultDataSetSpec]
   implicit val streamSpecFormat = Json.format[StreamSpec]
   implicit val tupleFormat = TupleFormat[String, String]
   implicit val tupleFormat2 = TupleFormat[String, String, String]
+  implicit val optionIntFormat = new OptionFormat[Int]
+  implicit val tupleFormat3 = TupleFormat[String, Option[Int]]
 
-  implicit val dataSetTransformationFormat: Format[DataSetTransformation] = new SubTypeFormat[DataSetTransformation](
+  implicit val dataSetMetaTransformationFormat: Format[DataSetMetaTransformation] = new SubTypeFormat[DataSetMetaTransformation](
     Seq(
       ManifestedFormat(Json.format[CopyDataSetTransformation]),
       ManifestedFormat(Json.format[DropFieldsTransformation]),
       ManifestedFormat(Json.format[RenameFieldsTransformation]),
-      ManifestedFormat(Json.format[ChangeFieldEnumsTransformation])
+      ManifestedFormat(Json.format[ChangeFieldEnumsTransformation]),
+      ManifestedFormat(Json.format[MatchGroupsWithConfoundersTransformation])
     )
   )
 
-  implicit object DataSetTransformationIdentity extends BSONObjectIdentity[DataSetTransformation] {
-    def of(entity: DataSetTransformation): Option[BSONObjectID] = entity._id
+  implicit object DataSetMetaTransformationIdentity extends BSONObjectIdentity[DataSetMetaTransformation] {
+    def of(entity: DataSetMetaTransformation): Option[BSONObjectID] = entity._id
 
-    protected def set(entity: DataSetTransformation, id: Option[BSONObjectID]) =
+    protected def set(entity: DataSetMetaTransformation, id: Option[BSONObjectID]) =
       entity match {
         case x: CopyDataSetTransformation => x.copy(_id = id)
         case x: DropFieldsTransformation => x.copy(_id = id)
         case x: RenameFieldsTransformation => x.copy(_id = id)
         case x: ChangeFieldEnumsTransformation => x.copy(_id = id)
+        case x: MatchGroupsWithConfoundersTransformation => x.copy(_id = id)
       }
   }
 
-  implicit class DataSetTransformationExt(val dataSetImport: DataSetTransformation) extends AnyVal {
+  implicit class DataSetMetaTransformationExt(val dataSetImport: DataSetMetaTransformation) extends AnyVal {
 
     def copyWithTimestamps(timeCreated: Date, timeLastExecuted: Option[Date]) =
       dataSetImport match {
@@ -66,6 +73,7 @@ object DataSetTransformation {
         case x: DropFieldsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
         case x: RenameFieldsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
         case x: ChangeFieldEnumsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
+        case x: MatchGroupsWithConfoundersTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
       }
   }
 }

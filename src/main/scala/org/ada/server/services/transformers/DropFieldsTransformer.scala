@@ -8,7 +8,7 @@ import org.incal.core.dataaccess.Criterion._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class DropFieldsTransformer extends AbstractDataSetTransformer[DropFieldsTransformation] {
+private class DropFieldsTransformer extends AbstractDataSetTransformer[DropFieldsTransformation] {
 
   override protected def execInternal(
     spec: DropFieldsTransformation
@@ -36,6 +36,6 @@ class DropFieldsTransformer extends AbstractDataSetTransformer[DropFieldsTransfo
       inputStream <- sourceDsa.dataSetRepo.findAsStream(projection = fieldsToKeep.map(_.name))
 
     } yield
-      (sourceDsa, fieldsToKeep, Some(inputStream))
+      (sourceDsa, fieldsToKeep, inputStream)
   }
 }

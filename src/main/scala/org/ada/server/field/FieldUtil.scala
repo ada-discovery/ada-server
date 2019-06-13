@@ -13,7 +13,7 @@ import org.incal.core.util.ReflectionUtil
 import org.incal.core.util.ReflectionUtil.currentThreadClassLoader
 import org.ada.server.models.FieldTypeSpec
 import org.incal.core.FilterCondition
-import org.incal.core.FilterCondition.toCriterion
+import org.incal.core.FilterCondition.{toCriteria, toCriterion}
 import org.incal.core.dataaccess.Criterion
 import reactivemongo.bson.BSONObjectID
 import org.ada.server.models._

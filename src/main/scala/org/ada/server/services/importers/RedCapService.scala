@@ -100,7 +100,7 @@ trait RedCapService {
     instrument: Option[String] = None,
     instance: Option[Int] = None,
     projectId: Option[Int] = None
-  ): Future[Seq[JsObject]]
+  ): Future[Seq[LockRecordResponse]]
 }
 
 object RedCapLockAction extends Enumeration {
@@ -198,7 +198,7 @@ protected[services] class RedCapServiceWSImpl @Inject() (
     instrument: Option[String],
     instance: Option[Int],
     projectId: Option[Int]
-  ): Future[Seq[JsObject]] = {
+  ): Future[Seq[LockRecordResponse]] = {
     // post data
     val requestData: Map[String, String] = Map(
       "token" -> token,
@@ -218,7 +218,9 @@ protected[services] class RedCapServiceWSImpl @Inject() (
       "page" -> action.toString
     ) ++ Seq(projectId.map("pid" -> _.toString)).flatten.toMap
 
-    runRedCapQuery(requestData, queryParams)
+    runRedCapQuery(requestData, queryParams).map(jsons =>
+      jsons.map(_.as[LockRecordResponse])
+    )
   }
 
   // Helper methods
@@ -230,7 +232,12 @@ protected[services] class RedCapServiceWSImpl @Inject() (
     req.withQueryString(queryParams.toSeq:_*).post(requestData.map { case (a, b) => (a, Seq(b)) }).map { response =>
       try {
         handleErrorResponse(response)
-        response.json.as[JsArray].value.asInstanceOf[Seq[JsObject]]
+
+        response.json.asOpt[JsArray].map(
+          _.value.asInstanceOf[Seq[JsObject]]
+        ).getOrElse(
+          throw new AdaRestException(s"JSON array response expected but got ${response.body}.")
+        )
       } catch {
         case e: JsonParseException => {
           throw new AdaRestException("Couldn't parse Red Cap JSON response.")

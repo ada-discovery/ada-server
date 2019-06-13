@@ -3,13 +3,13 @@ package org.ada.server.runnables.core
 import javax.inject.Inject
 import org.ada.server.dataaccess.StreamSpec
 import org.ada.server.models.datatrans.{RenameFieldsTransformation, ResultDataSetSpec}
-import org.ada.server.services.transformers.RenameFieldsTransformer
+import org.ada.server.services.ServiceTypes.DataSetCentralTransformer
 import org.incal.core.runnables.{InputFutureRunnable, InputFutureRunnableExt}
 
-class ChangeFieldNames @Inject() (renameFieldsTransformer: RenameFieldsTransformer) extends InputFutureRunnableExt[ChangeFieldNamesSpec] {
+class ChangeFieldNames @Inject() (centralTransformer: DataSetCentralTransformer) extends InputFutureRunnableExt[ChangeFieldNamesSpec] {
 
   override def runAsFuture(input: ChangeFieldNamesSpec) =
-    renameFieldsTransformer.runAsFuture(
+    centralTransformer(
       RenameFieldsTransformation(
         sourceDataSetId = input.sourceDataSetId,
         fieldOldNewNames = input.oldFieldNames.zip(input.newFieldNames),

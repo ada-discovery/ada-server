@@ -5,7 +5,7 @@ import play.api.libs.json.{JsNull, JsObject}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class RenameFieldsTransformer extends AbstractDataSetTransformer[RenameFieldsTransformation] {
+private class RenameFieldsTransformer extends AbstractDataSetTransformer[RenameFieldsTransformation] {
 
   override protected val saveViewsAndFiltersFlag = false
 
@@ -36,6 +36,6 @@ class RenameFieldsTransformer extends AbstractDataSetTransformer[RenameFieldsTra
         trimmedJson ++ JsObject(replacedFieldValues)
       }
     } yield
-      (sourceDsa, newFields, Some(inputStream))
+      (sourceDsa, newFields, inputStream)
   }
 }

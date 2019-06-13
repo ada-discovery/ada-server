@@ -19,6 +19,6 @@ private class CopyDataSetTransformer extends AbstractDataSetTransformer[CopyData
       inputStream <- sourceDsa.dataSetRepo.findAsStream()
 
     } yield
-      (sourceDsa, fields, Some(inputStream))
+      (sourceDsa, fields, inputStream)
   }
 }

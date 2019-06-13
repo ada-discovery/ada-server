@@ -9,10 +9,8 @@ import org.ada.server.dataaccess.JsonReadonlyRepoExtra._
 import org.ada.server.dataaccess.JsonCrudRepoExtra._
 import org.ada.server.dataaccess.{JsonUtil, StreamSpec}
 import org.ada.server.util.MessageLogger
-import org.ada.server.field.FieldUtil.{fieldTypeOrdering, isNumeric}
-import org.ada.server.field.FieldUtil.{FieldOps, JsonFieldOps}
+import org.ada.server.field.FieldUtil.{FieldOps, JsonFieldOps, fieldTypeOrdering, isNumeric, specToField, toDataSetCriteria}
 import com.google.inject.ImplementedBy
-import org.ada.server.models._
 import org.ada.server.dataaccess.RepoTypes._
 import org.ada.server.dataaccess.dataset.{DataSetAccessor, DataSetAccessorFactory}
 import play.api.Logger
@@ -20,7 +18,7 @@ import play.api.libs.json.{JsObject, _}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import reactivemongo.bson.BSONObjectID
 import org.incal.core.dataaccess.Criterion.Infix
-import org.incal.core.dataaccess.{AscSort, Criterion}
+import org.incal.core.dataaccess.{AscSort, AsyncCrudRepo, Criterion}
 import org.incal.core.util.{GroupMapList, crossProduct, nonAlphanumericToUnderscore, retry, seqFutures}
 
 import scala.collection.mutable.ListBuffer
@@ -32,15 +30,15 @@ import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.stream.scaladsl.{Sink, Source, StreamConverters}
 import org.ada.server.{AdaException, AdaParseException}
 import org.ada.server.models._
-import org.ada.server.field.{FieldType, FieldTypeHelper, FieldTypeInferrer}
+import org.ada.server.field.{FieldType, FieldTypeHelper, FieldTypeInferrer, FieldUtil}
 import org.ada.server.models.ml._
 import org.ada.server.models._
 
 import scala.collection.Set
 import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
-import org.ada.server.calc.impl.{BasicStatsResult, MultiBasicStatsCalc}
 import org.ada.server.models.datatrans._
 import org.ada.server.services.ml.IOSeriesUtil
+import org.incal.core.Identity
 
 import scala.util.Random
 
@@ -54,30 +52,23 @@ trait DataSetService {
     fieldTypeIdsToExclude: Traversable[FieldTypeId.Value] = Nil
   ): Future[Unit]
 
-  def updateDictionaryFields(
+  def updateFields(
     dataSetId: String,
     newFields: Traversable[Field],
     deleteAndSave: Boolean,
     deleteNonReferenced: Boolean
   ): Future[Unit]
 
-  def updateDictionaryFields(
+  def updateFields(
     fieldRepo: FieldRepo,
     newFields: Traversable[Field],
     deleteAndSave: Boolean,
     deleteNonReferenced: Boolean
   ): Future[Unit]
 
-  def updateDictionary(
-    dataSetId: String,
-    fieldNameAndTypes: Traversable[(String, FieldTypeSpec)],
-    deleteAndSave: Boolean,
-    deleteNonReferenced: Boolean
-  ): Future[Unit]
-
-  def updateDictionary(
-    fieldRepo: FieldRepo,
-    fieldNameAndTypes: Traversable[(String, FieldTypeSpec)],
+  def updateCategories(
+    categoryRepo: CategoryRepo,
+    newFields: Traversable[Category],
     deleteAndSave: Boolean,
     deleteNonReferenced: Boolean
   ): Future[Unit]
@@ -233,16 +224,6 @@ trait DataSetService {
 
   def selfLink(
     spec: SelfLinkSpec
-  ): Future[Unit]
-
-  def matchGroups(
-    dataSetId: String,
-    derivedDataSetSpec: ResultDataSetSpec,
-    criteria: Seq[Criterion[Any]],
-    targetGroupFieldName: String,
-    confoundingFieldNames: Seq[String],
-    numericDistTolerance: Double,
-    targetGroupDisplayStringRatios: Seq[(String, Int)]
   ): Future[Unit]
 
   def extractPeaks(
@@ -564,7 +545,7 @@ class DataSetServiceImpl @Inject()(
       // save, update, or delete the fields
       _ <- {
         val fieldNameAndTypeSpecs = fieldNameAndTypes.map { case (fieldName, fieldType) => (fieldName, fieldType.spec)}
-        updateDictionary(fieldRepo, fieldNameAndTypeSpecs, false, false)
+        updateFieldSpecs(fieldRepo, fieldNameAndTypeSpecs, false, false)
       }
     } yield
       messageLogger.info(s"Dictionary inference for data set '${dataSetId}' successfully finished.")
@@ -935,7 +916,7 @@ class DataSetServiceImpl @Inject()(
             fieldNameTypesWoLink
         }
 
-        updateDictionary(spec.resultDataSetId, leftFieldNameAndTypes ++ rightFieldNameAndTypesWoLink, false, true)
+        updateFieldSpecs(spec.resultDataSetId, leftFieldNameAndTypes ++ rightFieldNameAndTypesWoLink, false, true)
       }
 
       // the right data set link->jsons
@@ -1230,7 +1211,7 @@ class DataSetServiceImpl @Inject()(
           }
         )
 
-        updateDictionaryFields(newDsa.fieldRepo, newFields, true, true)
+        updateFields(newDsa.fieldRepo, newFields, true, true)
       }
 
 
@@ -1283,7 +1264,7 @@ class DataSetServiceImpl @Inject()(
         )
 
         val fieldNameAndTypes = (preservedFields ++ newFields).map(field => (field.name, field.fieldTypeSpec))
-        updateDictionary(spec.resultDataSetId, fieldNameAndTypes, false, true)
+        updateFieldSpecs(spec.resultDataSetId, fieldNameAndTypes, false, true)
       }
 
       // delete all from the old data set
@@ -1337,7 +1318,7 @@ class DataSetServiceImpl @Inject()(
         )
 
         val fieldNameAndTypes = (preservedFields ++ newFields).map(field => (field.name, field.fieldTypeSpec))
-        updateDictionary(spec.resultDataSetId, fieldNameAndTypes, false, true)
+        updateFieldSpecs(spec.resultDataSetId, fieldNameAndTypes, false, true)
       }
 
 //      // delete all from the old data set
@@ -1590,7 +1571,7 @@ class DataSetServiceImpl @Inject()(
       (fieldName, jsonFieldTypeInferrer(jsons))
     }
 
-  override def updateDictionary(
+  private def updateFieldSpecs(
     dataSetId: String,
     fieldNameAndTypes: Traversable[(String, FieldTypeSpec)],
     deleteAndSave: Boolean,
@@ -1601,103 +1582,144 @@ class DataSetServiceImpl @Inject()(
     val dsa = dsaf(dataSetId).get
     val fieldRepo = dsa.fieldRepo
 
-    updateDictionary(fieldRepo, fieldNameAndTypes, deleteAndSave, deleteNonReferenced).map(_ =>
+    updateFieldSpecs(fieldRepo, fieldNameAndTypes, deleteAndSave, deleteNonReferenced).map(_ =>
       messageLogger.info(s"Dictionary update for '${dataSetId}' successfully finished.")
     )
   }
 
-  override def updateDictionaryFields(
-    dataSetId: String,
-    newFields: Traversable[Field],
-    deleteAndSave: Boolean,
-    deleteNonReferenced: Boolean
-  ): Future[Unit] = {
-    logger.info(s"Dictionary update for data set '${dataSetId}' initiated.")
-
-    val dsa = dsaf(dataSetId).get
-    val fieldRepo = dsa.fieldRepo
-
-    updateDictionaryFields(fieldRepo, newFields, deleteAndSave, deleteNonReferenced).map(_ =>
-      messageLogger.info(s"Dictionary update for '${dataSetId}' successfully finished.")
-    )
-  }
-
-  override def updateDictionary(
+  private def updateFieldSpecs(
     fieldRepo: FieldRepo,
     fieldNameAndTypes: Traversable[(String, FieldTypeSpec)],
     deleteAndSave: Boolean,
     deleteNonReferenced: Boolean
   ): Future[Unit] = {
-    val newFields = fieldNameAndTypes.map { case (fieldName, fieldType) =>
-      val stringEnums = fieldType.enumValues.map { case (from, to) => (from.toString, to) }
-      Field(fieldName, None, fieldType.fieldType, fieldType.isArray, stringEnums, fieldType.displayDecimalPlaces)
+    val newFields = fieldNameAndTypes.map { case (fieldName, fieldSpec) =>
+      specToField(fieldName, None, fieldSpec)
     }
-    updateDictionaryFields(fieldRepo, newFields, deleteAndSave, deleteNonReferenced)
+    updateFields(fieldRepo, newFields, deleteAndSave, deleteNonReferenced)
   }
 
-  override def updateDictionaryFields(
+  override def updateFields(
+    dataSetId: String,
+    newFields: Traversable[Field],
+    deleteAndSave: Boolean,
+    deleteNonReferenced: Boolean
+  ): Future[Unit] = {
+    logger.info(s"Dictionary update for data set '${dataSetId}' initiated.")
+
+    val dsa = dsaf(dataSetId).get
+    val fieldRepo = dsa.fieldRepo
+
+    updateFields(fieldRepo, newFields, deleteAndSave, deleteNonReferenced).map(_ =>
+      messageLogger.info(s"Dictionary update for '${dataSetId}' successfully finished.")
+    )
+  }
+
+  override def updateFields(
     fieldRepo: FieldRepo,
     newFields: Traversable[Field],
     deleteAndSave: Boolean,
     deleteNonReferenced: Boolean
   ): Future[Unit] = {
-    val newFieldNames = newFields.map(_.name).toSeq
+    // only field type, isArray, and enumValues are copied
+    // label is copied only if it's defined
+    def merge(oldField: Field, newField: Field) =
+      oldField.copy(
+        fieldType = newField.fieldType,
+        isArray = newField.isArray,
+        enumValues = newField.enumValues,
+        label = oldField.label match {
+          case Some(label) => Some(label)
+          case None => newField.label
+        }
+      )
+
+    updateItems(
+      fieldRepo,
+      newFields,
+      deleteAndSave,
+      deleteNonReferenced,
+      merge,
+      false
+    )
+  }
+
+  override def updateCategories(
+    categoryRepo: CategoryRepo,
+    newFields: Traversable[Category],
+    deleteAndSave: Boolean,
+    deleteNonReferenced: Boolean
+  ): Future[Unit] = {
+    // for merging (updating) always take a new category
+    def merge(oldCategory: Category, newCategory: Category) = newCategory
+
+    updateItems(
+      categoryRepo,
+      newFields,
+      deleteAndSave,
+      deleteNonReferenced,
+      merge
+    )
+  }
+
+  private def updateItems[E, ID](
+    repo: AsyncCrudRepo[E, ID],
+    newItems: Traversable[E],
+    deleteAndSave: Boolean,
+    deleteNonReferenced: Boolean,
+    mergeOldAndNew: (E, E) => E,
+    idOptional: Boolean = true)(
+    implicit identity: Identity[E, ID]
+  ): Future[Unit] = {
+    val newIdsAux = newItems.map(identity.of).flatten.toSeq
+    val newIds = if (idOptional) newIdsAux.map(Some(_)) else newIdsAux
 
     for {
-      // get the existing fields
-      referencedFields <-
-        fieldRepo.find(Seq(FieldIdentity.name #-> newFieldNames))
+      // get the existing items
+      referencedItems <- repo.find(Seq(identity.name #-> newIds))
+      referencedIdItemMap: Map[ID, E] = referencedItems.map(item => (identity.of(item).get, item)).toMap
 
-      referencedNameFieldMap = referencedFields.map(field => (field.name, field)).toMap
+      // get the non-existing items
+      nonReferencedItems <- repo.find(Seq(identity.name #!-> newIds))
 
-      // get the non-existing fields
-      nonReferencedFields <-
-        fieldRepo.find(Seq(FieldIdentity.name #!-> newFieldNames))
+      // items to save or update
+      itemsToSaveAndUpdate: Traversable[Either[E, E]] =
+        newItems.map { newItem =>
+          val id = identity.of(newItem)
+          id.map { id =>
+            referencedIdItemMap.get(id) match {
+              case None => Left(newItem) // to save
+              case Some(oldField) => Right(mergeOldAndNew(oldField, newItem)) // to update
+            }
+          }.getOrElse(
+            Left(newItem) // to save
+          )
+      }
 
-      // fields to save or update
-      fieldsToSaveAndUpdate: Traversable[Either[Field, Field]] =
-        newFields.map { newField =>
-          referencedNameFieldMap.get(newField.name) match {
+      // items to save
+      itemsToSave = itemsToSaveAndUpdate.map(_.left.toOption).flatten
 
-            case None => Left(newField)
+      // save the new items
+      _ <- repo.save(itemsToSave)
 
-            case Some(oldField) => Right(
-              oldField.copy(
-                fieldType = newField.fieldType,
-                isArray = newField.isArray,
-                enumValues = newField.enumValues,
-                label = oldField.label match {
-                  case Some(label) => Some(label)
-                  case None => newField.label
-                }
-              )
-            )
-          }
+      // items to update
+      itemsToUpdate = itemsToSaveAndUpdate.map(_.right.toOption).flatten
+
+      // update the existing items
+      _ <- if (deleteAndSave) {
+        val ids = itemsToUpdate.map(identity.of(_).getOrElse(throw new RuntimeException("No id provided but expected for update.")))
+        repo.delete(ids).flatMap { _ =>
+          repo.save(itemsToUpdate)
         }
+      } else
+        repo.update(itemsToUpdate)
 
-      // fields to save
-      fieldsToSave = fieldsToSaveAndUpdate.map(_.left.toOption).flatten
-
-      // save the new fields
-      _ <- fieldRepo.save(fieldsToSave)
-
-      // fields to update
-      fieldsToUpdate = fieldsToSaveAndUpdate.map(_.right.toOption).flatten
-
-      // update the existing fields
-      _ <- if (deleteAndSave)
-        fieldRepo.delete(fieldsToUpdate.map(_.name)).flatMap { _ =>
-          fieldRepo.save(fieldsToUpdate)
-        }
-      else
-        fieldRepo.update(fieldsToUpdate)
-
-      // remove the non-referenced fields if needed
-      _ <- if (deleteNonReferenced)
-        fieldRepo.delete(nonReferencedFields.map(_.name))
-      else
+      // remove the non-referenced items if needed
+      _ <- if (deleteNonReferenced) {
+        val ids = nonReferencedItems.map(identity.of(_).getOrElse(throw new RuntimeException("No id provided but expected for update.")))
+        repo.delete(ids)
+      } else
         Future(())
-
     } yield
       ()
   }
@@ -1748,7 +1770,7 @@ class DataSetServiceImpl @Inject()(
         items, originalFieldNameAndTypes, translationMap, true, true)
 
       // update the dictionary
-      _ <- updateDictionary(newFieldRepo, newFieldNameAndTypes, false, true)
+      _ <- updateFieldSpecs(newFieldRepo, newFieldNameAndTypes, false, true)
 
       // since we possible changed the dictionary (the data structure) we need to update the data set repo
       _ <- newDsa.updateDataSetRepo
@@ -1909,21 +1931,23 @@ class DataSetServiceImpl @Inject()(
 
       // delete all the new categories (if any)
       _ <- targetDsa.categoryRepo.deleteAll
+      _ <- targetDsa.categoryRepo.flushOps
+
+      // get the categories referenced by the fields
+      oldRefCategories <- sourceDsa.categoryRepo.find(Seq(CategoryIdentity.name #-> refCategoryIds.map(Some(_))))
 
       // save the referenced categories and collect new ids
-      newCategoryIds <- sourceDsa.categoryRepo.find(Seq(CategoryIdentity.name #-> refCategoryIds.map(Some(_)))).flatMap(categories =>
-        targetDsa.categoryRepo.save(categories.map(_.copy(_id = None)))
-      )
+      // important note: we save only referenced categories (with at least one field associated)
+      newCategoryIds <- targetDsa.categoryRepo.save(oldRefCategories.map(_.copy(_id = None)))
 
       // old -> new category id map
-      oldNewCategoryIdMap = refCategoryIds.zip(newCategoryIds.toSeq).toMap
+      oldNewCategoryIdMap = oldRefCategories.toSeq.map(_._id.get).zip(newCategoryIds.toSeq).toMap
 
       // new fields (with replaced category ids)
       newFields = fields.map(field => field.copy(categoryId = field.categoryId.flatMap(oldNewCategoryIdMap.get)))
 
       // delete all the new fields (if any)
       _ <- targetDsa.fieldRepo.deleteAll
-
       _ <- targetDsa.fieldRepo.flushOps
 
       // save the new fields (minus the dropped ones)
@@ -2500,211 +2524,6 @@ class DataSetServiceImpl @Inject()(
       jsons <- dataFuture
     } yield
       (jsons, fields.toSeq)
-  }
-
-  override def matchGroups(
-    dataSetId: String,
-    derivedDataSetSpec: ResultDataSetSpec,
-    criteria: Seq[Criterion[Any]],
-    targetGroupFieldName: String,
-    confoundingFieldNames: Seq[String],
-    numericDistTolerance: Double,
-    targetGroupSelectionRatios: Seq[(String, Int)]
-  ) = {
-    val dsa = dsaf(dataSetId).getOrElse(throw new AdaException(s"Data Set ${dataSetId} not found."))
-
-    // aux function to find group confounding values
-    def findGroupConfoundingValues(
-      fieldNameTypes: Seq[(String, FieldType[Any])])(
-      groupValueSelectionRatio: (Any, Int)
-    ): Future[(Int, ListBuffer[(BSONObjectID, Seq[Option[Any]])])] =
-      dsa.dataSetRepo.find(
-        criteria = criteria ++ Seq(targetGroupFieldName #== groupValueSelectionRatio._1),
-        projection = confoundingFieldNames ++ Seq(JsObjectIdentity.name)
-      ).map { jsons =>
-        val idValues = jsons.map { json =>
-          val id = (json \ JsObjectIdentity.name).as[BSONObjectID]
-          (id, json.toValues(fieldNameTypes))
-        }
-        (groupValueSelectionRatio._2, ListBuffer(Random.shuffle(idValues).toSeq :_*))
-      }
-
-    // aux function to get the list of availble values (boolean, enum supported only)
-    def availableValues(targetField: Field) = targetField.fieldType match {
-      case FieldTypeId.Enum => targetField.enumValues.keys.toSeq
-      case FieldTypeId.Boolean => Seq(true, false)
-      case _ => throw new AdaException(s"Only enum and boolean types are allowed for a target group field. Got ${targetField.fieldType}.")
-    }
-
-    for {
-      // confounding fields
-      confoundingFields <- dsa.fieldRepo.find(Seq(FieldIdentity.name #-> confoundingFieldNames)).map(_.toSeq)
-
-      // confounding field names and types
-      confoundingFieldNameTypes = confoundingFields.map(field => (field.name, ftf(field.fieldTypeSpec).asValueOf[Any]))
-
-      // filter numberic field types
-      numericFieldNameTypes = confoundingFieldNameTypes.filter { case (_, fieldType) => isNumeric(fieldType.spec.fieldType) }
-
-      // min-maxes for numeric fields
-      nameMinMaxMap <- Future.sequence(
-        numericFieldNameTypes.map { case (fieldName, fieldType) =>
-          minMaxDoubles(dsa.dataSetRepo, fieldName, fieldType, criteria).map(minMax => minMax.map((fieldName, _)))
-        }
-      ).map(_.flatten.toMap)
-
-      // target field
-      targetField <- dsa.fieldRepo.get(targetGroupFieldName).map(
-        _.getOrElse(throw new AdaException(s"Target field $targetGroupFieldName not found."))
-      )
-
-      // target field type
-      targetFieldType = ftf(targetField.fieldTypeSpec).asValueOf[Any]
-
-      // group values with selection ratios
-      groupValueSelectionRatios = targetGroupSelectionRatios match {
-        case Nil => availableValues(targetField).map((_, 1)) // default selection is one sample per group
-        case _ =>
-          targetGroupSelectionRatios.flatMap { case (displayString, ratio) =>
-            targetFieldType.displayStringToValue(displayString).map(value => (value, ratio))
-          }
-      }
-
-      // for each group value find samples for all confounders
-      selectCountConfoundingIdSamples <- Future.sequence {
-        groupValueSelectionRatios.map(
-          findGroupConfoundingValues(confoundingFieldNameTypes)
-        )
-      }
-
-      // collect ids of the matched samples
-      sampleIds = collectMatchedSampleIds(selectCountConfoundingIdSamples, confoundingFields, nameMinMaxMap, numericDistTolerance)
-
-      // input stream (for given ids)
-      inputStream <- dsa.dataSetRepo.findAsStream(Seq(JsObjectIdentity.name #-> sampleIds.toSeq))
-
-      // get all the fields
-      fields <- dsa.fieldRepo.find()
-
-      // save the derived data set with an input stream (also save filters and data views)
-      _ <- saveDerivedDataSet(dsa, derivedDataSetSpec, inputStream, fields.toSeq, StreamSpec(batchSize = Some(10)), true)
-    } yield
-      ()
-  }
-
-  private def minMaxDoubles[T](
-    dataRepo: JsonReadonlyRepo,
-    fieldName: String,
-    fieldType: FieldType[_],
-    criteria: Seq[Criterion[Any]]
-  ): Future[Option[(Double, Double)]] = {
-    val convert = doubleValue(fieldType.spec.fieldType)
-
-    // aux function to convert to double
-    def toDouble(jsValue: JsReadable): Option[Double] =
-      convert(fieldType.asValueOf[Any].jsonToValue(jsValue))
-
-    val maxFuture = dataRepo.max(fieldName, criteria, true).map(_.flatMap(toDouble))
-    val minFuture = dataRepo.min(fieldName, criteria, true).map(_.flatMap(toDouble))
-
-    for {
-      min <- minFuture
-      max <- maxFuture
-    } yield
-      (min, max).zipped.headOption
-  }
-
-  private def collectMatchedSampleIds(
-    selectCountConfoundingIdSamples: Seq[(Int, ListBuffer[(BSONObjectID, Seq[Option[Any]])])],
-    confoundingFields: Seq[Field],
-    fieldNameMinMaxMap: Map[String, (Double, Double)],
-    numericDistTolerance: Double
-  ): Traversable[BSONObjectID] = {
-    val nonEmptySelectCountConfoundingIdSamples = selectCountConfoundingIdSamples.filter(_._2.nonEmpty)
-
-    if (nonEmptySelectCountConfoundingIdSamples.isEmpty) {
-      Nil
-    } else {
-      nonEmptySelectCountConfoundingIdSamples.head._2.flatMap { case (id, matchingConfoundingSample) =>
-        val matchedGroupIdSamples = nonEmptySelectCountConfoundingIdSamples.tail.map { case (selectCount, confoundingIdSamples) =>
-          val bestSamples = findBestSampleMatches(matchingConfoundingSample, confoundingIdSamples, confoundingFields, fieldNameMinMaxMap, numericDistTolerance, selectCount)
-
-          // only if the number of samples is as expected return them, otherwise return Nil indicating a failure
-          if (bestSamples.size == selectCount) bestSamples else Nil
-        }
-
-        if (matchedGroupIdSamples.forall(_.nonEmpty)) {
-          // remove matched samples
-          selectCountConfoundingIdSamples.tail.zip(matchedGroupIdSamples).map {
-            case ((_, confoundingIdSamples), matchedGroupIdSamples) =>
-              confoundingIdSamples.--=(matchedGroupIdSamples)
-          }
-
-          // collect ids sand return
-          val ids = matchedGroupIdSamples.flatten.map(_._1)
-          Seq(id) ++ ids
-        } else
-          Nil
-      }
-    }
-  }
-
-  private def findBestSampleMatches(
-    matchingConfoundingSample: Seq[Option[Any]],
-    confoundingIdSamples: ListBuffer[(BSONObjectID, Seq[Option[Any]])],
-    confoundingFields: Seq[Field],
-    fieldNameMinMaxMap: Map[String, (Double, Double)],
-    numericDistTolerance: Double,
-    selectCount: Int
-  ): Seq[(BSONObjectID, Seq[Option[Any]])] = {
-    val matchedIdSamples = confoundingIdSamples.filter { case (_, confoundingSample) =>
-      (matchingConfoundingSample, confoundingSample, confoundingFields).zipped.forall { case (matchingValue, value, field) =>
-        (matchingValue.isEmpty && value.isEmpty) || field.isNumeric || (field.isCategorical && matchingValue.nonEmpty && value.nonEmpty && matchingValue.get == value.get)
-      }
-    }
-
-    val idSampleDistances = matchedIdSamples.map { case (id, confoundingSample) =>
-      val squareSum = (matchingConfoundingSample, confoundingSample, confoundingFields).zipped.map { case (matchingValue, value, field) =>
-        if (field.isNumeric) {
-          if (matchingValue.isEmpty && value.isEmpty)
-            0d
-          else {
-            val (min, max) = fieldNameMinMaxMap.get(field.name).getOrElse(
-              // not possible
-              throw new IllegalArgumentException(s"Min max for a numeric field ${field.name} not found.")
-            )
-
-            val toDouble = {
-              val convert = doubleValue(field.fieldType)
-              (value: Option[Any]) => convert(value).getOrElse(Double.PositiveInfinity)
-            }
-
-            val normalizedDiff = Math.abs(toDouble(matchingValue) - toDouble(value)) / Math.abs(max - min)
-
-            // square of normalized diff
-            normalizedDiff * normalizedDiff
-          }
-        } else
-          0d
-      }.sum
-
-      ((id, confoundingSample), Math.sqrt(squareSum))
-    }.filter { case (_, distance) => distance < Math.min(numericDistTolerance, Double.PositiveInfinity) }
-
-    idSampleDistances.sortBy(_._2).take(selectCount).map(_._1)
-  }
-
-  private def doubleValue(fieldTypeId: FieldTypeId.Value): Option[Any] => Option[Double] = {
-    // aux double conversion function
-    def toDouble[T](convert: T => Double)(value: Option[Any]): Option[Double] =
-      value.asInstanceOf[Option[T]].map(convert)
-
-    fieldTypeId match {
-      case FieldTypeId.Double => toDouble[Double](identity)(_)
-      case FieldTypeId.Integer => toDouble[Long](_.toDouble)(_)
-      case FieldTypeId.Date => toDouble[java.util.Date](_.getTime.toDouble)(_)
-      case _ => throw new IllegalArgumentException(s"Numeric type expected but got ${fieldTypeId}.")
-    }
   }
 
   private def logProgress(index: Int, granularity: Double, total: Int) =

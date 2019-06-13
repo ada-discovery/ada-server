@@ -89,7 +89,7 @@ private class TranSmartDataSetImporter extends AbstractDataSetImporter[TranSmart
             fields
           )
         } else {
-          dataSetService.updateDictionaryFields(dsa.fieldRepo, fields, true, true)
+          dataSetService.updateFields(dsa.fieldRepo, fields, true, true)
         }
       }
 
@@ -163,7 +163,7 @@ private class TranSmartDataSetImporter extends AbstractDataSetImporter[TranSmart
             fields
           )
         } else {
-          dataSetService.updateDictionaryFields(dsa.fieldRepo, fields, true, true)
+          dataSetService.updateFields(dsa.fieldRepo, fields, true, true)
         }
       }
 
@@ -232,7 +232,7 @@ private class TranSmartDataSetImporter extends AbstractDataSetImporter[TranSmart
           field.copy(label = Some(fieldLabel), categoryId = categoryId)
         }
 
-        dataSetService.updateDictionaryFields(fieldRepo, newFields, true, true)
+        dataSetService.updateFields(fieldRepo, newFields, true, true)
       }
     } yield
       logger.info(s"TranSMART dictionary inference and import for data set '${dataSetId}' successfully finished.")

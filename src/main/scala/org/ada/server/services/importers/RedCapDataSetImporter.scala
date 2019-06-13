@@ -381,7 +381,7 @@ private class RedCapDataSetImporter @Inject() (
       newFields = newFieldsWithEnumFlag.map(_._1)
 
       // save the fields
-      _ <- dataSetService.updateDictionaryFields(dataSetId, newFields, true, true)
+      _ <- dataSetService.updateFields(dataSetId, newFields, true, true)
     } yield
       newFieldsWithEnumFlag
   }

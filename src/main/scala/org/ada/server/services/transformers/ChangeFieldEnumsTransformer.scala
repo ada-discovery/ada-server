@@ -6,7 +6,7 @@ import org.incal.core.util.GroupMapList3
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ChangeFieldEnumsTransformer extends AbstractDataSetTransformer[ChangeFieldEnumsTransformation] {
+private class ChangeFieldEnumsTransformer extends AbstractDataSetMetaTransformer[ChangeFieldEnumsTransformation] {
 
   override protected def execInternal(
     spec: ChangeFieldEnumsTransformation
@@ -33,6 +33,6 @@ class ChangeFieldEnumsTransformer extends AbstractDataSetTransformer[ChangeField
         )
       )
     } yield
-      (sourceDsa, newFields, None)
+      (sourceDsa, newFields, Nil)
   }
 }
