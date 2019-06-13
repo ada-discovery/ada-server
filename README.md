@@ -7,7 +7,7 @@ This is a server part of Ada Discovery Analytics.
 All you need is **Scala 2.11**. To pull the library you have to add the following dependency to *build.sbt*
 
 ```
-"org.adada" %% "ada-server % "0.7.3.RC.9"
+"org.adada" %% "ada-server" % "0.7.3.RC.9"
 ```
 
 or to *pom.xml* (if you use maven)
