@@ -1,4 +1,4 @@
-# Ada Server [![version](https://img.shields.io/badge/version-0.7.3.RC.9-green.svg)](https://ada-discovery.org) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+# Ada Server [![version](https://img.shields.io/badge/version-0.7.3.RC.9-green.svg)](https://ada-discovery.org) [![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 This is a server part of Ada Discovery Analytics.
 
