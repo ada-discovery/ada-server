@@ -41,6 +41,7 @@ object DataSetTransformation {
   implicit val tupleFormat2 = TupleFormat[String, String, String]
   implicit val optionIntFormat = new OptionFormat[Int]
   implicit val tupleFormat3 = TupleFormat[String, Option[Int]]
+  implicit val linkedDataSetSpecFormat = Json.format[LinkedDataSetSpec]
 
   implicit val dataSetMetaTransformationFormat: Format[DataSetMetaTransformation] = new SubTypeFormat[DataSetMetaTransformation](
     Seq(
@@ -48,7 +49,9 @@ object DataSetTransformation {
       ManifestedFormat(Json.format[DropFieldsTransformation]),
       ManifestedFormat(Json.format[RenameFieldsTransformation]),
       ManifestedFormat(Json.format[ChangeFieldEnumsTransformation]),
-      ManifestedFormat(Json.format[MatchGroupsWithConfoundersTransformation])
+      ManifestedFormat(Json.format[MatchGroupsWithConfoundersTransformation]),
+      ManifestedFormat(Json.format[LinkTwoDataSetsTransformation]),
+      ManifestedFormat(Json.format[LinkMultiDataSetsTransformation])
     )
   )
 
@@ -62,6 +65,8 @@ object DataSetTransformation {
         case x: RenameFieldsTransformation => x.copy(_id = id)
         case x: ChangeFieldEnumsTransformation => x.copy(_id = id)
         case x: MatchGroupsWithConfoundersTransformation => x.copy(_id = id)
+        case x: LinkTwoDataSetsTransformation => x.copy(_id = id)
+        case x: LinkMultiDataSetsTransformation => x.copy(_id = id)
       }
   }
 
@@ -74,6 +79,8 @@ object DataSetTransformation {
         case x: RenameFieldsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
         case x: ChangeFieldEnumsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
         case x: MatchGroupsWithConfoundersTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
+        case x: LinkTwoDataSetsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
+        case x: LinkMultiDataSetsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
       }
   }
 }

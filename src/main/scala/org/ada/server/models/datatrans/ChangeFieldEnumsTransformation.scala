@@ -8,8 +8,10 @@ import reactivemongo.bson.BSONObjectID
 
 case class ChangeFieldEnumsTransformation(
   _id: Option[BSONObjectID] = None,
+
   sourceDataSetId: String,
   fieldNameOldNewEnums: Seq[(String, String, String)],
+
   scheduled: Boolean = false,
   scheduledTime: Option[ScheduledTime] = None,
   timeCreated: Date = new Date(),

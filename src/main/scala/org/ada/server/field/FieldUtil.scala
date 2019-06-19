@@ -156,6 +156,12 @@ object FieldUtil {
     def toDisplayString[T](
       namedFieldType: NamedFieldType[T]
     ) = namedFieldType._2.jsonToDisplayString(json \ namedFieldType._1)
+
+    def toDisplayStrings[T](
+      fieldNameTypes: Seq[NamedFieldType[T]]
+    ) = fieldNameTypes.map { case (fieldName, fieldType) =>
+      json.toDisplayString(fieldName, fieldType)
+    }
   }
 
   private implicit class InfixOp(val typ: Type) {

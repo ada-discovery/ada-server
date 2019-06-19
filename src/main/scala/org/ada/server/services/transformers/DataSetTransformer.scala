@@ -33,10 +33,8 @@ private[transformers] abstract class AbstractDataSetTransformer[T <: DataSetTran
   protected val ftf = FieldTypeHelper.fieldTypeFactory()
   protected val defaultCharset = "UTF-8"
 
-  protected val saveViewsAndFiltersFlag = true
-
   override def runAsFuture(spec: T) =
-    execInternal(spec).flatMap { case (sourceDsa, fields, inputSource) =>
+    execInternal(spec).flatMap { case (sourceDsa, fields, inputSource, saveViewsAndFiltersFlag) =>
       dataSetService.saveDerivedDataSet(
         sourceDsa,
         spec.resultDataSetSpec,
@@ -50,6 +48,7 @@ private[transformers] abstract class AbstractDataSetTransformer[T <: DataSetTran
   protected def execInternal(spec: T): Future[(
     DataSetAccessor,
     Traversable[Field],
-    Source[JsObject, _]
+    Source[JsObject, _],
+    Boolean // save views and filters
   )]
 }

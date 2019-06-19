@@ -8,9 +8,11 @@ import reactivemongo.bson.BSONObjectID
 
 case class DropFieldsTransformation(
   _id: Option[BSONObjectID] = None,
+
   sourceDataSetId: String,
   fieldNamesToKeep: Traversable[String],
   fieldNamesToDrop: Traversable[String],
+
   resultDataSetSpec: ResultDataSetSpec,
   streamSpec: StreamSpec,
   scheduled: Boolean = false,

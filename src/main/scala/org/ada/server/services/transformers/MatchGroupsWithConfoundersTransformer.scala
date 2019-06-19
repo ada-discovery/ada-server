@@ -23,6 +23,8 @@ import scala.util.Random
 
 private class MatchGroupsWithConfoundersTransformer extends AbstractDataSetTransformer[MatchGroupsWithConfoundersTransformation] {
 
+  private val saveViewsAndFilters = true
+
   override protected def execInternal(
     spec: MatchGroupsWithConfoundersTransformation
   ) = {
@@ -43,7 +45,7 @@ private class MatchGroupsWithConfoundersTransformer extends AbstractDataSetTrans
       // use all the fields
       fields <- sourceDsa.fieldRepo.find()
     } yield
-      (sourceDsa, fields, inputStream)
+      (sourceDsa, fields, inputStream, saveViewsAndFilters)
   }
 
   private def matchedGroupsStream(
@@ -51,12 +53,6 @@ private class MatchGroupsWithConfoundersTransformer extends AbstractDataSetTrans
     dsa: DataSetAccessor,
     criteria: Seq[Criterion[Any]]
   ): Future[Source[JsObject, _]] = {
-//    // initialize ratios (if not provided)
-//    val ratios = spec.targetGroupSelectionRatios match {
-//      case Nil => Stream.continually(1)
-//      case _ => spec.targetGroupSelectionRatios
-//    }
-
     val targetGroupSelectionRatios = spec.targetGroupDisplayStringRatios.map { case (string, ratio) => (string, ratio.getOrElse(1)) }
 
     // aux function to find group confounding values

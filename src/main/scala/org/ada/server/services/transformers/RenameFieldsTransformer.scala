@@ -7,7 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 private class RenameFieldsTransformer extends AbstractDataSetTransformer[RenameFieldsTransformation] {
 
-  override protected val saveViewsAndFiltersFlag = false
+  private val saveViewsAndFilters = false
 
   override protected def execInternal(
     spec: RenameFieldsTransformation
@@ -36,6 +36,6 @@ private class RenameFieldsTransformer extends AbstractDataSetTransformer[RenameF
         trimmedJson ++ JsObject(replacedFieldValues)
       }
     } yield
-      (sourceDsa, newFields, inputStream)
+      (sourceDsa, newFields, inputStream, saveViewsAndFilters)
   }
 }

@@ -8,8 +8,10 @@ import reactivemongo.bson.BSONObjectID
 
 case class RenameFieldsTransformation(
   _id: Option[BSONObjectID] = None,
+
   sourceDataSetId: String,
   fieldOldNewNames: Seq[(String, String)],
+
   resultDataSetSpec: ResultDataSetSpec,
   streamSpec: StreamSpec,
   scheduled: Boolean = false,

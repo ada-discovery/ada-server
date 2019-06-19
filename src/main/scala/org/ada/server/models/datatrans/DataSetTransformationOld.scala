@@ -1,5 +1,6 @@
 package org.ada.server.models.datatrans
 
+import org.ada.server.dataaccess.StreamSpec
 import org.ada.server.json.EnumFormat
 import org.ada.server.models.{ScheduledTime, StorageType}
 import org.incal.spark_ml.models.VectorScalerType
@@ -53,38 +54,6 @@ case class SeriesTransformationSpec(
   override def toString =
     fieldPath + "_" + transformType.toString
 }
-
-case class DataSetLinkSpec(
-  leftSourceDataSetId: String,
-  rightSourceDataSetId: String,
-  leftLinkFieldNames: Seq[String],
-  rightLinkFieldNames: Seq[String],
-  leftPreserveFieldNames: Traversable[String],
-  rightPreserveFieldNames: Traversable[String],
-  addDataSetIdToRightFieldNames: Boolean,
-  resultDataSetSpec: ResultDataSetSpec,
-  processingBatchSize: Option[Int] = None,
-  saveBatchSize: Option[Int] = None,
-  backpressureBufferSize: Option[Int] = None,
-  parallelism: Option[Int] = None
-) extends DataSetTransformation2 {
-  def linkFieldNames = leftLinkFieldNames.zip(rightLinkFieldNames)
-}
-
-case class MultiDataSetLinkSpec(
-  leftSourceDataSetId: String,
-  rightSourceDataSetIds: Seq[String],
-  leftLinkFieldNames: Seq[String],
-  rightLinkFieldNames: Seq[Seq[String]],
-  leftPreserveFieldNames: Traversable[String],
-  rightPreserveFieldNames: Seq[Traversable[String]],
-  addDataSetIdToRightFieldNames: Boolean,
-  resultDataSetSpec: ResultDataSetSpec,
-  processingBatchSize: Option[Int] = None,
-  saveBatchSize: Option[Int] = None,
-  backpressureBufferSize: Option[Int] = None,
-  parallelism: Option[Int] = None
-) extends DataSetTransformation2
 
 case class SelfLinkSpec(
   dataSetId: String,

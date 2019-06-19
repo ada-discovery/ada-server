@@ -6,6 +6,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 private class CopyDataSetTransformer extends AbstractDataSetTransformer[CopyDataSetTransformation] {
 
+  private val saveViewsAndFilters = true
+
   override protected def execInternal(
     spec: CopyDataSetTransformation
   ) = {
@@ -19,6 +21,6 @@ private class CopyDataSetTransformer extends AbstractDataSetTransformer[CopyData
       inputStream <- sourceDsa.dataSetRepo.findAsStream()
 
     } yield
-      (sourceDsa, fields, inputStream)
+      (sourceDsa, fields, inputStream, saveViewsAndFilters)
   }
 }

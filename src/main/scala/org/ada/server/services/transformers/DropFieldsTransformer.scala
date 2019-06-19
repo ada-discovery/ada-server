@@ -10,6 +10,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 private class DropFieldsTransformer extends AbstractDataSetTransformer[DropFieldsTransformation] {
 
+  private val saveViewsAndFilters = false
+
   override protected def execInternal(
     spec: DropFieldsTransformation
   ) = {
@@ -36,6 +38,6 @@ private class DropFieldsTransformer extends AbstractDataSetTransformer[DropField
       inputStream <- sourceDsa.dataSetRepo.findAsStream(projection = fieldsToKeep.map(_.name))
 
     } yield
-      (sourceDsa, fieldsToKeep, inputStream)
+      (sourceDsa, fieldsToKeep, inputStream, saveViewsAndFilters)
   }
 }

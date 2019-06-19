@@ -6,15 +6,15 @@ import org.ada.server.dataaccess.StreamSpec
 import org.ada.server.models.ScheduledTime
 import reactivemongo.bson.BSONObjectID
 
-case class MatchGroupsWithConfoundersTransformation(
+case class LinkTwoDataSetsTransformation(
   _id: Option[BSONObjectID] = None,
 
-  sourceDataSetId: String,
-  filterId: Option[BSONObjectID] = None,
-  targetGroupFieldName: String,
-  confoundingFieldNames: Seq[String],
-  numericDistTolerance: Double,
-  targetGroupDisplayStringRatios: Seq[(String, Option[Int])] = Nil,
+  leftSourceDataSetId: String,
+  rightSourceDataSetId: String,
+  linkFieldNames: Seq[(String, String)],
+  leftFieldNamesToKeep: Traversable[String] = Nil,
+  rightFieldNamesToKeep: Traversable[String] = Nil,
+  addDataSetIdToRightFieldNames: Boolean = true,
 
   resultDataSetSpec: ResultDataSetSpec,
   streamSpec: StreamSpec,
@@ -23,5 +23,5 @@ case class MatchGroupsWithConfoundersTransformation(
   timeCreated: Date = new Date(),
   timeLastExecuted: Option[Date] = None
 ) extends DataSetTransformation {
-  override val sourceDataSetIds = Seq(sourceDataSetId)
+  override val sourceDataSetIds = Seq(leftSourceDataSetId, rightSourceDataSetId)
 }

@@ -8,8 +8,10 @@ import reactivemongo.bson.BSONObjectID
 
 case class CopyDataSetTransformation(
   _id: Option[BSONObjectID] = None,
+
   sourceDataSetId: String,
   resultDataSetSpec: ResultDataSetSpec,
+
   streamSpec: StreamSpec,
   scheduled: Boolean = false,
   scheduledTime: Option[ScheduledTime] = None,
