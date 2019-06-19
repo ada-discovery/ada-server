@@ -4,7 +4,7 @@ import java.util.Calendar
 
 import akka.actor.{ActorSystem, Cancellable}
 import org.ada.server.AdaException
-import org.ada.server.models.{Schedulable, ScheduledTime}
+import org.ada.server.models.{Schedulable, ScheduledTime, WeekDay}
 import org.incal.core.Identity
 import org.incal.core.dataaccess.AsyncReadonlyRepo
 import play.api.Logger
@@ -91,36 +91,47 @@ protected[services] abstract class SchedulerImpl[IN <: Schedulable, ID] (
     }
 
   private def toDelayAndInterval(scheduledTime: ScheduledTime): (FiniteDuration, FiniteDuration) = {
+    val weekDay = scheduledTime.weekDay
     val hour = scheduledTime.hour
     val minute = scheduledTime.minute
     val second = scheduledTime.second
 
-    val interval = if (hour.isDefined)
-      1.day
-    else if (minute.isDefined)
-      1.hour
-    else if (second.isDefined)
-      1.minute
-    else
-      throw new AdaException("Hour, minute, or second have to be defined.")
+    val interval =
+      if (weekDay.isDefined)
+        7.days
+      else if (hour.isDefined)
+        1.day
+      else if (minute.isDefined)
+        1.hour
+      else if (second.isDefined)
+        1.minute
+      else
+        throw new AdaException("Week day, hour, minute, or second have to be defined.")
 
     val now = Calendar.getInstance()
+
     val nextTime = Calendar.getInstance()
+
+    if (weekDay.isDefined)
+      nextTime.set(Calendar.DAY_OF_WEEK, weekDay.get.day)
+
     if (hour.isDefined)
       nextTime.set(Calendar.HOUR_OF_DAY, hour.get)
+
     if (minute.isDefined)
       nextTime.set(Calendar.MINUTE, minute.get)
+
     if (second.isDefined)
       nextTime.set(Calendar.SECOND, second.get)
 
     val timeDiffMs = nextTime.getTimeInMillis - now.getTimeInMillis
+
+    val intervalMillis = interval.toMillis
+
     val initialDelayMs =
       if (timeDiffMs < 0) {
-        val adjustedDelay = timeDiffMs - timeDiffMs * (timeDiffMs / interval.toMillis)
-        if (adjustedDelay < 0)
-          adjustedDelay + interval.toMillis
-        else
-          adjustedDelay
+        val adjustedDelay = timeDiffMs - intervalMillis * (timeDiffMs / intervalMillis)
+        if (adjustedDelay < 0) adjustedDelay + intervalMillis else adjustedDelay
       } else
         timeDiffMs
 

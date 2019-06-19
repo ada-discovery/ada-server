@@ -7,7 +7,7 @@ import scala.reflect.runtime.universe.TypeTag
 private class LinkTwoDataSetsTransformer @Inject()(multiTransformer: LinkMultiDataSetsTransformer) extends DataSetTransformer[LinkTwoDataSetsTransformation] {
 
   // just delegates to LinkMultiDataSetsTransformer
-  override protected def runAsFuture(
+  override def runAsFuture(
     spec: LinkTwoDataSetsTransformation
   ) = {
     multiTransformer.runAsFuture(

@@ -4,7 +4,7 @@ import akka.stream.scaladsl.StreamConverters
 import org.ada.server.AdaException
 import org.ada.server.dataaccess.dataset.DataSetAccessor
 import org.ada.server.field.FieldType
-import org.ada.server.field.FieldUtil.{JsonFieldOps, fieldTypeOrdering, NamedFieldType}
+import org.ada.server.field.FieldUtil.{JsonFieldOps, FieldOps, fieldTypeOrdering, NamedFieldType}
 import org.ada.server.models.DataSetFormattersAndIds.{FieldIdentity, JsObjectIdentity}
 import org.ada.server.models.Field
 import org.ada.server.models.datatrans.{LinkMultiDataSetsTransformation, LinkedDataSetSpec}
@@ -96,12 +96,12 @@ private class LinkMultiDataSetsTransformer extends AbstractDataSetTransformer[Li
       }
     } yield {
       // collect field types (in order) for the link
-      val nameFieldSpecMap = fields.map(field => (field.name, field.fieldTypeSpec)).toMap
+      val nameFieldMap = fields.map(field => (field.name, field)).toMap
+
       val linkFieldTypes = spec.linkFieldNames.map { fieldName =>
-        val fieldTypeSpec = nameFieldSpecMap.get(fieldName).getOrElse(
+        nameFieldMap.get(fieldName).map(_.toNamedTypeAny).getOrElse(
           throw new AdaException(s"Link field $fieldName not found.")
         )
-        (fieldName, ftf(fieldTypeSpec))
       }
 
       LinkedDataSetInfo(dsa, spec.linkFieldNames, fields, linkFieldTypes)
@@ -112,7 +112,7 @@ private class LinkMultiDataSetsTransformer extends AbstractDataSetTransformer[Li
     dsa: DataSetAccessor,
     linkFieldNames: Seq[String],
     fields: Traversable[Field],
-    linkFieldTypes: Seq[NamedFieldType[_]]
+    linkFieldTypes: Seq[NamedFieldType[Any]]
   ) {
     val fieldNames = fields.map(_.name)
   }

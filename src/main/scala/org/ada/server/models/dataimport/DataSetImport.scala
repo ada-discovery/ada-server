@@ -2,7 +2,7 @@ package org.ada.server.models.dataimport
 
 import org.ada.server.models._
 import org.ada.server.dataaccess.BSONObjectIdentity
-import org.ada.server.json.{ManifestedFormat, SubTypeFormat}
+import org.ada.server.json.{EnumFormat, ManifestedFormat, SubTypeFormat}
 import reactivemongo.bson.BSONObjectID
 import java.util.Date
 
@@ -23,6 +23,7 @@ trait DataSetImport extends Schedulable {
 }
 
 object DataSetImport {
+  implicit val weekDayFormat = EnumFormat(WeekDay)
   implicit val scheduleTimeFormat = Json.format[ScheduledTime]
   implicit val dataSetSettingFormat = DataSetFormattersAndIds.dataSetSettingFormat
   implicit val dataViewFormat = DataView.dataViewFormat

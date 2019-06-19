@@ -4,7 +4,7 @@ import java.util.Date
 
 import org.ada.server.dataaccess.{BSONObjectIdentity, StreamSpec}
 import org.ada.server.json._
-import org.ada.server.models.{Schedulable, ScheduledTime, StorageType}
+import org.ada.server.models.{Schedulable, ScheduledTime, StorageType, WeekDay}
 import play.api.libs.json.{Format, Json}
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONFormats._
@@ -33,6 +33,7 @@ case class ResultDataSetSpec(
 
 object DataSetTransformation {
 
+  implicit val weekDayFormat = EnumFormat(WeekDay)
   implicit val scheduleTimeFormat = Json.format[ScheduledTime]
   implicit val storageTypeFormat = EnumFormat(StorageType)
   implicit val resultDataSetSpecFormat = Json.format[ResultDataSetSpec]
