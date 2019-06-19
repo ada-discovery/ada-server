@@ -4,7 +4,7 @@ import java.util.Calendar
 
 import akka.actor.{ActorSystem, Cancellable}
 import org.ada.server.AdaException
-import org.ada.server.models.{Schedulable, ScheduledTime, WeekDay}
+import org.ada.server.models.{Schedulable, ScheduledTime}
 import org.incal.core.Identity
 import org.incal.core.dataaccess.AsyncReadonlyRepo
 import play.api.Logger
