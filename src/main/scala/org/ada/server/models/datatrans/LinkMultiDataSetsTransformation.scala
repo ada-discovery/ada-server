@@ -19,7 +19,22 @@ case class LinkMultiDataSetsTransformation(
   timeCreated: Date = new Date(),
   timeLastExecuted: Option[Date] = None
 ) extends DataSetTransformation {
+
   override val sourceDataSetIds = linkedDataSetSpecs.map(_.dataSetId)
+
+  override def copyCore(
+    __id: Option[BSONObjectID],
+    _timeCreated: Date,
+    _timeLastExecuted: Option[Date],
+    _scheduled: Boolean,
+    _scheduledTime: Option[ScheduledTime]
+  ) = copy(
+    _id = __id,
+    timeCreated = _timeCreated,
+    timeLastExecuted = _timeLastExecuted,
+    scheduled = _scheduled,
+    scheduledTime = _scheduledTime
+  )
 }
 
 case class LinkedDataSetSpec(

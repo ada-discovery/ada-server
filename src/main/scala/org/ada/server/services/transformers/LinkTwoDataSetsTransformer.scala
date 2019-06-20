@@ -4,7 +4,7 @@ import javax.inject.Inject
 import org.ada.server.models.datatrans.{LinkMultiDataSetsTransformation, LinkTwoDataSetsTransformation, LinkedDataSetSpec}
 import scala.reflect.runtime.universe.TypeTag
 
-private class LinkTwoDataSetsTransformer @Inject()(multiTransformer: LinkMultiDataSetsTransformer) extends DataSetTransformer[LinkTwoDataSetsTransformation] {
+private class LinkTwoDataSetsTransformer @Inject()(multiTransformer: LinkMultiDataSetsTransformer) extends AbstractDataSetTransformer[LinkTwoDataSetsTransformation] {
 
   // just delegates to LinkMultiDataSetsTransformer
   override def runAsFuture(
@@ -23,5 +23,5 @@ private class LinkTwoDataSetsTransformer @Inject()(multiTransformer: LinkMultiDa
     )
   }
 
-  override protected implicit val typeTag = implicitly[TypeTag[LinkTwoDataSetsTransformation]]
+  protected def execInternal(spec: LinkTwoDataSetsTransformation) = ??? // not called
 }

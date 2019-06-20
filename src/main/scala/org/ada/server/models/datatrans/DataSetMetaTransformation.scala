@@ -15,6 +15,14 @@ trait DataSetMetaTransformation extends Schedulable {
   val timeLastExecuted: Option[Date]
 
   val sourceDataSetIds: Seq[String]
+
+  def copyCore(
+    _id: Option[BSONObjectID],
+    timeCreated: Date,
+    timeLastExecuted: Option[Date],
+    scheduled: Boolean,
+    scheduledTime: Option[ScheduledTime]
+  ): DataSetMetaTransformation
 }
 
 trait DataSetTransformation extends DataSetMetaTransformation {
@@ -60,28 +68,6 @@ object DataSetTransformation {
     def of(entity: DataSetMetaTransformation): Option[BSONObjectID] = entity._id
 
     protected def set(entity: DataSetMetaTransformation, id: Option[BSONObjectID]) =
-      entity match {
-        case x: CopyDataSetTransformation => x.copy(_id = id)
-        case x: DropFieldsTransformation => x.copy(_id = id)
-        case x: RenameFieldsTransformation => x.copy(_id = id)
-        case x: ChangeFieldEnumsTransformation => x.copy(_id = id)
-        case x: MatchGroupsWithConfoundersTransformation => x.copy(_id = id)
-        case x: LinkTwoDataSetsTransformation => x.copy(_id = id)
-        case x: LinkMultiDataSetsTransformation => x.copy(_id = id)
-      }
-  }
-
-  implicit class DataSetMetaTransformationExt(val dataSetImport: DataSetMetaTransformation) extends AnyVal {
-
-    def copyWithTimestamps(timeCreated: Date, timeLastExecuted: Option[Date]) =
-      dataSetImport match {
-        case x: CopyDataSetTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-        case x: DropFieldsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-        case x: RenameFieldsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-        case x: ChangeFieldEnumsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-        case x: MatchGroupsWithConfoundersTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-        case x: LinkTwoDataSetsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-        case x: LinkMultiDataSetsTransformation => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-      }
+      entity.copyCore(id, entity.timeCreated, entity.timeLastExecuted, entity.scheduled, entity.scheduledTime)
   }
 }

@@ -20,6 +20,14 @@ trait DataSetImport extends Schedulable {
   val setting: Option[DataSetSetting]
 
   val dataView: Option[DataView]
+
+  def copyCore(
+    _id: Option[BSONObjectID],
+    timeCreated: Date,
+    timeLastExecuted: Option[Date],
+    scheduled: Boolean,
+    scheduledTime: Option[ScheduledTime]
+  ): DataSetImport
 }
 
 object DataSetImport {
@@ -43,26 +51,6 @@ object DataSetImport {
     def of(entity: DataSetImport): Option[BSONObjectID] = entity._id
 
     protected def set(entity: DataSetImport, id: Option[BSONObjectID]) =
-      entity match {
-        case x: CsvDataSetImport => x.copy(_id = id)
-        case x: JsonDataSetImport => x.copy(_id = id)
-        case x: SynapseDataSetImport => x.copy(_id = id)
-        case x: TranSmartDataSetImport => x.copy(_id = id)
-        case x: RedCapDataSetImport => x.copy(_id = id)
-        case x: EGaitDataSetImport => x.copy(_id = id)
-      }
-  }
-
-  implicit class DataSetImportExt(val dataSetImport: DataSetImport) extends AnyVal {
-
-    def copyWithTimestamps(timeCreated: Date, timeLastExecuted: Option[Date]): DataSetImport =
-      dataSetImport match {
-        case x: CsvDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-        case x: JsonDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-        case x: SynapseDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-        case x: TranSmartDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-        case x: RedCapDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-        case x: EGaitDataSetImport => x.copy(timeCreated = timeCreated, timeLastExecuted = timeLastExecuted)
-      }
+      entity.copyCore(id, entity.timeCreated, entity.timeLastExecuted, entity.scheduled, entity.scheduledTime)
   }
 }

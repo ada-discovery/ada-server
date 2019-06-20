@@ -14,6 +14,22 @@ case class ScheduledTime(
   second: Option[Int]
 )
 
+object ScheduledTime {
+
+  def fillZeroes(scheduledTime: ScheduledTime): ScheduledTime = {
+    def value(int: Option[Int]) = Some(int.getOrElse(0))
+
+    if (scheduledTime.weekDay.isDefined) {
+      scheduledTime.copy(hour = value(scheduledTime.hour), minute = value(scheduledTime.minute), second = value(scheduledTime.second))
+    } else if (scheduledTime.hour.isDefined) {
+      scheduledTime.copy(minute = value(scheduledTime.minute), second = value(scheduledTime.second))
+    } else if (scheduledTime.minute.isDefined) {
+      scheduledTime.copy(second = value(scheduledTime.second))
+    } else
+      scheduledTime
+  }
+}
+
 object WeekDay extends Enumeration {
 
   case class Val(day: Int) extends super.Val

@@ -22,4 +22,19 @@ case class RedCapDataSetImport(
   dataView: Option[DataView] = None,
   timeCreated: Date = new Date(),
   timeLastExecuted: Option[Date] = None
-) extends DataSetImport
+) extends DataSetImport {
+
+  override def copyCore(
+    __id: Option[BSONObjectID],
+    _timeCreated: Date,
+    _timeLastExecuted: Option[Date],
+    _scheduled: Boolean,
+    _scheduledTime: Option[ScheduledTime]
+  ) = copy(
+    _id = __id,
+    timeCreated = _timeCreated,
+    timeLastExecuted = _timeLastExecuted,
+    scheduled = _scheduled,
+    scheduledTime = _scheduledTime
+  )
+}

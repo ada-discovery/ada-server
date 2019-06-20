@@ -23,5 +23,20 @@ case class LinkTwoDataSetsTransformation(
   timeCreated: Date = new Date(),
   timeLastExecuted: Option[Date] = None
 ) extends DataSetTransformation {
+
   override val sourceDataSetIds = Seq(leftSourceDataSetId, rightSourceDataSetId)
+
+  override def copyCore(
+    __id: Option[BSONObjectID],
+    _timeCreated: Date,
+    _timeLastExecuted: Option[Date],
+    _scheduled: Boolean,
+    _scheduledTime: Option[ScheduledTime]
+  ) = copy(
+    _id = __id,
+    timeCreated = _timeCreated,
+    timeLastExecuted = _timeLastExecuted,
+    scheduled = _scheduled,
+    scheduledTime = _scheduledTime
+  )
 }

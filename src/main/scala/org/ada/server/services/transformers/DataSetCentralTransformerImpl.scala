@@ -29,16 +29,15 @@ protected[services] class DataSetCentralTransformerImpl @Inject()(
   override protected def postExec(
     input: DataSetMetaTransformation,
     exec: DataSetMetaTransformer[DataSetMetaTransformation]
-  ): Future[Unit] = {
-    val futureUpdate =
-      if (input._id.isDefined) {
+  ) =
+    for {
+      _ <- if (input._id.isDefined) {
         // update if id exists, i.e., it's a persisted transformation
-        val updatedInput = input.copyWithTimestamps(timeCreated = input.timeCreated, timeLastExecuted = Some(new Date()))
-        repo.update(updatedInput)
-      } else Future(())
+        val updatedInput = input.copyCore(input._id, input.timeCreated, Some(new Date()), input.scheduled, input.scheduledTime)
+        repo.update(updatedInput).map(_ => ())
+      } else
+        Future(())
 
-    futureUpdate.map(_ =>
+    } yield
       messageLogger.info(s"Transformation of data set(s) '${input.sourceDataSetIds.mkString(", ")}' successfully finished.")
-    )
-  }
 }

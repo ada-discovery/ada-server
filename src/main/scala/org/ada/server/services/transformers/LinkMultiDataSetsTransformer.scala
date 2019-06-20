@@ -4,11 +4,11 @@ import akka.stream.scaladsl.StreamConverters
 import org.ada.server.AdaException
 import org.ada.server.dataaccess.dataset.DataSetAccessor
 import org.ada.server.field.FieldType
-import org.ada.server.field.FieldUtil.{JsonFieldOps, FieldOps, fieldTypeOrdering, NamedFieldType}
+import org.ada.server.field.FieldUtil.{FieldOps, JsonFieldOps, NamedFieldType, fieldTypeOrdering}
 import org.ada.server.models.DataSetFormattersAndIds.{FieldIdentity, JsObjectIdentity}
 import org.ada.server.models.Field
 import org.ada.server.models.datatrans.{LinkMultiDataSetsTransformation, LinkedDataSetSpec}
-import org.incal.core.dataaccess.AscSort
+import org.incal.core.dataaccess.{AscSort, NotEqualsNullCriterion}
 import org.incal.core.util.crossProduct
 import org.incal.core.dataaccess.Criterion._
 import play.api.libs.json.{JsObject, Json}
@@ -27,7 +27,6 @@ private class LinkMultiDataSetsTransformer extends AbstractDataSetTransformer[Li
 
     if (spec.linkedDataSetSpecs.size < 2)
       throw new AdaException(s"LinkMultiDataSetsTransformer expects at least two data sets but got ${spec.linkedDataSetSpecs.size}.")
-
 
     for {
       // prepare data set infos with initialized accessors and load fields
@@ -122,10 +121,18 @@ private class LinkMultiDataSetsTransformer extends AbstractDataSetTransformer[Li
     linkRightJsonsMaps: Seq[Map[Seq[String], Traversable[JsObject]]])(
     json: JsObject
   ): List[JsObject] = {
-    val link = json.toDisplayStrings(leftDataSetInfo.linkFieldTypes)
     val jsonId = (json \ JsObjectIdentity.name).asOpt[BSONObjectID]
 
-    val rightJsonsCrossed = crossProduct(linkRightJsonsMaps.flatMap(_.get(link)))
+    // check if the link is defined (i.e. all values are defined)
+    val isLinkDefined = json.toValues(leftDataSetInfo.linkFieldTypes).forall(_.isDefined)
+
+    // perform a cross-product of the right jsons (if the link is defined)
+    val rightJsonsCrossed =
+      if (isLinkDefined) {
+        val link = json.toDisplayStrings(leftDataSetInfo.linkFieldTypes)
+        crossProduct(linkRightJsonsMaps.flatMap(_.get(link)))
+      } else
+        Nil
 
     if (rightJsonsCrossed.isEmpty) {
       List(json)
@@ -145,7 +152,10 @@ private class LinkMultiDataSetsTransformer extends AbstractDataSetTransformer[Li
     addDataSetIdToRightFieldNames: Boolean
   ): Future[Map[Seq[String], Traversable[JsObject]]] =
     for {
-      jsons <- dataSetInfo.dsa.dataSetRepo.find(projection = dataSetInfo.fieldNames)
+      jsons <- dataSetInfo.dsa.dataSetRepo.find(
+        criteria = dataSetInfo.linkFieldNames.map(NotEqualsNullCriterion),  // all of the link fields must be defined (not null)
+        projection = dataSetInfo.fieldNames
+      )
     } yield {
       val linkFieldNameSet = dataSetInfo.linkFieldNames.toSet
       jsons.map { json =>

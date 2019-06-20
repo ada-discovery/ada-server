@@ -17,5 +17,20 @@ case class ChangeFieldEnumsTransformation(
   timeCreated: Date = new Date(),
   timeLastExecuted: Option[Date] = None
 ) extends DataSetMetaTransformation {
+
   override val sourceDataSetIds = Seq(sourceDataSetId)
+
+  override def copyCore(
+    __id: Option[BSONObjectID],
+    _timeCreated: Date,
+    _timeLastExecuted: Option[Date],
+    _scheduled: Boolean,
+    _scheduledTime: Option[ScheduledTime]
+  ) = copy(
+    _id = __id,
+    timeCreated = _timeCreated,
+    timeLastExecuted = _timeLastExecuted,
+    scheduled = _scheduled,
+    scheduledTime = _scheduledTime
+  )
 }

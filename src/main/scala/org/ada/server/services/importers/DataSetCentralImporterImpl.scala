@@ -28,16 +28,15 @@ protected[services] class DataSetCentralImporterImpl @Inject()(
   override protected def postExec(
     input: DataSetImport,
     exec: DataSetImporter[DataSetImport]
-  ): Future[Unit] = {
-    val futureUpdate =
-      if (input._id.isDefined) {
+  ) =
+    for {
+      _ <- if (input._id.isDefined) {
         // update if id exists, i.e., it's a persisted import
-        val updateInput = input.copyWithTimestamps(timeCreated = input.timeCreated, timeLastExecuted = Some(new Date()))
-        repo.update(updateInput)
-      } else Future(())
+        val updatedInput = input.copyCore(input._id, input.timeCreated, Some(new Date()), input.scheduled, input.scheduledTime)
+        repo.update(updatedInput).map(_ => ())
+      } else
+        Future(())
 
-    futureUpdate.map(_ =>
+    } yield
       messageLogger.info(s"Import of data set '${input.dataSetName}' successfully finished.")
-    )
-  }
 }
