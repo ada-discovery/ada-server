@@ -6,7 +6,6 @@ import org.ada.server.models.DataSetFormattersAndIds.JsObjectIdentity
 import org.ada.server.models.{Field, FieldTypeId, FieldTypeSpec}
 import org.ada.server.models.ml.IOJsonTimeSeriesSpec
 import org.ada.server.models.ml.unsupervised.UnsupervisedLearning
-import org.ada.server.AdaException
 import org.ada.server.services.SparkApp
 import org.ada.server.services.StatsService
 import org.apache.spark.ml.feature._
@@ -18,7 +17,7 @@ import org.apache.spark.ml.linalg.{DenseVector, Vector, Vectors}
 import org.apache.spark.ml.param._
 import org.apache.spark.sql.functions._
 import play.api.libs.json.{JsObject, Json}
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import org.incal.spark_ml.transformers._
 import org.incal.spark_ml.models.VectorScalerType
 import org.incal.spark_ml._
@@ -137,7 +136,7 @@ private class MachineLearningServiceImpl @Inject() (
     repetitionParallelism = configuration.getInt("ml.repetition_parallelism"),
     binaryClassifierInputName = configuration.getString("ml.binary_classifier.input"),
     useConsecutiveOrderForDL = configuration.getBoolean("ml.dl_use_consecutive_order_transformers"),
-    debugMode = true
+    debugMode = configuration.getBoolean("ml.debug_mode").getOrElse(false)
   )
 
   private val session = sparkApp.session
