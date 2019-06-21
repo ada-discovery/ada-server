@@ -2,7 +2,7 @@ organization := "org.adada"
 
 name := "ada-server"
 
-version := "0.7.3.RC.10.SNAPSHOT.7"
+version := "0.7.3"
 
 description := "Server side of Ada Discovery Analytics containing a persistence layer, stats and data import/transformation services, and util classes."
 
@@ -29,7 +29,7 @@ libraryDependencies ++= Seq(
   "org.apache.ignite" % "ignite-spring" % "1.6.0",
   "org.apache.ignite" % "ignite-indexing" % "1.6.0",
   "org.apache.ignite" % "ignite-scalar" % "1.6.0",
-  "org.in-cal" %% "incal-spark_ml" % "0.1.3"  exclude("com.fasterxml.jackson.core", "jackson-databind"),
+  "org.in-cal" %% "incal-spark_ml" % "0.1.9"  exclude("com.fasterxml.jackson.core", "jackson-databind"),
   "org.reflections" % "reflections" % "0.9.10" exclude("com.google.code.findbugs", "annotations"),  // class finder
   "com.typesafe.play" %% "play-java-ws" % playVersion,                                              // WS
   "com.unboundid" % "unboundid-ldapsdk" % "2.3.8",                                                  // LDAP (in-memory)
