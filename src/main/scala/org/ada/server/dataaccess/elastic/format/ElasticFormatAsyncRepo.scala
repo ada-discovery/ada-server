@@ -1,6 +1,6 @@
 package org.ada.server.dataaccess.elastic.format
 
-import com.sksamuel.elastic4s.IndexDefinition
+import com.sksamuel.elastic4s.indexes.IndexDefinition
 import org.incal.access.elastic.{ElasticAsyncRepo, ElasticSetting}
 import org.incal.core.Identity
 import play.api.libs.json.Format
@@ -15,5 +15,5 @@ abstract class ElasticFormatAsyncRepo[E, ID](
 ) extends ElasticAsyncRepo[E, ID](indexName, typeName, setting) with ElasticFormatSerializer[E] {
 
   override protected def createSaveDef(entity: E, id: ID): IndexDefinition =
-    index into indexAndType source entity id id
+    indexInto(indexAndType) source entity id id
 }

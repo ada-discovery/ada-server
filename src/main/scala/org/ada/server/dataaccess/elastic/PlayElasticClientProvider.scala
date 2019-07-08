@@ -1,7 +1,7 @@
 package org.ada.server.dataaccess.elastic
 
 import javax.inject.Inject
-import com.sksamuel.elastic4s.ElasticClient
+import com.sksamuel.elastic4s.http.HttpClient
 import org.incal.access.elastic.ElasticClientProvider
 import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
@@ -15,6 +15,6 @@ class PlayElasticClientProvider extends ElasticClientProvider {
 
   override protected def config = configuration.underlying
 
-  override protected def shutdownHook(client: ElasticClient): Unit =
+  override protected def shutdownHook(client: HttpClient): Unit =
     lifecycle.addStopHook(() => Future.successful(client.close()))
 }

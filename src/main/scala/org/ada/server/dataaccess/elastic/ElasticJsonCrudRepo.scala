@@ -2,77 +2,83 @@ package org.ada.server.dataaccess.elastic
 
 import com.google.inject.assistedinject.Assisted
 import com.sksamuel.elastic4s._
+import com.sksamuel.elastic4s.http.{ElasticDsl, HttpClient}
+import com.sksamuel.elastic4s.http.get.GetResponse
+import com.sksamuel.elastic4s.http.search.{SearchHit, SearchResponse}
 import com.sksamuel.elastic4s.mappings.FieldType._
-import com.sksamuel.elastic4s.mappings.TypedFieldDefinition
-import com.sksamuel.elastic4s.source.JsonDocumentSource
+import com.sksamuel.elastic4s.mappings.FieldDefinition
 import org.ada.server.dataaccess.ignite.BinaryJsonUtil
 import org.ada.server.dataaccess.RepoTypes.JsonCrudRepo
-import org.ada.server.dataaccess.elastic.format.ElasticIdRenameUtil
+import org.ada.server.dataaccess.elastic.format.ElasticIdRenameUtil._
 import org.ada.server.models.DataSetFormattersAndIds.JsObjectIdentity
 import org.ada.server.models.{FieldTypeId, FieldTypeSpec}
 import play.api.libs.json._
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONObjectIDFormat
-import org.incal.access.elastic.{CoerceDoubleFieldDefinition, ElasticAsyncCrudRepo, ElasticSetting}
+import org.incal.access.elastic.{ElasticAsyncCrudRepo, ElasticSetting}
 import javax.inject.Inject
 import play.api.Configuration
 
 class ElasticJsonCrudRepo @Inject()(
-    @Assisted collectionName : String,
-    @Assisted fieldNamesAndTypes: Seq[(String, FieldTypeSpec)],
-    val client: ElasticClient,
-    configuration: Configuration
+    @Assisted("collectionName") collectionName : String,
+    @Assisted("fieldNamesAndTypes") fieldNamesAndTypes: Seq[(String, FieldTypeSpec)],
+    @Assisted("setting") setting: Option[ElasticSetting],
+    val client: HttpClient,
+    val configuration: Configuration
   ) extends ElasticAsyncCrudRepo[JsObject, BSONObjectID](
     collectionName,
     collectionName,
-    ElasticSetting(
-      useDocScrollSort = configuration.getBoolean("elastic.scroll.doc_sort.use").getOrElse(true),
-      scrollBatchSize = configuration.getInt("elastic.scroll.batch.size").getOrElse(1000)
+    setting.getOrElse(
+      ElasticSetting(
+        useDocScrollSort = configuration.getBoolean("elastic.scroll.doc_sort.use").getOrElse(true),
+        scrollBatchSize = configuration.getInt("elastic.scroll.batch.size").getOrElse(1000),
+        indexFieldsLimit = configuration.getInt("elastic.index.fields.limit").getOrElse(10000),
+        shards = configuration.getInt("elastic.index.shards.num").getOrElse(5),
+        replicas = configuration.getInt("elastic.index.replicas.num").getOrElse(0)
+      )
     )
   ) with JsonCrudRepo {
 
-  private implicit val jsonIdRenameFormat = ElasticIdRenameUtil.createFormat
-  private val fieldNamesAndTypeWithId = fieldNamesAndTypes ++ Seq((ElasticIdRenameUtil.newIdName, FieldTypeSpec(FieldTypeId.Json)))
+  private val fieldNamesAndTypeWithId = fieldNamesAndTypes ++ Seq((storedIdName, FieldTypeSpec(FieldTypeId.String)))
+  private val fieldNameTypeMap = fieldNamesAndTypeWithId.toMap
   private val includeInAll = false
+  private val keywordIgnoreAboveCharCount = 30000
+  private val textAnalyzerName = configuration.getString("elastic.text.analyzer")
 
-  override protected lazy val fieldDefs: Iterable[TypedFieldDefinition] =
+  override protected lazy val fieldDefs: Iterable[FieldDefinition] =
     fieldNamesAndTypeWithId.map { case (fieldName, fieldTypeSpec) =>
       toElasticFieldType(fieldName, fieldTypeSpec)
     }
 
   // TODO: should be called as a post-init method, since all vals must be instantiated (i.e. the order matters)
-  createIndexIfNeeded()
+  createIndexIfNeeded
 
-  override protected def serializeGetResult(response: RichGetResponse) =
-    // TODO: check performance of sourceAsBytes vs sourceAsString
-    Json.parse(response.sourceAsBytes) match {
-      case JsNull => None
-      case x: JsObject => jsonIdRenameFormat.reads(x).asOpt.map(_.asInstanceOf[JsObject])
-      case _ => None
-    }
+  override protected def serializeGetResult(response: GetResponse) =
+    if (response.exists) {
+      // TODO: check performance of sourceAsMap with JSON building
+      Json.parse(response.sourceAsBytes) match {
+        case JsNull => None
+        case x: JsObject => elasticIdFormat.reads(x).asOpt.map(_.asInstanceOf[JsObject])
+        case _ => None
+      }
+    } else
+      None
 
-  override protected def serializeSearchResult(response: RichSearchResponse) = {
-    response.hits.flatMap(serializeSearchHitOptional).toIterable
-//      val stringSource = hit.sourceAsString
-//      val renamedStringSource = stringSource.replaceFirst("\"id\":", "\"_id\":")
-//      JsObject(
-//        hit.sourceAsMap.map { case (fieldName, value) =>
-//          if (fieldName.equals("id"))
-//            ("_id", Json.toJson(BSONObjectID.apply(value.asInstanceOf[util.HashMap[String, Any]].get("$oid").asInstanceOf[String])))
-//          else
-//            (fieldName, BinaryJsonUtil.toJson(value))
-//        }.toSeq
-//      )
-  }
+  override protected def serializeSearchResult(response: SearchResponse) =
+    response.hits.hits.flatMap(serializeSearchHitOptional).toIterable
 
-  override protected def serializeSearchHit(result: RichSearchHit) =
+  override protected def serializeSearchHit(result: SearchHit) =
     serializeSearchHitOptional(result).getOrElse(Json.obj())
 
-  private def serializeSearchHitOptional(result: RichSearchHit) =
-    Json.parse(result.source) match {
-      case x: JsObject => jsonIdRenameFormat.reads(x).asOpt.map(_.asInstanceOf[JsObject])
-      case _ => None
-    }
+  private def serializeSearchHitOptional(result: SearchHit) =
+    if (result.exists) {
+      // TODO: check performance of sourceAsMap with JSON building
+      Json.parse(result.sourceAsBytes) match {
+        case x: JsObject => elasticIdFormat.reads(x).asOpt.map(_.asInstanceOf[JsObject])
+        case _ => None
+      }
+    } else
+      None
 
   override protected def serializeProjectionSearchResult(
     projection: Seq[String],
@@ -80,43 +86,53 @@ class ElasticJsonCrudRepo @Inject()(
   ) =
     JsObject(
       result.map { case (fieldName, value) =>
-        if (fieldName.startsWith(ElasticIdRenameUtil.newIdName))
-          (ElasticIdRenameUtil.originalIdName, Json.toJson(BSONObjectID.parse(value.asInstanceOf[String]).get))
+
+        val fieldType = fieldNameTypeMap.get(fieldName).getOrElse(
+          throw new RuntimeException(s"Field $fieldName not registered for a JSON Elastic CRUD repo '$collectionName'.")
+        )
+        val trueValue = if (!fieldType.isArray) value.asInstanceOf[Seq[Any]].head else value
+
+        if (fieldName.equals(storedIdName))
+          (originalIdName, Json.toJson(BSONObjectID.parse(trueValue.asInstanceOf[String]).get))
         else
-          (fieldName, BinaryJsonUtil.toJson(value))
+          (fieldName, BinaryJsonUtil.toJson(trueValue))
       }.toSeq
     )
+
+  override def stringId(id: BSONObjectID)= id.stringify
 
   override protected def createSaveDef(
     entity: JsObject,
     id: BSONObjectID
   ) = {
-    val stringSource = Json.stringify(jsonIdRenameFormat.writes(entity))
-    index into indexAndType source stringSource id id
+    val stringSource = Json.stringify(elasticIdFormat.writes(entity))
+    indexInto(indexAndType) source stringSource id stringId(id)
   }
 
   override def createUpdateDef(
     entity: JsObject,
     id: BSONObjectID
   ) = {
-    val stringSource = Json.stringify(jsonIdRenameFormat.writes(entity))
-    ElasticDsl.update id id in indexAndType doc JsonDocumentSource(stringSource)
+    val stringSource = Json.stringify(elasticIdFormat.writes(entity))
+    ElasticDsl.update(stringId(id)) in indexAndType doc stringSource
   }
 
-  private def toElasticFieldType(fieldName: String, fieldTypeSpec: FieldTypeSpec): TypedFieldDefinition =
-    if (fieldName.equals(ElasticIdRenameUtil.newIdName)) {
-      fieldName typed NestedType as ("$oid" typed StringType) //  store true
-    } else
-      fieldTypeSpec.fieldType match {
-        case FieldTypeId.Integer => fieldName typed LongType store true includeInAll(includeInAll)
-        case FieldTypeId.Double => new CoerceDoubleFieldDefinition(fieldName) store true includeInAll(includeInAll)
-        case FieldTypeId.Boolean => fieldName typed BooleanType store true includeInAll(includeInAll)
-        case FieldTypeId.Enum => fieldName typed IntegerType store true includeInAll(includeInAll)
-        case FieldTypeId.String => fieldName typed StringType index NotAnalyzed store true includeInAll(includeInAll)
-        case FieldTypeId.Date => fieldName typed LongType store true includeInAll(includeInAll)
-        case FieldTypeId.Json => fieldName typed NestedType
-        case FieldTypeId.Null => fieldName typed ShortType includeInAll(includeInAll) // doesn't matter which type since it's always null
-      }
+  private def toElasticFieldType(fieldName: String, fieldTypeSpec: FieldTypeSpec): FieldDefinition =
+    fieldTypeSpec.fieldType match {
+      case FieldTypeId.String =>
+        if (textAnalyzerName.isDefined)
+          textField(fieldName) store true includeInAll(includeInAll) analyzer textAnalyzerName.get
+        else
+          keywordField(fieldName) store true includeInAll(includeInAll) ignoreAbove keywordIgnoreAboveCharCount
+
+      case FieldTypeId.Enum => intField(fieldName) store true includeInAll(includeInAll)
+      case FieldTypeId.Boolean => booleanField(fieldName) store true includeInAll(includeInAll)
+      case FieldTypeId.Integer => longField(fieldName) store true includeInAll(includeInAll)
+      case FieldTypeId.Double => doubleField(fieldName) coerce true store true includeInAll(includeInAll)
+      case FieldTypeId.Date => longField(fieldName) store true includeInAll(includeInAll)
+      case FieldTypeId.Json => nestedField(fieldName) enabled false includeInAll(includeInAll)
+      case FieldTypeId.Null => shortField(fieldName) includeInAll(includeInAll) // doesn't matter which type since it's always null
+    }
 
   override protected def toDBValue(value: Any): Any =
     value match {
@@ -125,5 +141,5 @@ class ElasticJsonCrudRepo @Inject()(
     }
 
   override protected def toDBFieldName(fieldName: String) =
-    ElasticIdRenameUtil.rename(fieldName, true)
+    rename(fieldName)
 }

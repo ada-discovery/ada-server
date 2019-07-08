@@ -46,7 +46,7 @@ trait DataSetAccessorFactory {
 @Singleton
 protected[dataaccess] class DataSetAccessorFactoryImpl @Inject()(
     @Named("MongoJsonCrudRepoFactory") mongoDataSetRepoFactory: MongoJsonCrudRepoFactory,
-    @Named("ElasticJsonCrudRepoFactory") elasticDataSetRepoFactory: JsonCrudRepoFactory,
+    @Named("ElasticJsonCrudRepoFactory") elasticDataSetRepoFactory: ElasticJsonCrudRepoFactory,
     @Named("CachedJsonCrudRepoFactory") cachedDataSetRepoFactory: MongoJsonCrudRepoFactory,
     fieldRepoFactory: FieldRepoFactory,
     categoryRepoFactory: CategoryRepoFactory,
@@ -154,7 +154,7 @@ protected[dataaccess] class DataSetAccessorFactoryImpl @Inject()(
           }
           case StorageType.ElasticSearch => {
             println(s"Creating Elastic Search based data set repo for '$dataSetId'.")
-            elasticDataSetRepoFactory(collectionName, fieldNamesAndTypes)
+            elasticDataSetRepoFactory(collectionName, fieldNamesAndTypes, None)
           }
         }
       }

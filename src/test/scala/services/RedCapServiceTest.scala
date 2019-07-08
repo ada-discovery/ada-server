@@ -3,6 +3,7 @@ package services
 import org.ada.server.services.importers.{RedCapLockAction, RedCapServiceFactory}
 import org.ada.server.services.GuiceApp
 import net.codingwell.scalaguice.InjectorExtensions._
+import org.ada.server.models.redcap.JsonFormat.responseFormat
 import org.scalatest._
 import play.api.Configuration
 import play.api.libs.json.Json
@@ -28,7 +29,7 @@ class RedCapServiceTest extends AsyncFlatSpec with Matchers {
   "Locking" should "lock the records" in {
     redCapService.lock(RedCapLockAction.lock, "ND00001").map { results =>
       println("Response:")
-      println(results.map(x => Json.prettyPrint(x)).mkString("\n"))
+      println(results.map(x => Json.prettyPrint(Json.toJson(x))).mkString("\n"))
       results.size should be (1)
     }
   }

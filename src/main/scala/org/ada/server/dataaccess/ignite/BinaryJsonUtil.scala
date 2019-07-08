@@ -55,11 +55,12 @@ object BinaryJsonUtil {
         case x: Double => JsNumber(BigDecimal.valueOf(x))
         case x: Boolean => JsBoolean(x)
         case x: Date => Json.toJson(x)
-        case x: Seq[JsValue] => JsArray(x)
         case x: BSONObjectID => Json.toJson(x)
         case x: Option[_] => x.map(toJson).getOrElse(JsNull)
         case x: BinaryObject => x.deserialize().asInstanceOf[JsValue]
         case x: Array[_] => JsArray(x.map(toJson))
+//        case x: Seq[JsValue] => JsArray(x)
+        case x: Seq[_] => JsArray(x.map(toJson))
         case _ => throw new IllegalArgumentException(s"No JSON formatter found for the class ${value.getClass.getName}.")
       }
 

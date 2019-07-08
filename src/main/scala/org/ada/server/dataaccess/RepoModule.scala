@@ -3,7 +3,6 @@ package org.ada.server.dataaccess
 import javax.inject.Provider
 import com.google.inject.{Key, TypeLiteral}
 import com.google.inject.assistedinject.FactoryModuleBuilder
-import com.sksamuel.elastic4s.ElasticClient
 import org.ada.server.dataaccess.elastic.{ElasticJsonCrudRepo, PlayElasticClientProvider}
 import org.ada.server.dataaccess.ignite.{CacheAsyncCrudRepoProvider, IgniteFactory, JsonBinaryCacheAsyncCrudRepoFactory}
 import org.incal.spark_ml.models.classification.Classifier
@@ -18,6 +17,7 @@ import net.codingwell.scalaguice.ScalaModule
 import org.ada.server.dataaccess.RepoTypes._
 import org.ada.server.dataaccess.RepoTypes._
 import com.google.inject.name.Names
+import com.sksamuel.elastic4s.http.HttpClient
 import org.ada.server.models.dataimport.DataSetImport
 import org.ada.server.models.{Message, Translation}
 import org.ada.server.models.ml.unsupervised.UnsupervisedLearning
@@ -26,7 +26,7 @@ import org.ada.server.dataaccess.dataset._
 import reactivemongo.bson.BSONObjectID
 import org.ada.server.dataaccess.RepoDef.Repo
 import org.ada.server.models.datatrans.DataSetMetaTransformation
-import org.ada.server.models.datatrans.DataSetTransformation.{dataSetMetaTransformationFormat, DataSetMetaTransformationIdentity}
+import org.ada.server.models.datatrans.DataSetTransformation.{DataSetMetaTransformationIdentity, dataSetMetaTransformationFormat}
 import org.apache.ignite.Ignite
 
 private object RepoDef extends Enumeration {
@@ -101,7 +101,7 @@ class RepoModule extends ScalaModule {
       new CacheAsyncCrudRepoProvider[HtmlSnippet, BSONObjectID]("html_snippets")
     ).asEagerSingleton
 
-    bind[ElasticClient].toProvider(new PlayElasticClientProvider).asEagerSingleton
+    bind[HttpClient].toProvider(new PlayElasticClientProvider).asEagerSingleton
 
     // bind the repos defined above
     RepoDef.values.foreach(bindRepo(_))
@@ -115,7 +115,7 @@ class RepoModule extends ScalaModule {
 
     install(new FactoryModuleBuilder()
       .implement(new TypeLiteral[JsonCrudRepo]{}, classOf[ElasticJsonCrudRepo])
-      .build(Key.get(classOf[JsonCrudRepoFactory], Names.named("ElasticJsonCrudRepoFactory"))))
+      .build(Key.get(classOf[ElasticJsonCrudRepoFactory], Names.named("ElasticJsonCrudRepoFactory"))))
 
     bind[MongoJsonCrudRepoFactory]
       .annotatedWith(Names.named("CachedJsonCrudRepoFactory"))

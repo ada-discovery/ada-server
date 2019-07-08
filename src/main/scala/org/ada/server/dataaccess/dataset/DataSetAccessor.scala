@@ -1,6 +1,6 @@
 package org.ada.server.dataaccess.dataset
 
-import org.ada.server.dataaccess.JsonCrudRepoFactory
+import org.ada.server.dataaccess.ElasticJsonCrudRepoFactory
 import org.ada.server.models.{DataSetMetaInfo, DataSetSetting, FieldTypeSpec}
 import org.incal.core.dataaccess.Criterion.Infix
 
