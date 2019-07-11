@@ -154,7 +154,7 @@ protected[dataaccess] class DataSetAccessorFactoryImpl @Inject()(
           }
           case StorageType.ElasticSearch => {
             println(s"Creating Elastic Search based data set repo for '$dataSetId'.")
-            elasticDataSetRepoFactory(collectionName, fieldNamesAndTypes, None)
+            elasticDataSetRepoFactory(collectionName, collectionName, fieldNamesAndTypes, None, false)
           }
         }
       }

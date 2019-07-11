@@ -35,15 +35,34 @@ object ElasticIdRenameUtil {
           (json \ storedIdName) match {
 
             case JsDefined(jsValue: JsValue) =>
-              jsValue.asOpt[JsString].flatMap(id => BSONObjectID.parse(id.value).toOption).map { id =>
-                val mergedValues = MMap[String, JsValue]()
-                mergedValues.++=(jsObject.value)
-                mergedValues.-=(storedIdName)
-                mergedValues.+=((originalIdName, Json.toJson(id)))
+              jsValue match {
+                case jsString: JsString =>
+                  BSONObjectID.parse(jsString.value).toOption.map { id =>
+                    val mergedValues = MMap[String, JsValue]()
+                    mergedValues.++=(jsObject.value)
+                    mergedValues.-=(storedIdName)
+                    mergedValues.+=((originalIdName, Json.toJson(id)))
 
-                JsSuccess(JsObject(mergedValues))
-              }.getOrElse(JsError(s"JSON $jsValue cannot be parsed to BSON Object ID."))
+                    JsSuccess(JsObject(mergedValues))
+                  }.getOrElse(
+                    JsError(s"JSON $jsValue cannot be parsed to BSON Object ID.")
+                  )
 
+                // TODO: once all the indeces are reindexed to 5.6 we can remove this part
+                case jsIdObject: JsObject =>
+                  jsIdObject.asOpt[BSONObjectID].map { id =>
+                    val mergedValues = MMap[String, JsValue]()
+                    mergedValues.++=(jsObject.value)
+                    mergedValues.-=(storedIdName)
+                    mergedValues.+=((originalIdName, Json.toJson(id)))
+
+                    JsSuccess(JsObject(mergedValues))
+                  }.getOrElse(
+                    JsError(s"JSON $jsValue cannot be parsed to BSON Object ID.")
+                  )
+
+                case _ => JsError(s"JSON $jsValue cannot be parsed to BSON Object ID.")
+              }
             case _ =>
               JsSuccess(jsObject)
           }

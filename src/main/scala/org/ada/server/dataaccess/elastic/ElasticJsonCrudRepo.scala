@@ -20,14 +20,16 @@ import javax.inject.Inject
 import play.api.Configuration
 
 class ElasticJsonCrudRepo @Inject()(
-    @Assisted("collectionName") collectionName : String,
+    @Assisted("indexName") indexName : String,
+    @Assisted("typeName") typeName : String,
     @Assisted("fieldNamesAndTypes") fieldNamesAndTypes: Seq[(String, FieldTypeSpec)],
     @Assisted("setting") setting: Option[ElasticSetting],
+    @Assisted("excludeIdMapping") excludeIdMapping: Boolean, // TODO: Derelease after migration
     val client: HttpClient,
     val configuration: Configuration
   ) extends ElasticAsyncCrudRepo[JsObject, BSONObjectID](
-    collectionName,
-    collectionName,
+    indexName,
+    typeName,
     setting.getOrElse(
       ElasticSetting(
         useDocScrollSort = configuration.getBoolean("elastic.scroll.doc_sort.use").getOrElse(true),
@@ -39,7 +41,9 @@ class ElasticJsonCrudRepo @Inject()(
     )
   ) with JsonCrudRepo {
 
-  private val fieldNamesAndTypeWithId = fieldNamesAndTypes ++ Seq((storedIdName, FieldTypeSpec(FieldTypeId.String)))
+  private val fieldNamesAndTypeWithId = fieldNamesAndTypes ++ (
+    if (excludeIdMapping) Nil else Seq((storedIdName, FieldTypeSpec(FieldTypeId.String)))
+  )
   private val fieldNameTypeMap = fieldNamesAndTypeWithId.toMap
   private val includeInAll = false
   private val keywordIgnoreAboveCharCount = 30000
@@ -88,7 +92,7 @@ class ElasticJsonCrudRepo @Inject()(
       result.map { case (fieldName, value) =>
 
         val fieldType = fieldNameTypeMap.get(fieldName).getOrElse(
-          throw new RuntimeException(s"Field $fieldName not registered for a JSON Elastic CRUD repo '$collectionName'.")
+          throw new RuntimeException(s"Field $fieldName not registered for a JSON Elastic CRUD repo '$indexName'.")
         )
         val trueValue = if (!fieldType.isArray) value.asInstanceOf[Seq[Any]].head else value
 
@@ -99,7 +103,7 @@ class ElasticJsonCrudRepo @Inject()(
       }.toSeq
     )
 
-  override def stringId(id: BSONObjectID)= id.stringify
+  override def stringId(id: BSONObjectID) = id.stringify
 
   override protected def createSaveDef(
     entity: JsObject,
@@ -117,21 +121,24 @@ class ElasticJsonCrudRepo @Inject()(
     ElasticDsl.update(stringId(id)) in indexAndType doc stringSource
   }
 
-  private def toElasticFieldType(fieldName: String, fieldTypeSpec: FieldTypeSpec): FieldDefinition =
+  private def toElasticFieldType(
+    fieldName: String,
+    fieldTypeSpec: FieldTypeSpec
+  ): FieldDefinition =
     fieldTypeSpec.fieldType match {
       case FieldTypeId.String =>
         if (textAnalyzerName.isDefined)
-          textField(fieldName) store true includeInAll(includeInAll) analyzer textAnalyzerName.get
+          textField(fieldName) store true includeInAll (includeInAll) analyzer textAnalyzerName.get
         else
-          keywordField(fieldName) store true includeInAll(includeInAll) ignoreAbove keywordIgnoreAboveCharCount
+          keywordField(fieldName) store true includeInAll (includeInAll) ignoreAbove keywordIgnoreAboveCharCount
 
-      case FieldTypeId.Enum => intField(fieldName) store true includeInAll(includeInAll)
-      case FieldTypeId.Boolean => booleanField(fieldName) store true includeInAll(includeInAll)
-      case FieldTypeId.Integer => longField(fieldName) store true includeInAll(includeInAll)
-      case FieldTypeId.Double => doubleField(fieldName) coerce true store true includeInAll(includeInAll)
-      case FieldTypeId.Date => longField(fieldName) store true includeInAll(includeInAll)
-      case FieldTypeId.Json => nestedField(fieldName) enabled false includeInAll(includeInAll)
-      case FieldTypeId.Null => shortField(fieldName) includeInAll(includeInAll) // doesn't matter which type since it's always null
+      case FieldTypeId.Enum => intField(fieldName) store true includeInAll (includeInAll)
+      case FieldTypeId.Boolean => booleanField(fieldName) store true includeInAll (includeInAll)
+      case FieldTypeId.Integer => longField(fieldName) store true includeInAll (includeInAll)
+      case FieldTypeId.Double => doubleField(fieldName) coerce true store true includeInAll (includeInAll)
+      case FieldTypeId.Date => longField(fieldName) store true includeInAll (includeInAll)
+      case FieldTypeId.Json => nestedField(fieldName) enabled false includeInAll (includeInAll)
+      case FieldTypeId.Null => shortField(fieldName) includeInAll (includeInAll) // doesn't matter which type since it's always null
     }
 
   override protected def toDBValue(value: Any): Any =

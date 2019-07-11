@@ -8,9 +8,11 @@ import com.google.inject.assistedinject.Assisted
 trait ElasticJsonCrudRepoFactory {
 
   def apply(
-    @Assisted("collectionName") collectionName: String,
+    @Assisted("indexName") indexName : String,
+    @Assisted("typeName") typeName : String,
     @Assisted("fieldNamesAndTypes") fieldNamesAndTypes: Seq[(String, FieldTypeSpec)],
-    @Assisted("setting") setting: Option[ElasticSetting]
+    @Assisted("setting") setting: Option[ElasticSetting],
+    @Assisted("excludeIdMapping") excludeIdMapping: Boolean
   ): JsonCrudRepo
 }
 
