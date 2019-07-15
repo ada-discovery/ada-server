@@ -197,26 +197,19 @@ protected class MongoAsyncReadonlyRepo[E: Format, ID: Format](
       case RegexNotEqualsCriterion(_, value) =>
         Json.obj("$regex" -> s"^(?!${value})", "$options" -> "i")
 
-      case c: NotEqualsCriterion[T] => {
-//        val json = c.value match {
-//            case Some(value) => toJson(value)
-//            case None => JsNull
-//          }
+      case c: NotEqualsCriterion[T] =>
         Json.obj("$ne" -> toJson(c.value))
-      }
 
       case c: NotEqualsNullCriterion =>
         Json.obj("$ne" -> JsNull)
 
-      case c: InCriterion[V] => {
+      case c: InCriterion[V] =>
         val inValues = c.value.map(toJson(_): JsValueWrapper)
         Json.obj("$in" -> Json.arr(inValues: _*))
-      }
 
-      case c: NotInCriterion[V] => {
+      case c: NotInCriterion[V] =>
         val inValues = c.value.map(toJson(_): JsValueWrapper)
         Json.obj("$nin" -> Json.arr(inValues: _*))
-      }
 
       case c: GreaterCriterion[T] =>
         Json.obj("$gt" -> toJson(c.value))

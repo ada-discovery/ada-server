@@ -8,14 +8,15 @@ import org.ada.server.dataaccess.JsonCrudRepoExtra.CrudInfixOps
 import org.ada.server.dataaccess.dataset.FieldRepoFactory
 import org.incal.access.elastic.{ElasticCrudRepoExtra, ElasticSetting, RefreshPolicy}
 import org.incal.core.runnables.InputFutureRunnableExt
-import play.api.Logger
+import play.api.{Configuration, Logger}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random
 
 class ReindexElasticDataSetWithCopying @Inject()(
   fieldRepoFactory: FieldRepoFactory,
-  @Named("ElasticJsonCrudRepoFactory") elasticDataSetRepoFactory: ElasticJsonCrudRepoFactory
+  @Named("ElasticJsonCrudRepoFactory") elasticDataSetRepoFactory: ElasticJsonCrudRepoFactory,
+  configuration: Configuration
 ) extends InputFutureRunnableExt[ReindexElasticDataSetWithCopyingSpec] {
 
   private val logger = Logger
@@ -31,7 +32,8 @@ class ReindexElasticDataSetWithCopying @Inject()(
     val setting = ElasticSetting(
       saveRefresh = input.refreshPolicy,
       saveBulkRefresh = input.refreshPolicy,
-      scrollBatchSize = input.scrollBatchSize
+      scrollBatchSize = input.scrollBatchSize,
+      indexFieldsLimit = configuration.getInt("elastic.index.fields.limit").getOrElse(10000)
     )
 
     for {

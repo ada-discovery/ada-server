@@ -15,40 +15,6 @@ import org.incal.core.util.seqFutures
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ReindexAll08ElasticDataSets @Inject()(
-  dataSpaceMetaInfoRepo: DataSpaceMetaInfoRepo,
-  reindexElasticDataSet: ReindexElasticDataSet
-) extends InputFutureRunnableExt[ReindexAll08ElasticDataSetsSpec]
-  with List08ElasticDataSetsToMigrateHelper
-  with RunnableHtmlOutput {
-
-  override def runAsFuture(input: ReindexAll08ElasticDataSetsSpec) =
-    for {
-      dataSpaces <- dataSpaceMetaInfoRepo.find()
-      dataSetIds = dataSpaces.flatMap(_.dataSetMetaInfos.map(_.id))
-
-      dataSetsToMigrate <- dataSetIdsToMigrate(dataSetIds.toSeq)
-
-      _ <- seqFutures(dataSetsToMigrate) { dataSetId =>
-        reindexElasticDataSet.runAsFuture(ReindexElasticDataSetSpec(
-          dataSetId,
-          input.refreshPolicy,
-          input.streamSpec,
-          input.scrollBatchSize
-        ))
-      }
-    } yield {
-      addParagraph(s"Migrated ${bold(dataSetsToMigrate.size.toString)} Elastic data sets (out of ${dataSetIds.size}) for which it was needed.")
-      addOutput(reindexElasticDataSet.output.toString())
-    }
-}
-
-case class ReindexAll08ElasticDataSetsSpec(
-  refreshPolicy: RefreshPolicy.Value,
-  streamSpec: StreamSpec,
-  scrollBatchSize: Int
-)
-
 class Reindex08ElasticDataSetsForDataSpace @Inject()(
   dataSpaceMetaInfoRepo: DataSpaceMetaInfoRepo,
   reindexElasticDataSet: ReindexElasticDataSet
@@ -61,13 +27,17 @@ class Reindex08ElasticDataSetsForDataSpace @Inject()(
       dataSpace <- dataSpaceMetaInfoRepo.get(input.dataSpaceId).map(_.getOrElse(throw new AdaException(s"Data space ${input.dataSpaceId.stringify} not found.")))
       dataSetIds = dataSpace.dataSetMetaInfos.map(_.id)
 
-      dataSetsToMigrate <- dataSetIdsToMigrate(dataSetIds)
+      dataSetsToMigrate <- dataSetIdsToMigrate(dataSetIds, input.mappingsLimit)
 
       _ <- seqFutures(dataSetsToMigrate) { dataSetId =>
         reindexElasticDataSet.runAsFuture(ReindexElasticDataSetSpec(
           dataSetId,
-          input.refreshPolicy,
-          input.streamSpec,
+          RefreshPolicy.None,
+          StreamSpec(
+            Some(input.saveBatchSize),
+            Some(input.saveBatchSize),
+            Some(1)
+          ),
           input.scrollBatchSize
         ))
       }
@@ -79,7 +49,7 @@ class Reindex08ElasticDataSetsForDataSpace @Inject()(
 
 case class ReindexElasticDataSetsForDataSpaceSpec(
   dataSpaceId: BSONObjectID,
-  refreshPolicy: RefreshPolicy.Value,
-  streamSpec: StreamSpec,
-  scrollBatchSize: Int
+  saveBatchSize: Int,
+  scrollBatchSize: Int,
+  mappingsLimit: Option[Int]
 )
