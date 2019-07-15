@@ -28,7 +28,7 @@ class DataSetMetaInfoMongoAsyncCrudRepoFactory(
     dataSpaceRepo.reactiveMongoApi = ReactiveMongoApi.create(configuration, applicationLifecycle)
 
     val repo = new DataSetMetaInfoMongoAsyncCrudRepo(dataSpaceId, dataSpaceRepo)
-    Await.result(repo.initIfNeeded, 30 seconds)
+    Await.result(repo.initIfNeeded, 1 minute)
     repo
   }
 }

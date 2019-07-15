@@ -40,7 +40,7 @@ class FilterMongoAsyncCrudRepoFactory(
     dictionaryRepo.reactiveMongoApi = ReactiveMongoApi.create(configuration, applicationLifecycle)
 
     val repo = new FilterMongoAsyncCrudRepo(dataSetId, dictionaryRepo)
-    Await.result(repo.initIfNeeded, 30 seconds)
+    Await.result(repo.initIfNeeded, 1 minute)
     repo
   }
 }
