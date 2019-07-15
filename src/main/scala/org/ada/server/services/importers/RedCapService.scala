@@ -55,6 +55,13 @@ trait RedCapService {
   def listExportFields: Future[Seq[ExportField]]
 
   /**
+    * Lists all the events (visits) associated with the study (token).
+    *
+    * @return
+    */
+  def listEvents: Future[Seq[Event]]
+
+  /**
     * Count all records in reference field.
     *
     * @return The number of records matching the filter string.
@@ -152,6 +159,7 @@ protected[services] class RedCapServiceWSImpl @Inject() (
 
   private val metadataRequestData = baseRequestData ++ Map("content" -> "metadata")
   private val fieldNamesRequestData = baseRequestData ++ Map("content" -> "exportFieldNames")
+  private val eventsRequestData = baseRequestData ++ Map("content" -> "event")
 
   // Services
 
@@ -171,25 +179,46 @@ protected[services] class RedCapServiceWSImpl @Inject() (
       _.map(_.as[ExportField])
     )
 
+  override def listEvents =
+    runRedCapQuery(eventsRequestData).map(
+      _.map(_.as[Event])
+    )
+
+  @Deprecated
   override def countRecords =
     runRedCapQuery(recordRequest()).map( items =>
       count(items, "", "")
     )
 
+  @Deprecated
   override def getRecord(id: String) =
     runRedCapQuery(recordRequest()).map { items =>
       findBy(items, id, "cdisc_dm_usubjd")
     }
 
+  @Deprecated
   override def getMetadata(id: String) =
     runRedCapQuery(metadataRequestData).map { items =>
       findBy(items, id, "field_name")
     }
 
+  @Deprecated
   override def getExportField(id: String) =
     runRedCapQuery(fieldNamesRequestData).map { items =>
       findBy(items, id, "export_field_name")
     }
+
+  private val lockingCustomErrorHandle: PartialFunction[WSResponse, Unit] = {
+    case response if response.status == 400 =>
+      val errorStart = response.body.indexOf("<error>")
+      val errorEnd = response.body.indexOf("</error>")
+
+      if (errorStart >= 0 && errorEnd >= 0) {
+        val error = response.body.substring(errorStart, errorEnd)
+        throw new AdaRestException(error)
+      } else
+        throw new AdaRestException(response.status + ": " + response.statusText + "; " + response.body)
+  }
 
   override def lock(
     action: RedCapLockAction.Value,
@@ -218,7 +247,7 @@ protected[services] class RedCapServiceWSImpl @Inject() (
       "page" -> action.toString
     ) ++ Seq(projectId.map("pid" -> _.toString)).flatten.toMap
 
-    runRedCapQuery(requestData, queryParams).map(jsons =>
+    runRedCapQuery(requestData, queryParams, Some(lockingCustomErrorHandle)).map(jsons =>
       jsons.map(_.as[LockRecordResponse])
     )
   }
@@ -227,28 +256,35 @@ protected[services] class RedCapServiceWSImpl @Inject() (
 
   private def runRedCapQuery(
     requestData : Map[String, String],
-    queryParams: Map[String, String] = Map()
+    queryParams: Map[String, String] = Map(),
+    customErrorHandle: Option[PartialFunction[WSResponse, Unit]] = None
   ) =
     req.withQueryString(queryParams.toSeq:_*).post(requestData.map { case (a, b) => (a, Seq(b)) }).map { response =>
       try {
-        handleErrorResponse(response)
+        // handle error
+        customErrorHandle.map( customHandle =>
+          if (customHandle.isDefinedAt(response)) customHandle(response) else handleErrorResponse(response)
+        ).getOrElse(
+          handleErrorResponse(response)
+        )
 
+        // return response jsons
         response.json.asOpt[JsArray].map(
           _.value.asInstanceOf[Seq[JsObject]]
         ).getOrElse(
           throw new AdaRestException(s"JSON array response expected but got ${response.body}.")
         )
       } catch {
-        case e: JsonParseException => {
+        case e: JsonParseException =>
           throw new AdaRestException("Couldn't parse Red Cap JSON response.")
-        }
       }
     }
 
-  private def handleErrorResponse(response: WSResponse): Unit =
+  private val handleErrorResponse: WSResponse => Unit = { response =>
     response.status match {
-      case x if x >= 200 && x<= 299 => ()
+      case x if x >= 200 && x <= 299 => ()
       case 401 | 403 => throw new AdaUnauthorizedAccessRestException(response.status + ": Unauthorized access.")
       case _ => throw new AdaRestException(response.status + ": " + response.statusText + "; " + response.body)
     }
+  }
 }

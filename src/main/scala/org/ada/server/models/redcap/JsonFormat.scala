@@ -9,6 +9,7 @@ object JsonFormat {
   implicit val fieldTypeFormat = EnumFormat(FieldType)
   implicit val metadataFormat = Json.format[Metadata]
   implicit val exportFieldFormat = Json.format[ExportField]
+  implicit val eventFormat = Json.format[Event]
 
   implicit val responseFormat: Format[LockRecordResponse] = (
     (__ \ "record").format[String] and
