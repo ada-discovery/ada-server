@@ -26,7 +26,7 @@ import scala.concurrent.{Await, Future}
 import play.api.Configuration
 import org.ada.server.dataaccess.JsonUtil._
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, OverflowStrategy}
+import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
 import akka.stream.scaladsl.{Sink, Source, StreamConverters}
 import org.ada.server.{AdaException, AdaParseException}
 import org.ada.server.models._
@@ -216,7 +216,8 @@ class DataSetServiceImpl @Inject()(
     sparkApp: SparkApp,
     messageRepo: MessageRepo,
     statsService: StatsService,
-    configuration: Configuration
+    configuration: Configuration)(
+    implicit val materializer: Materializer
   ) extends DataSetService {
 
   private val logger = Logger
@@ -229,9 +230,6 @@ class DataSetServiceImpl @Inject()(
   private val jsonFti = FieldTypeHelper.jsonFieldTypeInferrer
 
   private val idName = JsObjectIdentity.name
-
-  private implicit val system = ActorSystem()
-  private implicit val materializer = ActorMaterializer()
 
   private type CreateJsonsWithFieldTypes =
     (Seq[String], Seq[Seq[String]]) => (Seq[JsObject], Seq[FieldType[_]])

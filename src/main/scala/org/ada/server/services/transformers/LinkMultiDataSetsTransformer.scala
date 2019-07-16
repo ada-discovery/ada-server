@@ -1,5 +1,6 @@
 package org.ada.server.services.transformers
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.StreamConverters
 import org.ada.server.AdaException
 import org.ada.server.dataaccess.dataset.DataSetAccessor

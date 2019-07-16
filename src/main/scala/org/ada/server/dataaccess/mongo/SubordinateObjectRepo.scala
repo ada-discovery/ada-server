@@ -6,7 +6,7 @@ import org.ada.server.dataaccess._
 import org.incal.core.Identity
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, _}
-import play.modules.reactivemongo.json.commands.JSONAggregationFramework.{Push, PushField, SumValue}
+import reactivemongo.play.json.commands.JSONAggregationFramework.{Push, PushField, SumValue}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}

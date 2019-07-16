@@ -1,7 +1,6 @@
 package org.ada.server.services.transformers
 
 import org.ada.server.models.datatrans.ChangeFieldEnumsTransformation
-
 import org.incal.core.util.GroupMapList3
 
 import scala.concurrent.ExecutionContext.Implicits.global

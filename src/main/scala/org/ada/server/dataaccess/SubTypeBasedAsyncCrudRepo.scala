@@ -1,11 +1,12 @@
 package org.ada.server.dataaccess
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import org.incal.core.Identity
 import org.incal.core.dataaccess.{AsyncCrudRepo, Criterion, Sort}
 import org.incal.core.dataaccess.Criterion._
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 private class SubTypeBasedAsyncCrudRepoAdapter[SUB_E: Manifest, E >: SUB_E, ID](
@@ -48,7 +49,8 @@ private class SubTypeBasedAsyncCrudRepoAdapter[SUB_E: Manifest, E >: SUB_E, ID](
     sort: Seq[Sort],
     projection: Traversable[String],
     limit: Option[Int],
-    skip: Option[Int]
+    skip: Option[Int])(
+    implicit materializer: Materializer
   ): Future[Source[SUB_E, _]] =
     for {
       items <- underlying.findAsStream(criteria ++ Seq(targetClassCriterion), sort, projection, limit, skip)

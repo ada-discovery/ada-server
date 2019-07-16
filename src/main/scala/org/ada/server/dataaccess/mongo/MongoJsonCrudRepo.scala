@@ -8,16 +8,17 @@ import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
 import play.modules.reactivemongo.{DefaultReactiveMongoApi, ReactiveMongoApi}
 import reactivemongo.bson.BSONObjectID
-import play.modules.reactivemongo.json._
+import reactivemongo.play.json._
 import org.incal.core.dataaccess.{AsyncCrudRepo, InCalDataAccessException}
 import org.ada.server.dataaccess.RepoTypes.JsonCrudRepo
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.modules.reactivemongo.json.BSONFormats.BSONObjectIDFormat
+import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 
 import scala.concurrent.Future
 import javax.inject.Inject
+import org.ada.server.AdaException
 import org.ada.server.models.DataSetFormattersAndIds.JsObjectIdentity
-import reactivemongo.core.commands.RawCommand
+import reactivemongo.api.{DefaultDB, FailoverStrategy, MongoConnection}
 
 class MongoJsonCrudRepo @Inject()(
     @Assisted collectionName : String,
@@ -28,7 +29,7 @@ class MongoJsonCrudRepo @Inject()(
   override def save(entity: JsObject): Future[BSONObjectID] = {
     val (doc, id) = addId(entity)
 
-    collection.insert(entity).map {
+    collection.insert(ordered = false).one(entity).map {
       case le if le.ok => id
       case le => throw new InCalDataAccessException(le.writeErrors.map(_.errmsg).mkString(". "))
     }
@@ -37,7 +38,7 @@ class MongoJsonCrudRepo @Inject()(
   override def save(entities: Traversable[JsObject]): Future[Traversable[BSONObjectID]] = {
     val docAndIds = entities.map(addId)
 
-    collection.bulkInsert(docAndIds.map(_._1).toStream, ordered = false).map {
+    collection.insert(ordered = false).many(docAndIds.map(_._1).toStream).map {
       case le if le.ok => docAndIds.map(_._2)
       case le => throw new InCalDataAccessException(le.errmsg.getOrElse(""))
     }
@@ -50,23 +51,22 @@ class MongoJsonCrudRepo @Inject()(
 
   override def update(entity: JsObject): Future[BSONObjectID] = {
     val id = (entity \ identityName).as[BSONObjectID]
-    collection.update(Json.obj(identityName -> id), entity) map {
+    collection.update(ordered = false).one(Json.obj(identityName -> id), entity) map {
       case le if le.ok => id
       case le => throw new InCalDataAccessException(le.writeErrors.map(_.errmsg).mkString(". "))
     }
   }
 
   override def delete(id: BSONObjectID) =
-    collection.remove(Json.obj(identityName -> id)) map handleResult
+    collection.delete(ordered = false).one(Json.obj(identityName -> id)) map handleResult
 
   override def deleteAll : Future[Unit] =
-    collection.remove(Json.obj()) map handleResult
+    collection.delete(ordered = false).one(Json.obj()) map handleResult
 
-  override def flushOps = {
-    val rawCommand = RawCommand(FSyncCommand().toBSON)
-    reactiveMongoApi.db.command(rawCommand).map(_ => ())
-    //    collection.runCommand(FSyncCommand()).map(_ => ())
-  }
+  import FSyncCommand._
+
+  override def flushOps =
+    collection.db.asInstanceOf[DefaultDB].runCommand(FSyncCommand(), FailoverStrategy.default).map(_ => ())
 }
 
 class MongoJsonRepoFactory(
@@ -86,9 +86,21 @@ class MongoJsonRepoFactory(
 object ReactiveMongoApi {
   private var reactiveMongoApi: Option[DefaultReactiveMongoApi] = None
 
-  def create(configuration: Configuration, applicationLifecycle: ApplicationLifecycle): ReactiveMongoApi = {
+  def create(configuration: Configuration, applicationLifecycle: ApplicationLifecycle): ReactiveMongoApi = this.synchronized {
     reactiveMongoApi.getOrElse {
-      reactiveMongoApi = Some(new DefaultReactiveMongoApi(configuration, applicationLifecycle))
+      val uri = MongoConnection.parseURI(configuration.getString("mongodb.uri").getOrElse(
+        throw new AdaException("Cannot start Mongo. The configuration param 'mongo.uri' undefined.")
+      )).getOrElse(
+        throw new AdaException("The configuration param 'mongo.uri' cannot be parsed.")
+      )
+
+      val dbName = uri.db.getOrElse(configuration.getString("mongodb.db").getOrElse(
+        throw new AdaException("The configuration param 'mongodb.db' undefined.")
+      ))
+
+      val strictUri = configuration.getBoolean("mongodb.connection.strictUri").getOrElse(true)
+
+      reactiveMongoApi = Some(new DefaultReactiveMongoApi(uri, dbName, strictUri, configuration, applicationLifecycle))
       reactiveMongoApi.get
     }
   }

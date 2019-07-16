@@ -5,7 +5,7 @@ import reactivemongo.bson.BSONObjectID
 
 class BSONObjectIDBinarySerializer extends BinarySerializer {
 
-  private val rawField = classOf[BSONObjectID].getDeclaredField("raw")
+  private val rawField = classOf[BSONObjectID].getDeclaredField("reactivemongo$bson$BSONObjectID$$raw")
   rawField.setAccessible(true)
 
   override def writeBinary(obj: scala.Any, writer: BinaryWriter): Unit = {

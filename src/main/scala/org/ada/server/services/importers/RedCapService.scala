@@ -214,7 +214,7 @@ protected[services] class RedCapServiceWSImpl @Inject() (
       val errorEnd = response.body.indexOf("</error>")
 
       if (errorStart >= 0 && errorEnd >= 0) {
-        val error = response.body.substring(errorStart, errorEnd)
+        val error = response.body.substring(errorStart + "<error>".size, errorEnd)
         throw new AdaRestException(error)
       } else
         throw new AdaRestException(response.status + ": " + response.statusText + "; " + response.body)

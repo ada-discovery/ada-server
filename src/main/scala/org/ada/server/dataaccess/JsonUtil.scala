@@ -1,6 +1,5 @@
 package org.ada.server.dataaccess
 
-import java.text.SimpleDateFormat
 import java.util.regex.Pattern
 
 import play.api.libs.json.{JsObject, _}

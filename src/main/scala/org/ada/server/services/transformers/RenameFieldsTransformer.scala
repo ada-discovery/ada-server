@@ -1,5 +1,6 @@
 package org.ada.server.services.transformers
 
+import akka.stream.Materializer
 import org.ada.server.models.datatrans.RenameFieldsTransformation
 import play.api.libs.json.{JsNull, JsObject}
 

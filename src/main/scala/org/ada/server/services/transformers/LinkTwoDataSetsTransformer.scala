@@ -2,7 +2,6 @@ package org.ada.server.services.transformers
 
 import javax.inject.Inject
 import org.ada.server.models.datatrans.{LinkMultiDataSetsTransformation, LinkTwoDataSetsTransformation, LinkedDataSetSpec}
-import scala.reflect.runtime.universe.TypeTag
 
 private class LinkTwoDataSetsTransformer @Inject()(multiTransformer: LinkMultiDataSetsTransformer) extends AbstractDataSetTransformer[LinkTwoDataSetsTransformation] {
 
@@ -23,5 +22,7 @@ private class LinkTwoDataSetsTransformer @Inject()(multiTransformer: LinkMultiDa
     )
   }
 
-  protected def execInternal(spec: LinkTwoDataSetsTransformation) = ??? // not called
+  protected def execInternal(
+    spec: LinkTwoDataSetsTransformation
+  ) = ??? // not called
 }

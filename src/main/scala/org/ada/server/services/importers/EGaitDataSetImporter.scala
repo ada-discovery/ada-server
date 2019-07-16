@@ -102,31 +102,31 @@ private class EGaitDataSetImporter @Inject()(
 
       // parse lines
       (columnNameLabels, mergedValues) =
-      csvs.map(_.split(eol)) match {
-        case Nil => (Seq[(String, String)](), Seq(Seq[String]()).iterator)
-        case csvFiles =>
-          logger.info(s"Parsing lines...")
+        csvs.map(_.split(eol)) match {
+          case Nil => (Seq[(String, String)](), Seq(Seq[String]()).iterator)
+          case csvFiles =>
+            logger.info(s"Parsing lines...")
 
-          val columnsAndLines = csvFiles.map { csvFile =>
-            // collect the column names and lines
-            val csvFileIterator = csvFile.toIterator
-            val columnNameLabels = dataSetService.getColumnNameLabels(delimiter.toString, csvFileIterator)
-            val lines = dataSetService.parseLines(columnNameLabels.size, csvFileIterator, delimiter.toString, true, prefixSuffixSeparators)
-            (columnNameLabels, lines)
-          }
+            val columnsAndLines = csvFiles.map { csvFile =>
+              // collect the column names and lines
+              val csvFileIterator = csvFile.toIterator
+              val columnNameLabels = dataSetService.getColumnNameLabels(delimiter.toString, csvFileIterator)
+              val lines = dataSetService.parseLines(columnNameLabels.size, csvFileIterator, delimiter.toString, true, prefixSuffixSeparators)
+              (columnNameLabels, lines)
+            }
 
-          val columnNamesAndLabelsInOrder = columnsAndLines.flatMap(_._1).toGroupMap.map { case (columnName, labels) => (columnName, labels.head) }.toSeq
+            val columnNamesAndLabelsInOrder = columnsAndLines.flatMap(_._1).toGroupMap.map { case (columnName, labels) => (columnName, labels.head) }.toSeq
 
-          val values = columnsAndLines.flatMap { case (columns, lines) =>
-            lines.map { line =>
-              val columnNameValueMap = line.zip(columns).map { case (value, (columnName, _)) => (columnName, value) }.toMap
-              columnNamesAndLabelsInOrder.map { case (columnName, _) =>
-                columnNameValueMap.getOrElse(columnName, "")
+            val values = columnsAndLines.flatMap { case (columns, lines) =>
+              lines.map { line =>
+                val columnNameValueMap = line.zip(columns).map { case (value, (columnName, _)) => (columnName, value) }.toMap
+                columnNamesAndLabelsInOrder.map { case (columnName, _) =>
+                  columnNameValueMap.getOrElse(columnName, "")
+                }
               }
             }
-          }
 
-          (columnNamesAndLabelsInOrder, values.toIterator)
+            (columnNamesAndLabelsInOrder, values.toIterator)
       }
 
       _ <- saveStringsAndDictionaryWithTypeInference(dsa, columnNameLabels, mergedValues, Some(saveBatchSize), Some(fti))

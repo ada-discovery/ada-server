@@ -1,5 +1,6 @@
 package org.ada.server.dataaccess
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import org.ada.server.dataaccess.RepoTypes.{JsonCrudRepo, JsonReadonlyRepo}
 import play.api.libs.json.{Format, JsObject, Json}
@@ -32,7 +33,8 @@ private[dataaccess] abstract class AbstractJsonFormatReadonlyRepoAdapter[E: Form
     sort: Seq[Sort],
     projection: Traversable[String],
     limit: Option[Int],
-    skip: Option[Int]
+    skip: Option[Int])(
+    implicit materializer: Materializer
   ): Future[Source[JsObject, _]] =
     for {
       source <- repo.findAsStream(criteria, sort, projection, limit, skip)

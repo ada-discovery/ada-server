@@ -2,7 +2,7 @@ organization := "org.adada"
 
 name := "ada-server"
 
-version := "0.8.0.RC.3.SNAPSHOT.35"
+version := "0.8.0.RC.3.SNAPSHOT.40"
 
 description := "Server side of Ada Discovery Analytics containing a persistence layer, stats and data import/transformation services, and util classes."
 
@@ -21,10 +21,11 @@ val playVersion = "2.5.9"
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play" % playVersion,
   "com.typesafe.play" %% "play-json" % playVersion,
-  "org.reactivemongo" %% "play2-reactivemongo" %  "0.12.6-play25" exclude("com.typesafe.play", "play_2.11") exclude("com.typesafe.play", "play-json_2.11") exclude("com.typesafe.play", "play-iteratees_2.11") exclude("com.typesafe.play", "play-server_2.11") exclude("com.typesafe.play", "play-netty-server_2.11"),
-  "org.reactivemongo" %% "reactivemongo-akkastream" % "0.12.6",
+  "org.reactivemongo" %% "play2-reactivemongo" % "0.18.1-play25" exclude("com.typesafe.play", "play_2.11") exclude("com.typesafe.play", "play-json_2.11") exclude("com.typesafe.play", "play-iteratees_2.11") exclude("com.typesafe.play", "play-server_2.11") exclude("com.typesafe.play", "play-netty-server_2.11"),
+//  "org.reactivemongo" %% "play2-reactivemongo" %  "0.12.6-play25" exclude("com.typesafe.play", "play_2.11") exclude("com.typesafe.play", "play-json_2.11") exclude("com.typesafe.play", "play-iteratees_2.11") exclude("com.typesafe.play", "play-server_2.11") exclude("com.typesafe.play", "play-netty-server_2.11"),
+  "org.reactivemongo" %% "reactivemongo-akkastream" % "0.18.1",
   "com.typesafe.play" %% "play-iteratees" % playVersion,
-  "org.in-cal" %% "incal-access-elastic" % "0.2.1",
+  "org.in-cal" %% "incal-access-elastic" % "0.2.2.RC.1",
   "org.apache.ignite" % "ignite-core" % "1.6.0",
   "org.apache.ignite" % "ignite-spring" % "1.6.0",
   "org.apache.ignite" % "ignite-indexing" % "1.6.0",
