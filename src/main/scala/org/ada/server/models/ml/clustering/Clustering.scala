@@ -1,25 +1,17 @@
-package org.ada.server.models.ml.unsupervised
+package org.ada.server.models.ml.clustering
 
-import java.util.Date
-
+import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONFormats._
 import org.ada.server.dataaccess.BSONObjectIdentity
 import org.ada.server.json.{EnumFormat, ManifestedFormat, SubTypeFormat}
+import org.incal.spark_ml.models.clustering._
 import play.api.libs.json.{Format, Json}
-import reactivemongo.bson.BSONObjectID
 
-abstract class UnsupervisedLearning {
-  val _id: Option[BSONObjectID]
-  val name: Option[String]
-  val createdById: Option[BSONObjectID]
-  val timeCreated: Date
-}
-
-object UnsupervisedLearning {
+object Clustering {
   implicit val KMeansInitModeEnumTypeFormat = EnumFormat(KMeansInitMode)
   implicit val LDAOptimizerEnumTypeFormat = EnumFormat(LDAOptimizer)
 
-  implicit val unsupervisedLearningFormat: Format[UnsupervisedLearning] = new SubTypeFormat[UnsupervisedLearning](
+  implicit val clusteringFormat: Format[Clustering] = new SubTypeFormat[Clustering](
     Seq(
       ManifestedFormat(Json.format[KMeans]),
       ManifestedFormat(Json.format[LDA]),
@@ -28,10 +20,10 @@ object UnsupervisedLearning {
     )
   )
 
-  implicit object UnsupervisedLearningIdentity extends BSONObjectIdentity[UnsupervisedLearning] {
-    def of(entity: UnsupervisedLearning): Option[BSONObjectID] = entity._id
+  implicit object ClusteringIdentity extends BSONObjectIdentity[Clustering] {
+    def of(entity: Clustering): Option[BSONObjectID] = entity._id
 
-    protected def set(entity: UnsupervisedLearning, id: Option[BSONObjectID]) =
+    protected def set(entity: Clustering, id: Option[BSONObjectID]) =
       entity match {
         case x: KMeans => x.copy(_id = id)
         case x: LDA => x.copy(_id = id)

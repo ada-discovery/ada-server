@@ -232,7 +232,7 @@ class MongoAsyncStreamRepo[E: Format, ID: Format](
       if (timestampFieldName.isDefined) {
         collection.indexesManager.ensure(Index(
           key = Seq(timestampFieldName.get -> IndexType.Ascending),
-          unique = true
+          unique = false
         )).map(_ => collection)
       } else
         Future(collection)

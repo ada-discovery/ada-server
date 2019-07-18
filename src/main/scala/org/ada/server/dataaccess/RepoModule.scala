@@ -20,14 +20,14 @@ import com.google.inject.name.Names
 import com.sksamuel.elastic4s.http.HttpClient
 import org.ada.server.models.dataimport.DataSetImport
 import org.ada.server.models.{Message, Translation}
-import org.ada.server.models.ml.unsupervised.UnsupervisedLearning
-import org.ada.server.models.ml.unsupervised.UnsupervisedLearning.unsupervisedLearningFormat
+import org.ada.server.models.ml.clustering.Clustering._
 import org.ada.server.dataaccess.dataset._
 import reactivemongo.bson.BSONObjectID
 import org.ada.server.dataaccess.RepoDef.Repo
 import org.ada.server.models.datatrans.DataSetMetaTransformation
 import org.ada.server.models.datatrans.DataSetTransformation.{DataSetMetaTransformationIdentity, dataSetMetaTransformationFormat}
 import org.apache.ignite.Ignite
+import org.incal.spark_ml.models.clustering.Clustering
 
 private object RepoDef extends Enumeration {
   abstract class AbstractRepo[T: Manifest] extends super.Val {
@@ -56,8 +56,8 @@ private object RepoDef extends Enumeration {
   val RegressionRepo = Repo[RegressorRepo](
     new MongoAsyncCrudRepo[Regressor, BSONObjectID]("regressions"))
 
-  val UnsupervisedLearningRepo = Repo[UnsupervisedLearningRepo](
-    new MongoAsyncCrudRepo[UnsupervisedLearning, BSONObjectID]("unsupervisedLearnings"))
+  val ClusteringRepo = Repo[ClusteringRepo](
+    new MongoAsyncCrudRepo[Clustering, BSONObjectID]("clusterings"))
 
   val DictionaryRootRepo = Repo[DictionaryRootRepo](
     new MongoAsyncCrudRepo[Dictionary, BSONObjectID]("dictionaries"))

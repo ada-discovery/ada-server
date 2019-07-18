@@ -5,7 +5,6 @@ import com.google.inject.ImplementedBy
 import org.ada.server.models.DataSetFormattersAndIds.JsObjectIdentity
 import org.ada.server.models.{Field, FieldTypeId, FieldTypeSpec}
 import org.ada.server.models.ml.IOJsonTimeSeriesSpec
-import org.ada.server.models.ml.unsupervised.UnsupervisedLearning
 import org.ada.server.services.SparkApp
 import org.ada.server.services.StatsService
 import org.apache.spark.ml.feature._
@@ -22,6 +21,7 @@ import org.incal.spark_ml.transformers._
 import org.incal.spark_ml.models.VectorScalerType
 import org.incal.spark_ml._
 import org.incal.spark_ml.models.classification.{ClassificationEvalMetric, Classifier}
+import org.incal.spark_ml.models.clustering.Clustering
 import org.incal.spark_ml.models.regression.{RegressionEvalMetric, Regressor}
 import org.incal.spark_ml.models.result.{ClassificationResultsHolder, RegressionResultsHolder}
 import org.incal.spark_ml.models.setting.{ClassificationLearningSetting, RegressionLearningSetting, TemporalClassificationLearningSetting, TemporalRegressionLearningSetting}
@@ -94,7 +94,7 @@ trait MachineLearningService {
   def cluster(
     data: Traversable[JsObject],
     fields: Seq[(String, FieldTypeSpec)],
-    mlModel: UnsupervisedLearning,
+    mlModel: Clustering,
     featuresNormalizationType: Option[VectorScalerType.Value],
     pcaDim: Option[Int] = None
   ): Traversable[(String, Int)]
@@ -102,7 +102,7 @@ trait MachineLearningService {
   def clusterDf(
     dataFrame: DataFrame,
     idColumnName: String,
-    mlModel: UnsupervisedLearning,
+    mlModel: Clustering,
     featuresNormalizationType: Option[VectorScalerType.Value],
     pcaDim: Option[Int] = None
   ): Traversable[(String, Int)]
@@ -110,7 +110,7 @@ trait MachineLearningService {
   def clusterAndGetPCA12(
     data: Traversable[JsObject],
     fields: Seq[(String, FieldTypeSpec)],
-    mlModel: UnsupervisedLearning,
+    mlModel: Clustering,
     featuresNormalizationType: Option[VectorScalerType.Value],
     pcaDim: Option[Int] = None
   ): (Traversable[(String, Int)], Traversable[(String, (Double, Double))])
@@ -365,18 +365,18 @@ private class MachineLearningServiceImpl @Inject() (
   override def cluster(
     data: Traversable[JsObject],
     fields: Seq[(String, FieldTypeSpec)],
-    mlModel: UnsupervisedLearning,
+    mlModel: Clustering,
     featuresNormalizationType: Option[VectorScalerType.Value],
     pcaDim: Option[Int]
   ): Traversable[(String, Int)] = {
-    val (df, idClusters) = clusterAux(data, fields, mlModel, featuresNormalizationType, pcaDim)
+    val (_, idClusters) = clusterAux(data, fields, mlModel, featuresNormalizationType, pcaDim)
     idClusters
   }
 
   override def clusterAndGetPCA12(
     data: Traversable[JsObject],
     fields: Seq[(String, FieldTypeSpec)],
-    mlModel: UnsupervisedLearning,
+    mlModel: Clustering,
     featuresNormalizationType: Option[VectorScalerType.Value],
     pcaDim: Option[Int]
   ): (Traversable[(String, Int)], Traversable[(String, (Double, Double))]) = {
@@ -399,7 +399,7 @@ private class MachineLearningServiceImpl @Inject() (
   override def clusterDf(
     dataFrame: DataFrame,
     idColumnName: String,
-    mlModel: UnsupervisedLearning,
+    mlModel: Clustering,
     featuresNormalizationType: Option[VectorScalerType.Value],
     pcaDim: Option[Int] = None
   ): Traversable[(String, Int)] = {
@@ -408,14 +408,14 @@ private class MachineLearningServiceImpl @Inject() (
       SparkUtil.prepFeaturesDataFrame(featureNames.toSet, None)
     )
 
-    val (df, idClusters) = clusterAux2(featureDf, idColumnName, mlModel, featuresNormalizationType, pcaDim)
+    val (df, idClusters) = cluster(featureDf, idColumnName, mlModel, featuresNormalizationType, pcaDim)
     idClusters
   }
 
   private def clusterAux(
     data: Traversable[JsObject],
     fields: Seq[(String, FieldTypeSpec)],
-    mlModel: UnsupervisedLearning,
+    mlModel: Clustering,
     featuresNormalizationType: Option[VectorScalerType.Value],
     pcaDim: Option[Int]
   ): (DataFrame, Traversable[(String, Int)]) = {
@@ -424,67 +424,7 @@ private class MachineLearningServiceImpl @Inject() (
     val fieldsWithId = fields ++ Seq((JsObjectIdentity.name, FieldTypeSpec(FieldTypeId.String)))
     val df = FeaturesDataFrameFactory(session, data, fieldsWithId, featureFieldNames)
 
-    clusterAux2(df, JsObjectIdentity.name, mlModel, featuresNormalizationType, pcaDim)
-  }
-
-  private def clusterAux2[M <: Model[M]](
-    df: DataFrame,
-    idColumnName: String,
-    mlModel: UnsupervisedLearning,
-    featuresNormalizationType: Option[VectorScalerType.Value],
-    pcaDim: Option[Int]
-  ): (DataFrame, Traversable[(String, Int)]) = {
-    val trainer = SparkUnsupervisedEstimatorFactory[M](mlModel)
-
-    // normalize
-    val normalize = featuresNormalizationType.map(VectorColumnScaler.applyInPlace(_, "features"))
-
-    // reduce the dimensionality if needed
-    val reduceDim = pcaDim.map(InPlacePCA(_))
-
-    val stages = Seq(normalize, reduceDim).flatten
-    val pipeline = new Pipeline().setStages(stages.toArray)
-    val dataFrame = pipeline.fit(df).transform(df)
-
-    val cachedDf = dataFrame.cache()
-
-    val (model, predictions) = fit(trainer, cachedDf)
-    predictions.cache()
-
-    import sparkApp.session.implicits._
-
-    def extractClusterClasses(columnName: String): Traversable[(String, Int)] =
-      predictions.select(idColumnName, columnName).map { r =>
-        val id = r(0).asInstanceOf[String]
-        val clazz = r(1).asInstanceOf[Int]
-        (id, clazz + 1)
-      }.collect
-
-    def extractClusterClasssedFromProbabilities(columnName: String): Traversable[(String, Int)] =
-      predictions.select(idColumnName, columnName).map { r =>
-        val id = r(0).asInstanceOf[String]
-        val clazz = r(1).asInstanceOf[DenseVector].values.zipWithIndex.maxBy(_._1)._2
-        (id, clazz + 1)
-      }.collect
-
-    val result = model match {
-      case _: KMeansModel =>
-        extractClusterClasses("prediction")
-
-      case _: LDAModel =>
-        extractClusterClasssedFromProbabilities("topicDistribution")
-
-      case _: BisectingKMeansModel =>
-        extractClusterClasses("prediction")
-
-      case _: GaussianMixtureModel =>
-        extractClusterClasssedFromProbabilities("probability")
-    }
-
-    predictions.unpersist()
-    cachedDf.unpersist
-
-    (dataFrame, result)
+    cluster(df, JsObjectIdentity.name, mlModel, featuresNormalizationType, pcaDim)
   }
 
   override def pcaComponents(
@@ -492,17 +432,4 @@ private class MachineLearningServiceImpl @Inject() (
     df: DataFrame
   ): DataFrame =
     InPlacePCA(k).fit(df).transform(df)
-
-  private def fit[M <: Model[M]](
-    estimator: Estimator[M],
-    data: DataFrame
-  ): (M, DataFrame) = {
-    // Fit the model
-    val lrModel = estimator.fit(data)
-
-    // Make predictions.
-    val predictions = lrModel.transform(data)
-
-    (lrModel, predictions)
-  }
 }

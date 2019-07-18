@@ -4,7 +4,7 @@ import java.nio.file.Paths
 
 import com.banda.core.plotter.Plotter
 import com.google.inject.Inject
-import org.ada.server.models.ml.unsupervised.{BisectingKMeans, KMeans, UnsupervisedLearning}
+import org.incal.spark_ml.models.clustering.{BisectingKMeans, KMeans, Clustering}
 import org.apache.commons.lang3.StringEscapeUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
@@ -103,7 +103,7 @@ trait CalcKMeansHelper {
     delimiter: Option[String],
     exportFileName: String,
     exportPlotFileName: Option[String],
-    model: UnsupervisedLearning
+    model: Clustering
   ) = {
     val unescapedDelimiter = StringEscapeUtils.unescapeJava(delimiter.getOrElse(defaultDelimiter))
 
@@ -161,8 +161,8 @@ trait CalcKMeansHelper {
   }
 
   private def setCurrentTimeAsSeed(
-    model: UnsupervisedLearning
-  ): UnsupervisedLearning =
+    model: Clustering
+  ): Clustering =
     model match {
       case kMeans: KMeans => kMeans.copy(seed = Some(new java.util.Date().getTime))
       case bisectingKMeans: BisectingKMeans => bisectingKMeans.copy(seed = Some(new java.util.Date().getTime))

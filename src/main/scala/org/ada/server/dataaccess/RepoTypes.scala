@@ -4,11 +4,12 @@ import org.ada.server.dataaccess.mongo.MongoAsyncCrudExtraRepo
 import org.ada.server.models._
 import org.ada.server.models.dataimport.DataSetImport
 import org.ada.server.models.datatrans.DataSetMetaTransformation
-import org.ada.server.models.ml.unsupervised.UnsupervisedLearning
+import org.ada.server.models.ml.clustering.Clustering
 import play.api.libs.json.JsObject
 import reactivemongo.bson.BSONObjectID
 import org.incal.core.dataaccess._
 import org.incal.spark_ml.models.classification.Classifier
+import org.incal.spark_ml.models.clustering.Clustering
 import org.incal.spark_ml.models.regression.Regressor
 import org.incal.spark_ml.models.result._
 
@@ -47,7 +48,7 @@ object RepoTypes {
 
   type ClassifierRepo = AsyncCrudRepo[Classifier, BSONObjectID]
   type RegressorRepo = AsyncCrudRepo[Regressor, BSONObjectID]
-  type UnsupervisedLearningRepo = AsyncCrudRepo[UnsupervisedLearning, BSONObjectID]
+  type ClusteringRepo = AsyncCrudRepo[Clustering, BSONObjectID]
 
   type HtmlSnippetRepo = AsyncCrudRepo[HtmlSnippet, BSONObjectID]
 }
