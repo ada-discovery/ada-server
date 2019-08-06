@@ -3,7 +3,6 @@ package org.ada.server.runnables.core
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Sink
-import com.banda.core.plotter.Plotter
 import com.google.inject.Inject
 import org.ada.server.AdaException
 import org.apache.commons.lang3.StringEscapeUtils
@@ -23,7 +22,6 @@ class CalcTSNEProjectionFromFile @Inject()(
   import statsService._
 
   private val logger = Logger
-  private val plotter = Plotter("svg")
 
   private implicit val system = ActorSystem()
   private implicit val materializer = ActorMaterializer()

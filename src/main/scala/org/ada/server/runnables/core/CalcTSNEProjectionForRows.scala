@@ -1,6 +1,5 @@
 package org.ada.server.runnables.core
 
-import com.banda.core.plotter.Plotter
 import com.google.inject.Inject
 import org.ada.server.field.FieldTypeHelper
 import org.ada.server.AdaException
@@ -23,7 +22,6 @@ class CalcTSNEProjectionForRows @Inject()(
 
   private val logger = Logger
   implicit val ftf = FieldTypeHelper.fieldTypeFactory()
-  private val plotter = Plotter("svg")
 
   def runAsFuture(input: CalcTSNEProjectionForRowsSpec) = {
     val dsa = dsaf(input.dataSetId).get

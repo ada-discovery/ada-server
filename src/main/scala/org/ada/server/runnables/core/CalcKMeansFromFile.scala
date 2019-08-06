@@ -2,7 +2,6 @@ package org.ada.server.runnables.core
 
 import java.nio.file.Paths
 
-import com.banda.core.plotter.Plotter
 import com.google.inject.Inject
 import org.incal.spark_ml.models.clustering.{BisectingKMeans, KMeans, Clustering}
 import org.apache.commons.lang3.StringEscapeUtils
@@ -95,7 +94,6 @@ trait CalcKMeansHelper {
   private val fs = FileSystem.get(sparkApp.sc.hadoopConfiguration)
 
   private val clusterClassColumnName = "clazz"
-  private val plotter = Plotter("svg")
   private val defaultDelimiter = ","
 
   protected def calcKMeansAux(
