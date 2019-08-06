@@ -29,7 +29,7 @@ libraryDependencies ++= Seq(
   "org.apache.ignite" % "ignite-spring" % "1.6.0",
   "org.apache.ignite" % "ignite-indexing" % "1.6.0",
   "org.apache.ignite" % "ignite-scalar" % "1.6.0",
-  "org.in-cal" %% "incal-spark_ml" % "0.2.2.RC.1"  exclude("com.fasterxml.jackson.core", "jackson-databind"),
+  "org.in-cal" %% "incal-spark_ml" % "0.2.2.RC.3"  exclude("com.fasterxml.jackson.core", "jackson-databind"),
   "org.reflections" % "reflections" % "0.9.10" exclude("com.google.code.findbugs", "annotations"),  // class finder
   "com.typesafe.play" %% "play-java-ws" % playVersion,                                              // WS
   "com.unboundid" % "unboundid-ldapsdk" % "2.3.8",                                                  // LDAP (in-memory) - MUST BE REMOVED

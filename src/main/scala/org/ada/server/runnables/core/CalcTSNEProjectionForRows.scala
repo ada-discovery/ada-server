@@ -6,7 +6,7 @@ import org.ada.server.AdaException
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.Logger
 import org.incal.core.runnables.InputFutureRunnableExt
-import org.incal.core.util.writeStringAsStream
+import org.incal.core.{PlotSetting, PlotlyPlotter}
 import org.ada.server.runnables.core.CalcUtil._
 import org.ada.server.services.{StatsService, TSNESetting}
 import org.ada.server.calc.impl.JsonFieldUtil._
@@ -71,8 +71,8 @@ class CalcTSNEProjectionForRows @Inject()(
         if (tsneFailed)
           logger.error(s"Row-based t-SNE for ${numericFields.size} fields return NaN values. Image export is not possible.")
         else {
-          val output = plotter.plotXY(tsneProjections.map(_.toIterable).toIterable, "t-SNE")
-          writeStringAsStream(output, new java.io.File(input.plotExportFileName.get))
+          val xys = tsneProjections.map { data => (data(0), data(1)) }
+          PlotlyPlotter.plotScatter(Seq(xys), PlotSetting(title = Some("t-SNE")), input.plotExportFileName.get)
         }
       }
 

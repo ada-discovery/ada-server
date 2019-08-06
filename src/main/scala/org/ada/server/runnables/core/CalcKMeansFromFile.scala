@@ -3,18 +3,20 @@ package org.ada.server.runnables.core
 import java.nio.file.Paths
 
 import com.google.inject.Inject
-import org.incal.spark_ml.models.clustering.{BisectingKMeans, KMeans, Clustering}
+import org.incal.spark_ml.models.clustering.{BisectingKMeans, Clustering, KMeans}
 import org.apache.commons.lang3.StringEscapeUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 import org.apache.hadoop.fs._
 import play.api.Logger
 import org.incal.core.runnables.{InputRunnable, InputRunnableExt}
+import org.incal.core.util.GroupMapList3
+import org.incal.core.{PlotSetting, PlotlyPlotter}
 import org.ada.server.services.SparkApp
 import org.ada.server.services.ml.MachineLearningService
 
 import collection.JavaConverters._
-import scala.reflect.runtime.universe.typeOf
+
 import scala.util.Random
 import org.incal.core.util.{listFiles, writeStringAsStream}
 
@@ -56,7 +58,7 @@ class CalcKMeansFromFolder @Inject()(
       logger.info(s"Executing k-means with k=${input.k} for the file '$inputFileName'.")
       val exportFileBaseName = inputFileName.substring(0, inputFileName.size - (input.extension.size + 1)) + s"-${modelPrefix}_${input.k}${iterPart}"
       val exportFileName = input.exportFolderName + "/" + exportFileBaseName + ".csv"
-      val exportPlotFileName = if (input.exportPlot) Some(input.exportFolderName + "/" + exportFileBaseName + ".png") else None
+      val exportPlotFileName = if (input.exportPlot) Some(input.exportFolderName + "/" + exportFileBaseName + ".html") else None
 
       calcKMeansAux(input.inputFolderName + "/" + inputFileName, input.delimiter, exportFileName, exportPlotFileName, model)
     }
@@ -146,15 +148,16 @@ trait CalcKMeansHelper {
       val featureColumnNames = df.columns.filterNot(_.equals(idColumnName)).toSeq
       val finalDfRows = finalDf.select(clusterClassColumnName, featureColumnNames: _*).collect()
 
-      val values = finalDfRows.map { row =>
-        for (i <- 1 to row.size - 1) yield row.getDouble(i)
-      }
+      val labelValues = finalDfRows.map { row =>
+        (row.getInt(0).toString, row.getDouble(1), row.getDouble(2))
+      }.toSeq
 
-      // TODO: use labels
-      val labels = finalDfRows.map(_.getInt(0))
+      val labelValuesGrouped = labelValues.toGroupMap
 
-      val output = plotter.plotXY(values, "k-Means")
-      writeStringAsStream(output, new java.io.File(exportPlotFileName.get))
+      val values = labelValuesGrouped.map(_._2)
+      val labels = labelValuesGrouped.map(_._1).toSeq
+
+      PlotlyPlotter.plotScatter(values, PlotSetting(title = Some("k-Means"), captions = labels), exportPlotFileName.get)
     }
   }
 

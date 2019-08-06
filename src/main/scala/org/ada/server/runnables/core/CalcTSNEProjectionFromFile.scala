@@ -8,9 +8,9 @@ import org.ada.server.AdaException
 import org.apache.commons.lang3.StringEscapeUtils
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory
 import play.api.Logger
+import org.incal.core.{PlotSetting, PlotlyPlotter}
 import org.incal.core.runnables.{InputFutureRunnable, InputFutureRunnableExt}
 import org.ada.server.services.{StatsService, TSNESetting}
-import org.incal.core.util.writeStringAsStream
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -65,7 +65,7 @@ class CalcTSNEProjectionFromFile @Inject()(
 
         val pcaDimsPart = setting.pcaDims.map(pcaDims => s"_pca-$pcaDims").getOrElse("")
         val exportFileName = s"${input.exportFileName}-${input.dims}d_iter-${iterations}_per-${perplexity}_theta-${theta}" + pcaDimsPart
-        val plotExportFileName = if (input.exportPlot) Some(exportFileName + ".png") else None
+        val plotExportFileName = if (input.exportPlot) Some(exportFileName + ".html") else None
 
         runAndExportAux(
           input.inputFileName,
@@ -105,8 +105,8 @@ class CalcTSNEProjectionFromFile @Inject()(
       if (tsneFailed)
         logger.error(s"$prefix t-SNE for a file ${inputFileName} returned NaN values. Image export is not possible.")
       else {
-        val output = plotter.plotXY(tsneProjections.map(_.toIterable).toIterable, "t-SNE")
-        writeStringAsStream(output, new java.io.File(plotExportFileName.get))
+        val xys = tsneProjections.map(data => (data(0), data(1))).toSeq
+        PlotlyPlotter.plotScatter(Seq(xys), PlotSetting(title = Some("t-SNE")), plotExportFileName.get)
       }
     }
 
