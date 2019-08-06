@@ -2,7 +2,7 @@ organization := "org.adada"
 
 name := "ada-server"
 
-version := "0.8.1.RC.1"
+version := "0.8.1.RC.2"
 
 description := "Server side of Ada Discovery Analytics containing a persistence layer, stats and data import/transformation services, and util classes."
 
@@ -29,10 +29,10 @@ libraryDependencies ++= Seq(
   "org.apache.ignite" % "ignite-spring" % "1.6.0",
   "org.apache.ignite" % "ignite-indexing" % "1.6.0",
   "org.apache.ignite" % "ignite-scalar" % "1.6.0",
-  "org.in-cal" %% "incal-spark_ml" % "0.2.1"  exclude("com.fasterxml.jackson.core", "jackson-databind"),
+  "org.in-cal" %% "incal-spark_ml" % "0.2.2.RC.1"  exclude("com.fasterxml.jackson.core", "jackson-databind"),
   "org.reflections" % "reflections" % "0.9.10" exclude("com.google.code.findbugs", "annotations"),  // class finder
   "com.typesafe.play" %% "play-java-ws" % playVersion,                                              // WS
-  "com.unboundid" % "unboundid-ldapsdk" % "2.3.8",                                                  // LDAP (in-memory)
+  "com.unboundid" % "unboundid-ldapsdk" % "2.3.8",                                                  // LDAP (in-memory) - MUST BE REMOVED
   "com.github.lejon.T-SNE-Java" % "tsne" % "v2.5.0",                                                // t-SNE Java
   "org.scalanlp" %% "breeze" % "0.13.2",                                                            // linear algebra and stuff
   "org.scalanlp" %% "breeze-natives" % "0.13.2",                                                    // linear algebra and stuff (native)
