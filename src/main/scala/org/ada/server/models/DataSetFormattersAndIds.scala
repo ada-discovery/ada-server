@@ -7,8 +7,10 @@ import org.ada.server.json.{EnumFormat, ManifestedFormat, SerializableFormat, Su
 import org.incal.core.Identity
 import play.api.libs.functional.syntax._
 import reactivemongo.play.json.BSONFormats._
-import play.api.libs.json.{Format, JsObject, Json, __}
+import play.api.libs.json._
+import play.api.libs.json.{Format, JsObject, Json}
 import reactivemongo.bson.BSONObjectID
+import org.ada.server.models.NavigationItem.navigationItemFormat
 
 // JSON converters and identities
 
@@ -87,8 +89,10 @@ object DataSetFormattersAndIds {
 
   implicit val filterShowFieldStyleFormat = EnumFormat(FilterShowFieldStyle)
   implicit val storageTypeFormat = EnumFormat(StorageType)
+
   val dataSetSettingFormat = Json.format[DataSetSetting]
   implicit val serializableDataSetSettingFormat = new SerializableFormat(dataSetSettingFormat.reads, dataSetSettingFormat.writes)
+
   val serializableBSONObjectIDFormat = new SerializableFormat(BSONObjectIDFormat.reads, BSONObjectIDFormat.writes)
 
   implicit object DictionaryIdentity extends BSONObjectIdentity[Dictionary] {

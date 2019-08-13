@@ -10,7 +10,7 @@ import org.ada.server.services.StatsService
 import org.apache.spark.ml.feature._
 import org.apache.spark.ml._
 import org.apache.spark.sql.types.{Metadata, MetadataBuilder, StructType, _}
-import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import org.apache.spark.sql.{DataFrame, Dataset, Encoders, Row}
 import org.apache.spark.ml.clustering._
 import org.apache.spark.ml.linalg.{DenseVector, Vector, Vectors}
 import org.apache.spark.ml.param._
@@ -30,6 +30,8 @@ import scala.concurrent.{Await, Future}
 
 @ImplementedBy(classOf[MachineLearningServiceImpl])
 trait MachineLearningService {
+
+  // Classification
 
   def classifyStatic(
     data: Traversable[JsObject],
@@ -61,6 +63,8 @@ trait MachineLearningService {
     replicationData: Traversable[JsObject] = Nil
   ): Future[ClassificationResultsHolder]
 
+  // Regression
+
   def regressStatic(
     data: Traversable[JsObject],
     fields: Seq[(String, FieldTypeSpec)],
@@ -91,17 +95,19 @@ trait MachineLearningService {
     replicationData: Traversable[JsObject] = Nil
   ): Future[RegressionResultsHolder]
 
-  def cluster(
-    data: Traversable[JsObject],
-    fields: Seq[(String, FieldTypeSpec)],
+  // Clustering
+
+  def clusterDf(
+    dataFrame: DataFrame,
+    idColumnName: String,
     mlModel: Clustering,
     featuresNormalizationType: Option[VectorScalerType.Value],
     pcaDim: Option[Int] = None
   ): Traversable[(String, Int)]
 
-  def clusterDf(
-    dataFrame: DataFrame,
-    idColumnName: String,
+  def clusterBasic(
+    data: Traversable[JsObject],
+    fields: Seq[(String, FieldTypeSpec)],
     mlModel: Clustering,
     featuresNormalizationType: Option[VectorScalerType.Value],
     pcaDim: Option[Int] = None
@@ -362,7 +368,7 @@ private class MachineLearningServiceImpl @Inject() (
       filterGroups.map(_.transform(seriesDf)).getOrElse(seriesDf)
   }
 
-  override def cluster(
+  override def clusterBasic(
     data: Traversable[JsObject],
     fields: Seq[(String, FieldTypeSpec)],
     mlModel: Clustering,
@@ -408,8 +414,9 @@ private class MachineLearningServiceImpl @Inject() (
       SparkUtil.prepFeaturesDataFrame(featureNames.toSet, None)
     )
 
-    val (df, idClusters) = cluster(featureDf, idColumnName, mlModel, featuresNormalizationType, pcaDim)
-    idClusters
+    val resultsDf = cluster(featureDf, mlModel, featuresNormalizationType, pcaDim)
+
+    idClusterPairs(resultsDf, idColumnName)
   }
 
   private def clusterAux(
@@ -424,7 +431,22 @@ private class MachineLearningServiceImpl @Inject() (
     val fieldsWithId = fields ++ Seq((JsObjectIdentity.name, FieldTypeSpec(FieldTypeId.String)))
     val df = FeaturesDataFrameFactory(session, data, fieldsWithId, featureFieldNames)
 
-    cluster(df, JsObjectIdentity.name, mlModel, featuresNormalizationType, pcaDim)
+    val resultsDf = cluster(df, mlModel, featuresNormalizationType, pcaDim)
+
+    (resultsDf, idClusterPairs(resultsDf, JsObjectIdentity.name))
+  }
+
+  private def idClusterPairs(
+    resultsDf: DataFrame,
+    idColumnName: String
+  ): Traversable[(String, Int)] = {
+    implicit val encoder = Encoders.tuple(Encoders.STRING, Encoders.scalaInt)
+
+    resultsDf.select(idColumnName, "cluster").map { r =>
+      val id = r(0).asInstanceOf[String]
+      val clazz = r(1).asInstanceOf[Int]
+      (id, clazz + 1)
+    }.collect
   }
 
   override def pcaComponents(

@@ -10,7 +10,7 @@ case class DataSpaceMetaInfo(
   name: String,
   sortOrder: Int,
   timeCreated: Date = new Date(),
-  dataSetMetaInfos: Seq[DataSetMetaInfo] = Seq[DataSetMetaInfo](),
+  dataSetMetaInfos: Seq[DataSetMetaInfo] = Nil,
   parentId: Option[BSONObjectID] = None,
   var children: Buffer[DataSpaceMetaInfo] = ListBuffer[DataSpaceMetaInfo]()
 )

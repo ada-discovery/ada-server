@@ -3,7 +3,7 @@ package org.ada.server.dataaccess
 import org.ada.server.dataaccess.RepoTypes.FieldRepo
 import org.ada.server.field.FieldUtil.caseClassToFlatFieldTypes
 import org.ada.server.models.Field
-import org.apache.commons.lang.StringUtils
+import org.incal.core.util.toHumanReadableCamel
 import scala.reflect.runtime.universe.TypeTag
 
 object CaseClassFieldRepo {
@@ -21,9 +21,4 @@ object CaseClassFieldRepo {
 
     TransientLocalFieldRepo(fields)
   }
-
-  private def toHumanReadableCamel(s: String): String =
-    StringUtils.splitByCharacterTypeCamelCase(s.replaceAll("[_|\\.]", " ")).filter(!_.equals(" ")).map(
-      _.toLowerCase.capitalize
-    ).mkString(" ")
 }

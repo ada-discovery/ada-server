@@ -3,8 +3,8 @@ package org.ada.server.runnables.core
 import java.{lang => jl}
 
 import javax.inject.Inject
-import com.banda.math.domain.rand.RandomDistribution
-import com.banda.network.domain.ActivationFunctionType
+import com.bnd.math.domain.rand.RandomDistribution
+import com.bnd.network.domain.ActivationFunctionType
 import org.ada.server.models.ml.IOJsonTimeSeriesSpec
 import org.ada.server.dataaccess.RepoTypes.RegressorRepo
 import org.ada.server.dataaccess.dataset.DataSetAccessorFactory

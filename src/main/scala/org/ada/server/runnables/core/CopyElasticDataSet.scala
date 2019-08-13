@@ -47,7 +47,7 @@ class CopyElasticDataSet @Inject()(
       }
 
       // create a temp Elastic index accessor
-      targetElasticRepo = elasticDataSetRepoFactory(targetIndexName, targetIndexName, fieldNameAndTypes, Some(setting), false)
+      targetElasticRepo = elasticDataSetRepoFactory(targetIndexName, targetIndexName, fieldNameAndTypes, Some(setting), input.targetDataSetExcludeIdMapping)
 
       // the source stream
       sourceStream <- sourceElasticRepo.findAsStream()
@@ -65,6 +65,7 @@ class CopyElasticDataSet @Inject()(
 case class CopyElasticDataSetSpec(
   sourceDataSetId: String,
   targetDataSetId: String,
+  targetDataSetExcludeIdMapping: Boolean,
   fieldDataSetId: String,
   refreshPolicy: RefreshPolicy.Value,
   streamSpec: StreamSpec,

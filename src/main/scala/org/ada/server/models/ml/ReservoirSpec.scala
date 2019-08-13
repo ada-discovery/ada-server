@@ -1,7 +1,7 @@
 package org.ada.server.models.ml
 
-import com.banda.math.domain.rand.RandomDistribution
-import com.banda.network.domain.ActivationFunctionType
+import com.bnd.math.domain.rand.RandomDistribution
+import com.bnd.network.domain.ActivationFunctionType
 import org.ada.server.json.{EitherFormat, JavaEnumFormat, OptionFormat}
 import org.incal.spark_ml.models.{ReservoirSpec => ReservoirSpecModel}
 import org.incal.spark_ml.models.ValueOrSeq.ValueOrSeq
