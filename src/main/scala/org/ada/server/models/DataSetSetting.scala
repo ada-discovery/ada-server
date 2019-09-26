@@ -18,6 +18,7 @@ case class DataSetSetting(
   mongoAutoCreateIndexForProjection: Boolean = false,
   cacheDataSet: Boolean = false,
   ownerId: Option[BSONObjectID] = None,
+  showSideCategoricalTree: Boolean = true,
   extraNavigationItems: Seq[NavigationItem] = Nil
 ) {
   def this(
