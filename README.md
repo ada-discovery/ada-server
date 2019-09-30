@@ -28,7 +28,7 @@ or to *pom.xml* (if you use maven)
 
 #### License
 
-The project and all its code is distributed under the terms of the [https://www.apache.org/licenses/LICENSE-2.0.txt](Apache 2.0 license). 
+The project and all its code is distributed under the terms of the <a href="https://www.apache.org/licenses/LICENSE-2.0.txt">Apache 2.0 license</a>. 
 
 #### Acknowledgement and Support
 
