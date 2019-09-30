@@ -1,10 +1,16 @@
 # Ada Server [![version](https://img.shields.io/badge/version-0.8.0-green.svg)](https://ada-discovery.org) [![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
-This is a server part of Ada Discovery Analytics.
+The project serves as a server part of Ada Discovery Analytics platform providing.
+
+* Domain classes with JSON formatters.
+* Persistence layer with convenient repo abstractions for Mongo, Elastic Search, and Apache Ignite. 
+* Data set importers and transformations.
+* Stats calculators with Akka streaming support.
+* Machine learning service providing various classification, regression, and clustering routines backed by Apache Spark.
 
 #### Installation
 
-All you need is **Scala 2.11**. To pull the library you have to add the following dependency to *build.sbt*
+If you want to use *Ada Server* in your own project all you need is **Scala 2.11**. To pull the library you have to add the following dependency to *build.sbt*
 
 ```
 "org.adada" %% "ada-server" % "0.8.0"
@@ -19,3 +25,23 @@ or to *pom.xml* (if you use maven)
     <version>0.8.0</version>
 </dependency>
 ```
+
+#### License
+
+The project and all its code is distributed under the terms of the [https://www.apache.org/licenses/LICENSE-2.0.txt](Apache 2.0 license). 
+
+#### Acknowledgement and Support
+
+<tbody>
+    <tr>
+        <td>
+<a href="https://wwwen.uni.lu/lcsb"><img src="https://ada-discovery.github.io/images/logos/logoLCSB-long-230x97.jpg"></a>
+</td>
+<td>
+<a href="https://www.fnr.lu"><img src="https://ada-discovery.github.io/images/logos/fnr_logo-350x94.png"></a>
+</td>
+<td>
+<a href="https://www.michaeljfox.org"><img src="https://ada-discovery.github.io/images/logos/MJFF-logo-resized-300x99.jpg"></a>
+</td>
+</tr>
+</tbody>
