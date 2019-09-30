@@ -19,7 +19,8 @@ case class DataSetSetting(
   cacheDataSet: Boolean = false,
   ownerId: Option[BSONObjectID] = None,
   showSideCategoricalTree: Boolean = true,
-  extraNavigationItems: Seq[NavigationItem] = Nil
+  extraNavigationItems: Seq[NavigationItem] = Nil,
+  customControllerClassName: Option[String] = None
 ) {
   def this(
     dataSetId: String,
