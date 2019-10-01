@@ -3,7 +3,11 @@ package org.ada.server.models.datatrans
 import java.util.Date
 
 import org.ada.server.dataaccess.StreamSpec
+import org.ada.server.json.HasFormat
 import org.ada.server.models.ScheduledTime
+import org.ada.server.models.datatrans.DataSetTransformation._
+import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
+import play.api.libs.json.Json
 import reactivemongo.bson.BSONObjectID
 
 case class LinkTwoDataSetsTransformation(
@@ -39,4 +43,8 @@ case class LinkTwoDataSetsTransformation(
     scheduled = _scheduled,
     scheduledTime = _scheduledTime
   )
+}
+
+object LinkTwoDataSetsTransformation extends HasFormat[LinkTwoDataSetsTransformation] {
+  val format = Json.format[LinkTwoDataSetsTransformation]
 }

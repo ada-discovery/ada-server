@@ -30,11 +30,11 @@ object Regressor {
 
   implicit val regressorFormat: Format[Regressor] = new SubTypeFormat[Regressor](
     Seq(
-      ManifestedFormat(Json.format[LinearRegression]),
-      ManifestedFormat(Json.format[GeneralizedLinearRegression]),
-      ManifestedFormat(Json.format[RegressionTree]),
-      ManifestedFormat(Json.format[RandomRegressionForest]),
-      ManifestedFormat(Json.format[GradientBoostRegressionTree])
+      RuntimeClassFormat(Json.format[LinearRegression]),
+      RuntimeClassFormat(Json.format[GeneralizedLinearRegression]),
+      RuntimeClassFormat(Json.format[RegressionTree]),
+      RuntimeClassFormat(Json.format[RandomRegressionForest]),
+      RuntimeClassFormat(Json.format[GradientBoostRegressionTree])
     )
   )
 

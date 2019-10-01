@@ -3,7 +3,7 @@ package org.ada.server.models
 import java.util.UUID
 
 import org.ada.server.dataaccess.BSONObjectIdentity
-import org.ada.server.json.{EnumFormat, ManifestedFormat, SerializableFormat, SubTypeFormat}
+import org.ada.server.json.{EnumFormat, RuntimeClassFormat, SerializableFormat, SubTypeFormat}
 import org.incal.core.Identity
 import play.api.libs.functional.syntax._
 import reactivemongo.play.json.BSONFormats._
@@ -50,19 +50,19 @@ object DataSetFormattersAndIds {
   implicit val distributionDisplayOptionsFormat = Json.format[MultiChartDisplayOptions]
 
   // register your widget spec class here
-  private val widgetSpecManifestedFormats: Seq[ManifestedFormat[_ <: WidgetSpec]] =
+  private val widgetSpecManifestedFormats: Seq[RuntimeClassFormat[_ <: WidgetSpec]] =
     Seq(
-      ManifestedFormat(Json.format[DistributionWidgetSpec]),
-      ManifestedFormat(Json.format[CumulativeCountWidgetSpec]),
-      ManifestedFormat(Json.format[BoxWidgetSpec]),
-      ManifestedFormat(Json.format[ScatterWidgetSpec]),
-      ManifestedFormat(Json.format[ValueScatterWidgetSpec]),
-      ManifestedFormat(Json.format[HeatmapAggWidgetSpec]),
-      ManifestedFormat(Json.format[GridDistributionCountWidgetSpec]),
-      ManifestedFormat(Json.format[CorrelationWidgetSpec]),
-      ManifestedFormat(Json.format[IndependenceTestWidgetSpec]),
-      ManifestedFormat(Json.format[BasicStatsWidgetSpec]),
-      ManifestedFormat(Json.format[CustomHtmlWidgetSpec])
+      RuntimeClassFormat(Json.format[DistributionWidgetSpec]),
+      RuntimeClassFormat(Json.format[CumulativeCountWidgetSpec]),
+      RuntimeClassFormat(Json.format[BoxWidgetSpec]),
+      RuntimeClassFormat(Json.format[ScatterWidgetSpec]),
+      RuntimeClassFormat(Json.format[ValueScatterWidgetSpec]),
+      RuntimeClassFormat(Json.format[HeatmapAggWidgetSpec]),
+      RuntimeClassFormat(Json.format[GridDistributionCountWidgetSpec]),
+      RuntimeClassFormat(Json.format[CorrelationWidgetSpec]),
+      RuntimeClassFormat(Json.format[IndependenceTestWidgetSpec]),
+      RuntimeClassFormat(Json.format[BasicStatsWidgetSpec]),
+      RuntimeClassFormat(Json.format[CustomHtmlWidgetSpec])
     )
 
   val widgetSpecClasses: Seq[Class[_ <: WidgetSpec]] = widgetSpecManifestedFormats.map(_.runtimeClass)

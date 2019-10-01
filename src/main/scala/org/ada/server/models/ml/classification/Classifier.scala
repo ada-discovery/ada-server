@@ -30,13 +30,13 @@ object Classifier {
 
   implicit val classifierFormat: Format[Classifier] = new SubTypeFormat[Classifier](
     Seq(
-      ManifestedFormat(Json.format[LogisticRegression]),
-      ManifestedFormat(Json.format[MultiLayerPerceptron]),
-      ManifestedFormat(Json.format[DecisionTree]),
-      ManifestedFormat(Json.format[RandomForest]),
-      ManifestedFormat(Json.format[GradientBoostTree]),
-      ManifestedFormat(Json.format[NaiveBayes]),
-      ManifestedFormat(Json.format[LinearSupportVectorMachine])
+      RuntimeClassFormat(Json.format[LogisticRegression]),
+      RuntimeClassFormat(Json.format[MultiLayerPerceptron]),
+      RuntimeClassFormat(Json.format[DecisionTree]),
+      RuntimeClassFormat(Json.format[RandomForest]),
+      RuntimeClassFormat(Json.format[GradientBoostTree]),
+      RuntimeClassFormat(Json.format[NaiveBayes]),
+      RuntimeClassFormat(Json.format[LinearSupportVectorMachine])
     )
   )
 

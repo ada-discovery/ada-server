@@ -2,11 +2,11 @@ package org.ada.server.models.dataimport
 
 import org.ada.server.models._
 import org.ada.server.dataaccess.BSONObjectIdentity
-import org.ada.server.json.{EnumFormat, ManifestedFormat, SubTypeFormat}
+import org.ada.server.json.{EnumFormat, HasFormat, RuntimeClassFormat, SubTypeFormat}
 import reactivemongo.bson.BSONObjectID
 import java.util.Date
 
-import reactivemongo.play.json.BSONFormats._
+import org.ada.server.services.StaticLookupCentralImpl
 import play.api.libs.json._
 
 trait DataSetImport extends Schedulable {
@@ -36,16 +36,11 @@ object DataSetImport {
   implicit val dataSetSettingFormat = DataSetFormattersAndIds.dataSetSettingFormat
   implicit val dataViewFormat = DataView.dataViewFormat
 
-  implicit val dataSetImportFormat: Format[DataSetImport] = new SubTypeFormat[DataSetImport](
-    Seq(
-      ManifestedFormat(Json.format[CsvDataSetImport]),
-      ManifestedFormat(Json.format[JsonDataSetImport]),
-      ManifestedFormat(Json.format[SynapseDataSetImport]),
-      ManifestedFormat(Json.format[TranSmartDataSetImport]),
-      ManifestedFormat(Json.format[RedCapDataSetImport]),
-      ManifestedFormat(Json.format[EGaitDataSetImport])
-    )
-  )
+  private val subFormats = new StaticLookupCentralImpl[HasFormat[DataSetImport]](
+    getClass.getPackage.getName, true
+  ).apply.map(x => RuntimeClassFormat(x.format, x.runtimeClass))
+
+  implicit val dataSetImportFormat: Format[DataSetImport] = new SubTypeFormat[DataSetImport](subFormats)
 
   implicit object DataSetImportIdentity extends BSONObjectIdentity[DataSetImport] {
     def of(entity: DataSetImport): Option[BSONObjectID] = entity._id

@@ -3,7 +3,7 @@ package org.ada.server.models.ml.clustering
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONFormats._
 import org.ada.server.dataaccess.BSONObjectIdentity
-import org.ada.server.json.{EnumFormat, ManifestedFormat, SubTypeFormat}
+import org.ada.server.json.{EnumFormat, RuntimeClassFormat, SubTypeFormat}
 import org.incal.spark_ml.models.clustering._
 import play.api.libs.json.{Format, Json}
 
@@ -13,10 +13,10 @@ object Clustering {
 
   implicit val clusteringFormat: Format[Clustering] = new SubTypeFormat[Clustering](
     Seq(
-      ManifestedFormat(Json.format[KMeans]),
-      ManifestedFormat(Json.format[LDA]),
-      ManifestedFormat(Json.format[BisectingKMeans]),
-      ManifestedFormat(Json.format[GaussianMixture])
+      RuntimeClassFormat(Json.format[KMeans]),
+      RuntimeClassFormat(Json.format[LDA]),
+      RuntimeClassFormat(Json.format[BisectingKMeans]),
+      RuntimeClassFormat(Json.format[GaussianMixture])
     )
   )
 

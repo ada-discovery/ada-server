@@ -67,7 +67,7 @@ object AkkaStreamUtil {
       source1 ~> zip.in0
       source2 ~> zip.in1
 
-      // expose port
+      // expose the port
       SourceShape(zip.out)
     })
 

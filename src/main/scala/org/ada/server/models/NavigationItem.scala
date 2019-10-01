@@ -1,7 +1,7 @@
 package org.ada.server.models
 
 import play.api.libs.json.{Format, JsObject, Json}
-import org.ada.server.json.{ManifestedFormat, SubTypeFormat}
+import org.ada.server.json.{RuntimeClassFormat, SubTypeFormat}
 
 trait NavigationItem
 
@@ -19,8 +19,8 @@ object NavigationItem {
 
   implicit val navigationItemFormat: Format[NavigationItem] = new SubTypeFormat[NavigationItem](
     Seq(
-      ManifestedFormat(linkFormat),
-      ManifestedFormat(menuFormat)
+      RuntimeClassFormat(linkFormat),
+      RuntimeClassFormat(menuFormat)
     )
   )
 }

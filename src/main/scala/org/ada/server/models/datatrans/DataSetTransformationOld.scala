@@ -6,6 +6,8 @@ import org.ada.server.models.{ScheduledTime, StorageType}
 import org.incal.spark_ml.models.VectorScalerType
 import play.api.libs.json.Json
 
+// TODO: migrate to DataSetTransformation
+@Deprecated
 trait DataSetTransformation2 {
   val resultDataSetSpec: ResultDataSetSpec
   def resultDataSetId = resultDataSetSpec.id

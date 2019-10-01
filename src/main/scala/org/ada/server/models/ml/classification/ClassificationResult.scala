@@ -65,8 +65,8 @@ object ClassificationResult {
 
     new SubTypeFormat[ClassificationResult](
       Seq(
-        ManifestedFormat(standardFormat),
-        ManifestedFormat(temporalFormat)
+        RuntimeClassFormat(standardFormat),
+        RuntimeClassFormat(temporalFormat)
       )
     )
   }

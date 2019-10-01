@@ -67,8 +67,8 @@ object RegressionResult {
 
     new SubTypeFormat[RegressionResult](
       Seq(
-        ManifestedFormat(standardFormat),
-        ManifestedFormat(temporalFormat)
+        RuntimeClassFormat(standardFormat),
+        RuntimeClassFormat(temporalFormat)
       )
     )
   }

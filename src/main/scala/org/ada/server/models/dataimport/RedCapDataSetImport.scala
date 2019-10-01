@@ -2,7 +2,11 @@ package org.ada.server.models.dataimport
 
 import java.util.Date
 
+import org.ada.server.json.HasFormat
 import org.ada.server.models.{DataSetSetting, DataView, ScheduledTime}
+import org.ada.server.models.dataimport.DataSetImport._
+import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
+import play.api.libs.json.Json
 import reactivemongo.bson.BSONObjectID
 
 case class RedCapDataSetImport(
@@ -37,4 +41,8 @@ case class RedCapDataSetImport(
     scheduled = _scheduled,
     scheduledTime = _scheduledTime
   )
+}
+
+object RedCapDataSetImport extends HasFormat[RedCapDataSetImport] {
+  val format = Json.format[RedCapDataSetImport]
 }

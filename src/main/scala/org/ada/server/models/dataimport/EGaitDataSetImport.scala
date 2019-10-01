@@ -2,7 +2,11 @@ package org.ada.server.models.dataimport
 
 import java.util.Date
 
+import org.ada.server.json.HasFormat
 import org.ada.server.models.{DataSetSetting, DataView, ScheduledTime}
+import org.ada.server.models.dataimport.DataSetImport._
+import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
+import play.api.libs.json.Json
 import reactivemongo.bson.BSONObjectID
 
 case class EGaitDataSetImport(
@@ -32,4 +36,8 @@ case class EGaitDataSetImport(
     scheduled = _scheduled,
     scheduledTime = _scheduledTime
   )
+}
+
+object EGaitDataSetImport extends HasFormat[EGaitDataSetImport] {
+  val format = Json.format[EGaitDataSetImport]
 }

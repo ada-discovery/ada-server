@@ -5,6 +5,7 @@ import java.util.Date
 import org.ada.server.dataaccess.{BSONObjectIdentity, StreamSpec}
 import org.ada.server.json._
 import org.ada.server.models.{Schedulable, ScheduledTime, StorageType, WeekDay}
+import org.ada.server.services.StaticLookupCentralImpl
 import play.api.libs.json.{Format, Json}
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONFormats._
@@ -50,19 +51,12 @@ object DataSetTransformation {
   implicit val tupleFormat2 = TupleFormat[String, String, String]
   implicit val optionIntFormat = new OptionFormat[Int]
   implicit val tupleFormat3 = TupleFormat[String, Option[Int]]
-  implicit val linkedDataSetSpecFormat = Json.format[LinkedDataSetSpec]
 
-  implicit val dataSetMetaTransformationFormat: Format[DataSetMetaTransformation] = new SubTypeFormat[DataSetMetaTransformation](
-    Seq(
-      ManifestedFormat(Json.format[CopyDataSetTransformation]),
-      ManifestedFormat(Json.format[DropFieldsTransformation]),
-      ManifestedFormat(Json.format[RenameFieldsTransformation]),
-      ManifestedFormat(Json.format[ChangeFieldEnumsTransformation]),
-      ManifestedFormat(Json.format[MatchGroupsWithConfoundersTransformation]),
-      ManifestedFormat(Json.format[LinkTwoDataSetsTransformation]),
-      ManifestedFormat(Json.format[LinkMultiDataSetsTransformation])
-    )
-  )
+  private val subFormats = new StaticLookupCentralImpl[HasFormat[DataSetMetaTransformation]](
+    getClass.getPackage.getName, true
+  ).apply.map(x => RuntimeClassFormat(x.format, x.runtimeClass))
+
+  implicit val dataSetMetaTransformationFormat: Format[DataSetMetaTransformation] = new SubTypeFormat[DataSetMetaTransformation](subFormats)
 
   implicit object DataSetMetaTransformationIdentity extends BSONObjectIdentity[DataSetMetaTransformation] {
     def of(entity: DataSetMetaTransformation): Option[BSONObjectID] = entity._id
