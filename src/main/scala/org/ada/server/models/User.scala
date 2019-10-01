@@ -15,7 +15,14 @@ import reactivemongo.play.json.BSONFormats._
   * @param roles Roles for Deadbolt.
   * @param permissions Permissions for Deadbolt.
   */
-case class User(_id: Option[BSONObjectID], ldapDn: String, email: String, roles: Seq[String], permissions: Seq[String])
+case class User(
+  _id: Option[BSONObjectID],
+  ldapDn: String, // TODO: rename to userName
+  email: String,
+  roles: Seq[String],
+  permissions: Seq[String] = Nil,
+  locked: Boolean = false
+)
 
 object User {
   val userFormat: Format[User] = Json.format[User]

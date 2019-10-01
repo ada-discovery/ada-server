@@ -16,20 +16,9 @@ import scala.concurrent.Future.sequence
 trait UserManager {
 
   /**
-    * Matches email and password for authentication.
-    * Returns an Account, if successful.
- *
-    * @param id ID (e.g. mail) for matching.
-    * @param password Password which should match the password associated to the mail.
-    * @return None, if password is wrong or not associated mail was found. Corresponding Account otherwise.
+    * Matches a user id and password for authentication.
     */
-  def authenticate(id: String, password: String): Future[Boolean] =
-    findByEmail(id).map(userOp =>
-      userOp match {
-        case Some(usr) => true //(usr.password == password)
-        case None => false
-      }
-    )
+  def authenticate(id: String, password: String): Future[Boolean]
 
   def synchronizeRepos: Future[Unit]
 
@@ -41,8 +30,8 @@ trait UserManager {
 
   def debugUsers: Traversable[User]
 
-  val adminUser = User(None, "admin.user", "admin@mail", Seq("admin"), Seq())
-  val basicUser = User(None, "basic.user", "basic@mail", Seq("basic"), Seq())
+  val adminUser = User(None, "admin.user", "admin@mail", Seq("admin"))
+  val basicUser = User(None, "basic.user", "basic@mail", Seq("basic"))
 }
 
 /**
