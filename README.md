@@ -1,8 +1,7 @@
 # Ada Server [![version](https://img.shields.io/badge/version-0.8.0-green.svg)](https://ada-discovery.org) [![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
-<img src="https://ada-discovery.github.io/images/logo.png" width="500px">
-
-The project serves as a server part of Ada Discovery Analytics platform providing.
+c
+The project serves as a server part of Ada Discovery Analytics platform providing:
 
 * Domain classes with JSON formatters.
 * Persistence layer with convenient repo abstractions for Mongo, Elastic Search, and Apache Ignite. 
