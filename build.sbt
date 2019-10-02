@@ -2,7 +2,7 @@ organization := "org.adada"
 
 name := "ada-server"
 
-version := "0.8.1.RC.8"
+version := "0.8.1.RC.9"
 
 description := "Server side of Ada Discovery Analytics containing a persistence layer, stats and data import/transformation services, and util classes."
 
@@ -11,8 +11,7 @@ isSnapshot := false
 scalaVersion := "2.11.12"
 
 resolvers ++= Seq(
-  "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
-  "JCenter" at "http://jcenter.bintray.com/",
+  "Sci Java" at "https://maven.scijava.org/content/repositories/public/",
   Resolver.mavenLocal
 )
 
