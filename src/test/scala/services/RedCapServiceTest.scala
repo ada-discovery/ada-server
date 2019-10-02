@@ -21,16 +21,16 @@ class RedCapServiceTest extends AsyncFlatSpec with Matchers {
   private val redCapServiceFactory = injector.instance[RedCapServiceFactory]
   private val configuration = injector.instance[Configuration]
 
-  private val redCapService = redCapServiceFactory(
-    configuration.getString("test.redcap.url").get,
-    configuration.getString("test.redcap.token").get
-  )
+//  private val redCapService = redCapServiceFactory(
+//    configuration.getString("test.redcap.url").get,
+//    configuration.getString("test.redcap.token").get
+//  )
 
-  "Locking" should "lock the records" in {
-    redCapService.lock(RedCapLockAction.lock, "ND00001").map { results =>
-      println("Response:")
-      println(results.map(x => Json.prettyPrint(Json.toJson(x))).mkString("\n"))
-      results.size should be (1)
-    }
-  }
+//  "Locking" should "lock the records" in {
+//    redCapService.lock(RedCapLockAction.lock, "ND00001").map { results =>
+//      println("Response:")
+//      println(results.map(x => Json.prettyPrint(Json.toJson(x))).mkString("\n"))
+//      results.size should be (1)
+//    }
+//  }
 }

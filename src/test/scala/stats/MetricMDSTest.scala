@@ -28,7 +28,7 @@ class MetricMDSTest extends AsyncFlatSpec with Matchers with ExtraMatchers {
     Seq(2.7976, -0.9328, -1.2011, -0.0140)
   )
 
-  private val randomInputSize = 2000
+  private val randomInputSize = 1000
   private val precision = 0.001
 
   private val injector = GuicePlayTestApp().injector
@@ -40,11 +40,10 @@ class MetricMDSTest extends AsyncFlatSpec with Matchers with ExtraMatchers {
     def checkAux(
       calc: Int => Future[(Seq[Seq[Double]], Seq[Double])],
       dims: Int
-    ): Future[Assertion] = {
+    ): Future[Assertion] =
       calc(dims).map { case (mdsProjections, _) =>
         checkResult(expectedResult, dims)(mdsProjections)
       }
-    }
 
     // standard calculation
     def checkStandardAux(dims: Int) = checkAux(
