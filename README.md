@@ -1,4 +1,4 @@
-# Ada Server [![version](https://img.shields.io/badge/version-0.8.0-green.svg)](https://ada-discovery.org) [![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+# Ada Server [![version](https://img.shields.io/badge/version-0.8.0-green.svg)](https://ada-discovery.org) [![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![Build Status](https://travis-ci.com/ada-discovery/ada-server.svg?branch=master)](https://travis-ci.com/ada-discovery/ada-server)
 
 <img src="https://ada-discovery.github.io/images/logo.png" width="450px">
 
