@@ -20,7 +20,8 @@ case class DataSetSetting(
   ownerId: Option[BSONObjectID] = None,
   showSideCategoricalTree: Boolean = true,
   extraNavigationItems: Seq[NavigationItem] = Nil,
-  customControllerClassName: Option[String] = None
+  customControllerClassName: Option[String] = None,
+  description: Option[String] = None
 ) {
   def this(
     dataSetId: String,
