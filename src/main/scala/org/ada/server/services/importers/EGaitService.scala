@@ -305,7 +305,9 @@ protected[services] class EGaitServiceWSImpl @Inject() (
     } yield
       bytes
 
-  case class TestInfo(name: String, duration: Int, rightStart: Int, rightStop: Int, leftStart: Int, leftStop: Int)
+  case class MoteInfo(position: String, file: String, start: Int, stop: Int)
+
+  case class TestInfo(name: String, duration: Int, rightMote: MoteInfo, leftMote: MoteInfo)
 
   override def downloadRawDataStructured(
     sessionToken: String,
@@ -315,19 +317,27 @@ protected[services] class EGaitServiceWSImpl @Inject() (
     for {
       rawData <- downloadRawData(sessionToken, userSessionId, searchSessionId)
     } yield {
-      val files = ZipFileIterator.asBytes(rawData.toSeq.toArray).toSeq
+      val fileMap = ZipFileIterator.asBytes(rawData.toArray).toSeq.toMap
 
-      val rightSensorKineticData = extractKineticData(files(1)._2).toSeq
-      val leftSensorKineticData = extractKineticData(files(2)._2).toSeq
-
-      val sessionXmlString = new String(files(0)._2, "UTF-8")
+      // get the session xml and parse
+      val sessionXmlString = new String(fileMap("session.xml"), "UTF-8")
       val sessionXML = XML.loadString(sessionXmlString)
 
+      // collect the kinetic data files (should be exactly two - left and right)
+      val sensorKineticDataMap = fileMap.filterKeys(!_.equals("session.xml")).map { case (name, file) =>
+        (name, extractKineticData(file))
+      }
+
+      // parse test infos
       val testInfos = parseTestInfos(sessionXML)
 
+      // extract the structured kinetics data for each test from given bin files
       testInfos.map { testInfo =>
-        val testRightKineticData = rightSensorKineticData.slice(testInfo.rightStart, testInfo.rightStop)
-        val testLeftKineticData = leftSensorKineticData.slice(testInfo.leftStart, testInfo.leftStop)
+        val rightKineticData = sensorKineticDataMap(testInfo.rightMote.file)
+        val leftKineticData = sensorKineticDataMap(testInfo.leftMote.file)
+
+        val testRightKineticData = rightKineticData.slice(testInfo.rightMote.start, testInfo.rightMote.stop).toSeq
+        val testLeftKineticData = leftKineticData.slice(testInfo.leftMote.start, testInfo.leftMote.stop).toSeq
 
 //        s"${testInfo.name}, ${testInfo.duration}:\nRight: ${testInfo.rightStart}, ${testInfo.rightStop}, size: ${testRightKineticData.size}\nLeft: ${testInfo.leftStart}, ${testInfo.leftStop}, size: ${testLeftKineticData.size}"
 
@@ -338,12 +348,12 @@ protected[services] class EGaitServiceWSImpl @Inject() (
           startTime = ConversionUtil.toDate(Seq(dateFormat))((sessionXML \ "Start").text),
           testName = testInfo.name,
           testDuration = testInfo.duration,
-          rightSensorFileName = files(1)._1,
-          leftSensorFileName = files(2)._1,
-          rightSensorStartIndex = testInfo.rightStart,
-          rightSensorStopIndex = testInfo.rightStop,
-          leftSensorStartIndex = testInfo.leftStart,
-          leftSensorStopIndex = testInfo.leftStop,
+          rightSensorFileName = testInfo.rightMote.file,
+          leftSensorFileName = testInfo.leftMote.file,
+          rightSensorStartIndex = testInfo.rightMote.start,
+          rightSensorStopIndex = testInfo.rightMote.stop,
+          leftSensorStartIndex = testInfo.leftMote.start,
+          leftSensorStopIndex = testInfo.leftMote.stop,
           rightAccelerometerPoints = testRightKineticData.map(_._1),
           rightGyroscopePoints = testRightKineticData.map(_._2),
           leftAccelerometerPoints = testLeftKineticData.map(_._1),
@@ -369,26 +379,26 @@ protected[services] class EGaitServiceWSImpl @Inject() (
       val testName = (testXML \ "Name").text
       val duration = (testXML \ "Duration").text.toInt
 
-      def posStartStop(moteXML: Node) = {
-        val position  = (moteXML \ "Position").text
-        val start = (moteXML \ "Tag" \ "Start").text.toInt
-        val stop = (moteXML \ "Tag" \ "Stop").text.toInt
-        (position, start, stop)
-      }
+      def parseMoteInfo(moteXML: Node) = MoteInfo(
+        (moteXML \ "Position").text,
+        (moteXML \ "File").text,
+        (moteXML \ "Tag" \ "Start").text.toInt,
+        (moteXML \ "Tag" \ "Stop").text.toInt
+      )
 
       val moteXMLs = (testXML \ "MoteList" \ "Mote")
       if (moteXMLs.size != 2)
         throw new IllegalArgumentException("eGait Test XML " + testXML.toString + " do not contain two motes for and left and right sensors).")
 
-      val startStops = moteXMLs.map(posStartStop)
+      val moteInfos = moteXMLs.map(parseMoteInfo)
 
-      val rightStartStop = startStops.find(_._1.equals("RightFoot"))
-      val leftStartStop = startStops.find(_._1.equals("LeftFoot"))
+      val rightMote = moteInfos.find(_.position.equals("RightFoot"))
+      val leftMote = moteInfos.find(_.position.equals("LeftFoot"))
 
-      if (rightStartStop.isEmpty && leftStartStop.isEmpty)
-        throw new IllegalArgumentException("eGait Test XML " + testXML.toString + " do not contain two motes for and left and right sensors).")
+      if (moteInfos.size != 2 || rightMote.isEmpty || leftMote.isEmpty)
+        throw new IllegalArgumentException("eGait Test XML " + testXML.toString + " do not contain two motes one for the left and one for the right sensor).")
 
-      TestInfo(testName, duration, rightStartStop.get._2, rightStartStop.get._3, leftStartStop.get._2, leftStartStop.get._3)
+      TestInfo(testName, duration, rightMote.get, leftMote.get)
     }
 
   private def withXmlContent(request: WSRequest): WSRequest =

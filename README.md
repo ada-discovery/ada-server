@@ -1,4 +1,4 @@
-# Ada Server [![version](https://img.shields.io/badge/version-0.8.0-green.svg)](https://ada-discovery.org) [![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![Build Status](https://travis-ci.com/ada-discovery/ada-server.svg?branch=master)](https://travis-ci.com/ada-discovery/ada-server)
+# Ada Server [![version](https://img.shields.io/badge/version-0.8.0-green.svg)](https://ada-discovery.github.io) [![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![Build Status](https://travis-ci.com/ada-discovery/ada-server.svg?branch=master)](https://travis-ci.com/ada-discovery/ada-server)
 
 <img src="https://ada-discovery.github.io/images/logo.png" width="450px">
 
@@ -6,6 +6,7 @@ The project serves as a server part of Ada Discovery Analytics platform providin
 
 * Domain classes with JSON formatters.
 * Persistence layer with convenient repo abstractions for Mongo, Elastic Search, and Apache Ignite. 
+* WS clients to call REDCap, Synapse, and eGaIT REST services.
 * Data set importers and transformations.
 * Stats calculators with Akka streaming support.
 * Machine learning service providing various classification, regression, and clustering routines backed by Apache Spark.
