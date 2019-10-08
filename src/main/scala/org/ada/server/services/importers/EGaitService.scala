@@ -325,7 +325,7 @@ protected[services] class EGaitServiceWSImpl @Inject() (
 
       // collect the kinetic data files (should be exactly two - left and right)
       val sensorKineticDataMap = fileMap.filterKeys(!_.equals("session.xml")).map { case (name, file) =>
-        (name, extractKineticData(file))
+        (name, extractKineticData(file).toSeq)
       }
 
       // parse test infos
@@ -336,8 +336,8 @@ protected[services] class EGaitServiceWSImpl @Inject() (
         val rightKineticData = sensorKineticDataMap(testInfo.rightMote.file)
         val leftKineticData = sensorKineticDataMap(testInfo.leftMote.file)
 
-        val testRightKineticData = rightKineticData.slice(testInfo.rightMote.start, testInfo.rightMote.stop).toSeq
-        val testLeftKineticData = leftKineticData.slice(testInfo.leftMote.start, testInfo.leftMote.stop).toSeq
+        val testRightKineticData = rightKineticData.slice(testInfo.rightMote.start, testInfo.rightMote.stop)
+        val testLeftKineticData = leftKineticData.slice(testInfo.leftMote.start, testInfo.leftMote.stop)
 
 //        s"${testInfo.name}, ${testInfo.duration}:\nRight: ${testInfo.rightStart}, ${testInfo.rightStop}, size: ${testRightKineticData.size}\nLeft: ${testInfo.leftStart}, ${testInfo.leftStop}, size: ${testLeftKineticData.size}"
 

@@ -149,7 +149,7 @@ private class EGaitDataSetImporter @Inject()(
       jsons = kineticDatas.map(Json.toJson(_).as[JsObject]).toSeq
 
       // save jsons and the dictionary
-      _ <- saveJsonsAndDictionary(dsa, jsons, rawKineticDataDictionary, None)
+      _ <- saveJsonsAndDictionary(dsa, jsons, rawKineticDataDictionary, Some(saveBatchSize))
     } yield
       ()
 
