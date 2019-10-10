@@ -276,7 +276,7 @@ protected[services] class RedCapServiceWSImpl @Inject() (
         )
       } catch {
         case e: JsonParseException =>
-          throw new AdaRestException("Couldn't parse Red Cap JSON response.")
+          throw new AdaRestException(s"Couldn't parse a Red Cap JSON response due to ${e.getMessage}. Response body: ${response.body}.")
       }
     }
 
