@@ -7,6 +7,7 @@ import org.ada.server.models.LdapUser
 import org.ada.server.dataaccess.RepoTypes.UserRepo
 import org.ada.server.models.User
 import org.incal.core.dataaccess.Criterion.Infix
+import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
@@ -23,6 +24,8 @@ trait UserManager {
   def synchronizeRepos: Future[Unit]
 
   def purgeMissing: Future[Unit]
+
+  def lockMissing: Future[Unit]
 
   def findById(id: String): Future[Option[User]]
 
@@ -44,6 +47,8 @@ private class UserManagerImpl @Inject()(
     ldapService: LdapService,
     ldapSettings: LdapSettings
   ) extends UserManager {
+
+  private val logger = Logger
 
   override def debugUsers: Traversable[User] =
     if (ldapSettings.addDebugUsers) {
@@ -78,11 +83,11 @@ private class UserManagerImpl @Inject()(
   }
 
   /**
-    * Removes users from local database which do not exist on the LDAP server.
+    * Removes local users that do not exist on the LDAP server.
     * Use this to clean the user data base or when moving from debug to production.
     * This will also remove all debug users!
     */
-  override def purgeMissing: Future[Unit] =
+  override def purgeMissing =
     for {
       // local users
       localUsers <- userRepo.find()
@@ -93,7 +98,30 @@ private class UserManagerImpl @Inject()(
         val nonMatchingLocalUsers = localUsers.filterNot(user => ldapUserUids.contains(user.ldapDn))
         val nonMatchingIds = nonMatchingLocalUsers.map(_._id.get)
 
-        userRepo.delete(nonMatchingIds)
+        userRepo.delete(nonMatchingIds).map(_ =>
+          logger.info(s"${nonMatchingIds.size} users missing on the LDAP server have been purged locally.")
+        )
+      }
+    } yield
+      ()
+
+  /**
+    * Locks local users that do not exist on the LDAP server.
+    */
+  override def lockMissing =
+    for {
+      // local users
+      localUsers <- userRepo.find()
+
+      // retrieve all LDAP users and remove those who are not matched
+      _ <- {
+        val ldapUserUids = ldapService.listUsers.map(_.uid).toSet
+        val nonMatchingLocalUsers = localUsers.filterNot(user => ldapUserUids.contains(user.ldapDn))
+        val usersToLock = nonMatchingLocalUsers.map(_.copy(locked = true))
+
+        userRepo.update(usersToLock).map(_ =>
+          logger.info(s"${usersToLock.size} users missing on the LDAP server have been locked.")
+        )
       }
     } yield
       ()
