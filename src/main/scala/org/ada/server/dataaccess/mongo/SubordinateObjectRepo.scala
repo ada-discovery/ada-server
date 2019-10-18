@@ -43,7 +43,7 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
 
   protected lazy val rootId: ROOT_ID = synchronized {
     val futureId = getRootObject.map(rootObject => rootIdentity.of(rootObject.get).get)
-    Await.result(futureId, 120000 millis)
+    Await.result(futureId, 20 minutes)
   }
 
   protected lazy val rootIdSelector = Json.obj(rootIdentity.name -> rootId)
