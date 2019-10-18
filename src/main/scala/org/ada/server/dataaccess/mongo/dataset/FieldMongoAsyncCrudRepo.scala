@@ -33,7 +33,7 @@ class FieldMongoAsyncCrudRepoFactory(
     dictionaryRepo.reactiveMongoApi = ReactiveMongoApi.create(configuration, applicationLifecycle)
 
     val repo = new FieldMongoAsyncCrudRepo(dataSetId, dictionaryRepo)
-    Await.result(repo.initIfNeeded, 1 minute)
+    Await.result(repo.initIfNeeded, configuration.getInt("future.timeout").getOrElse(1) minutes)
     repo
   }
 }
