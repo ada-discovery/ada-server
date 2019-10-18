@@ -1,5 +1,6 @@
 package org.ada.server.dataaccess.mongo
 
+import org.ada.server.AdaException
 import org.incal.core.dataaccess._
 import org.incal.core.dataaccess.Criterion.Infix
 import org.ada.server.dataaccess._
@@ -8,8 +9,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, _}
 import reactivemongo.play.json.commands.JSONAggregationFramework.{Push, PushField, SumValue}
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 
 abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E: Format,  ROOT_ID: Format](
     listName: String,
@@ -19,34 +19,37 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
 
   protected def getDefaultRoot: ROOT_E
 
+  protected var rootId: Option[Future[ROOT_ID]] = None
+
   protected def getRootObject: Future[Option[ROOT_E]]
 
+  private def getRootIdSafe: Future[ROOT_ID] =
+    rootId.getOrElse(synchronized { // use double checking here
+      rootId.getOrElse(synchronized {
+        rootId = Some(initRootId); rootId.get
+      })
+    })
+
   /**
-    * Initialize if root object does not exist.
-    *
-    * @return true, if initialization was required.
+    * Initialize if the root object does not exist.
     */
-  def initIfNeeded: Future[Boolean] = synchronized {
-    val responseFuture = getRootObject.flatMap(rootObject =>
-      if (rootObject.isEmpty)
-        rootRepo.save(getDefaultRoot).map(_ => true)
+  def initIfNeeded: Future[Unit] = getRootIdSafe.map(_ => ())
+
+  private def initRootId =
+    for {
+      rootObject <- getRootObject
+      _ <- if (rootObject.isEmpty)
+        rootRepo.save(getDefaultRoot)
       else
-        Future(false)
-    )
-
-    // init root id
-    responseFuture.map { response =>
-      rootId;
-      response
+        Future(())
+      persistedRootObject <- getRootObject
+    } yield {
+      val rootObject = persistedRootObject.getOrElse(throw new AdaException(s"No root object found for the subordinate mongo repo '${listName}'."))
+      rootIdentity.of(rootObject).getOrElse(throw new AdaException(s"The root object for the subordinate mongo repo '${listName}' has no id."))
     }
-  }
 
-  protected lazy val rootId: ROOT_ID = synchronized {
-    val futureId = getRootObject.map(rootObject => rootIdentity.of(rootObject.get).get)
-    Await.result(futureId, 120000 millis)
-  }
-
-  protected lazy val rootIdSelector = Json.obj(rootIdentity.name -> rootId)
+  protected def rootIdSelector: Future[JsObject] = getRootIdSafe.map(id => Json.obj(rootIdentity.name -> id))
+  protected def rootIdCriteria = getRootIdSafe.map(id => Seq(rootIdentity.name #== id))
 
   /**
     * Converts the given subordinateListName into Json format and calls updateCustom() to update/ save it in the repo.
@@ -62,9 +65,11 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
       }
     }
 
-    rootRepo.updateCustom(rootIdSelector, modifier) map { _ =>
+    for {
+      selector <- rootIdSelector
+      _ <- rootRepo.updateCustom(selector, modifier)
+    } yield
       identity.of(entity).get
-    }
   }
 
   override def save(entities: Traversable[E]): Future[Traversable[ID]] = {
@@ -76,9 +81,11 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
       }
     }
 
-    rootRepo.updateCustom(rootIdSelector, modifier) map { _ =>
+    for {
+      selector <- rootIdSelector
+      _ <- rootRepo.updateCustom(selector, modifier)
+    } yield
       entities.map(identity.of(_).get)
-    }
   }
 
   /**
@@ -90,17 +97,18 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
     */
   override def update(entity: E): Future[ID] = {
     val id = identity.of(entity)
-    val selector =
-      rootIdSelector + ((listName + "." + identity.name) -> Json.toJson(id))
-
     val modifier = Json.obj {
       "$set" -> Json.obj {
         listName + ".$" -> Json.toJson(entity)
       }
     }
-    rootRepo.updateCustom(selector, modifier) map { _ =>
+
+    for {
+      idSelector <- rootIdSelector
+      selector = idSelector + ((listName + "." + identity.name) -> Json.toJson(id))
+      _ <- rootRepo.updateCustom(selector, modifier)
+    } yield
       id.get
-    }
   }
 
 //  override def update(entities: Traversable[E]): Future[Traversable[ID]] = super.update(entities)
@@ -119,7 +127,12 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
         }
       }
     }
-    rootRepo.updateCustom(rootIdSelector, modifier)
+
+    for {
+      selector <- rootIdSelector
+      _ <- rootRepo.updateCustom(selector, modifier)
+    } yield
+      ()
   }
 
   override def delete(ids: Traversable[ID]): Future[Unit] = {
@@ -132,7 +145,12 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
         }
       }
     }
-    rootRepo.updateCustom(rootIdSelector, modifier)
+
+    for {
+      selector <- rootIdSelector
+      _ <- rootRepo.updateCustom(selector, modifier)
+    } yield
+      ()
   }
 
   /**
@@ -147,7 +165,12 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
         listName -> List[E]()
       }
     }
-    rootRepo.updateCustom(rootIdSelector, modifier)
+
+    for {
+      selector <- rootIdSelector
+      _ <- rootRepo.updateCustom(selector, modifier)
+    } yield
+      ()
   }
 
   /**
@@ -157,26 +180,25 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
     * @return Number of matching elements.
     */
   override def count(criteria: Seq[Criterion[Any]]): Future[Int] = {
-    val rootCriteria = Seq(rootIdentity.name #== rootId)
     val subCriteria = criteria.map(criterion => criterion.copyWithFieldName(listName + "." + criterion.fieldName))
 
     val referencedFieldNames = (Seq(rootIdentity.name, listName + "." + identity.name) ++ subCriteria.map(_.fieldName)).toSet.toSeq
 
-    val result = rootRepo.findAggregate(
-      rootCriteria = rootCriteria,
-      subCriteria = subCriteria,
-      sort = Nil,
-      projection = Some(JsObject(referencedFieldNames.map(_ -> JsNumber(1)))),
-      idGroup = Some(JsNull),
-      groups = Some(Seq("count" -> SumValue(1))),
-      unwindFieldName = Some(listName),
-      limit = None,
-      skip = None
-    )
-
-    result.map {
-      _.headOption.map(head => (head \ "count").as[Int]).getOrElse(0)
-    }
+    for {
+      rootCriteria <- rootIdCriteria
+      results <- rootRepo.findAggregate(
+        rootCriteria = rootCriteria,
+        subCriteria = subCriteria,
+        sort = Nil,
+        projection = Some(JsObject(referencedFieldNames.map(_ -> JsNumber(1)))),
+        idGroup = Some(JsNull),
+        groups = Some(Seq("count" -> SumValue(1))),
+        unwindFieldName = Some(listName),
+        limit = None,
+        skip = None
+      )
+    } yield
+      results.headOption.map(head => (head \ "count").as[Int]).getOrElse(0)
   }
 
   override def exists(id: ID): Future[Boolean] =
@@ -211,7 +233,6 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
   ): Future[Traversable[E]] = {
     val page: Option[Int] = None
 
-    val rootCriteria = Seq(rootIdentity.name #== rootId)
     val subCriteria = criteria.map(criterion => criterion.copyWithFieldName(listName + "." + criterion.fieldName))
 
     val fullSort =
@@ -224,27 +245,28 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
 
     val fullProjection = projection.map(listName + "." + _)
 
-    // TODO: projection can not be passed here since subordinateListName JSON formatter expects ALL attributes to be returned.
-    // It could be solved either by making all subordinateListName attributes optional (Option[..]) or introducing a special JSON formatter with default values for each attribute
-    val result = rootRepo.findAggregate(
-      rootCriteria = rootCriteria,
-      subCriteria = subCriteria,
-      sort = fullSort,
-      projection = None, //fullProjection,
-      idGroup = Some(JsNull),
-      groups = Some(Seq(listName -> PushField(listName))), // Push(listName)
-      unwindFieldName = Some(listName),
-      limit = limit,
-      skip = skip
-    )
+    for {
+      rootCriteria <- rootIdCriteria
 
-    result.map { result =>
-      if (result.nonEmpty) {
-        val jsonFields = (result.head \ listName).as[JsArray].value // .asInstanceOf[Stream[JsValue]].force.toList
+      // TODO: projection can not be passed here since subordinateListName JSON formatter expects ALL attributes to be returned.
+      // It could be solved either by making all subordinateListName attributes optional (Option[..]) or introducing a special JSON formatter with default values for each attribute
+      results <- rootRepo.findAggregate(
+        rootCriteria = rootCriteria,
+        subCriteria = subCriteria,
+        sort = fullSort,
+        projection = None, //fullProjection,
+        idGroup = Some(JsNull),
+        groups = Some(Seq(listName -> PushField(listName))), // Push(listName)
+        unwindFieldName = Some(listName),
+        limit = limit,
+        skip = skip
+      )
+    } yield
+      if (results.nonEmpty) {
+        val jsonFields = (results.head \ listName).as[JsArray].value // .asInstanceOf[Stream[JsValue]].force.toList
         jsonFields.map(_.as[E])
       } else
         Seq[E]()
-    }
   }
 
   override def flushOps = rootRepo.flushOps

@@ -14,8 +14,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 
 class DataSetMetaInfoMongoAsyncCrudRepoFactory(
     dataSpaceId: BSONObjectID,
@@ -28,7 +27,7 @@ class DataSetMetaInfoMongoAsyncCrudRepoFactory(
     dataSpaceRepo.reactiveMongoApi = ReactiveMongoApi.create(configuration, applicationLifecycle)
 
     val repo = new DataSetMetaInfoMongoAsyncCrudRepo(dataSpaceId, dataSpaceRepo)
-    Await.result(repo.initIfNeeded, 1 minute)
+    repo.initIfNeeded
     repo
   }
 }
@@ -38,7 +37,7 @@ class DataSetMetaInfoMongoAsyncCrudRepo @Inject()(
     dataSpaceMetaInfoRepo: MongoAsyncCrudExtraRepo[DataSpaceMetaInfo, BSONObjectID]
   ) extends SubordinateObjectMongoAsyncCrudRepo[DataSetMetaInfo, BSONObjectID, DataSpaceMetaInfo, BSONObjectID]("dataSetMetaInfos", dataSpaceMetaInfoRepo) {
 
-  override protected lazy val rootId = dataSpaceId
+  rootId = Some(Future(dataSpaceId)) // initialize the data space id
 
   override protected def getDefaultRoot =
     DataSpaceMetaInfo(Some(dataSpaceId), "", 0, new java.util.Date(), Seq[DataSetMetaInfo]())

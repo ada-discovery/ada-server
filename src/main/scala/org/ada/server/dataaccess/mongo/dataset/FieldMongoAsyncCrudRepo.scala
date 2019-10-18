@@ -14,9 +14,6 @@ import play.api.inject.ApplicationLifecycle
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 
-import scala.concurrent.duration._
-import scala.concurrent.Await
-
 class FieldMongoAsyncCrudRepo @Inject()(
     @Assisted dataSetId : String,
     dictionaryRepo: DictionaryRootRepo
@@ -33,7 +30,7 @@ class FieldMongoAsyncCrudRepoFactory(
     dictionaryRepo.reactiveMongoApi = ReactiveMongoApi.create(configuration, applicationLifecycle)
 
     val repo = new FieldMongoAsyncCrudRepo(dataSetId, dictionaryRepo)
-    Await.result(repo.initIfNeeded, 1 minute)
+    repo.initIfNeeded
     repo
   }
 }
