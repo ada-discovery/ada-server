@@ -19,8 +19,7 @@ import reactivemongo.core.errors.ReactiveMongoException
 import org.ada.server.dataaccess.ignite.BinaryJsonUtil.toJson
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import org.incal.core.dataaccess._
 import reactivemongo.api.{Cursor, QueryOpts}
 
@@ -46,13 +45,17 @@ protected class MongoAsyncReadonlyRepo[E: Format, ID: Format](
   //        attemptNumber => 1 + attemptNumber * 0.5
   //    )
 
-  protected lazy val collection: JSONCollection = {
-    val db = Await.result(reactiveMongoApi.database, 1 minute)
-    db.collection[JSONCollection](collectionName)
-  }
+  protected def collection: Future[JSONCollection] =
+    reactiveMongoApi.database.map(
+      _.collection[JSONCollection](collectionName)
+    )
+
+  protected def withCollection[T](fun: JSONCollection => Future[T]) = collection.flatMap(fun)
 
   override def get(id: ID): Future[Option[E]] =
-    collection.find(Json.obj(identityName -> id), None).one[E]
+    withCollection(
+      _.find(Json.obj(identityName -> id), None).one[E]
+    )
 
   override def find(
     criteria: Seq[Criterion[Any]],
@@ -60,12 +63,11 @@ protected class MongoAsyncReadonlyRepo[E: Format, ID: Format](
     projection: Traversable[String],
     limit: Option[Int],
     skip: Option[Int]
-  ): Future[Traversable[E]] = {
+  ): Future[Traversable[E]] =
     findAsCursor(criteria, sort, projection, limit, skip).flatMap { cursor =>
       // handle the limit
       cursor.collect[List](limit.getOrElse(-1), Cursor.FailOnError[List[E]]())
     }.recover(handleExceptions)
-  }
 
   override def findAsStream(
     criteria: Seq[Criterion[Any]],
@@ -91,7 +93,7 @@ protected class MongoAsyncReadonlyRepo[E: Format, ID: Format](
     projection: Traversable[String],
     limit: Option[Int],
     skip: Option[Int]
-  ): Future[AkkaStreamCursor[E]] = {
+  ): Future[AkkaStreamCursor[E]] = withCollection { collection =>
     val sortedProjection = projection.toSeq.sorted
 
     val jsonProjection = sortedProjection match {
@@ -227,7 +229,7 @@ protected class MongoAsyncReadonlyRepo[E: Format, ID: Format](
     }
 
     // collection.runCommand(Count(jsonCriteria)).map(_.value).recover(handleExceptions)
-    collection.count(jsonCriteria).recover(handleExceptions)
+    withCollection(_.count(jsonCriteria).recover(handleExceptions))
   }
 
   override def exists(id: ID): Future[Boolean] =

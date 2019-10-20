@@ -6,12 +6,17 @@ import javax.inject.Inject
 import play.api.libs.json._
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.akkastream.{AkkaStreamCursor, State}
-import reactivemongo.api._
+import reactivemongo.api.{Cursor, _}
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import org.incal.core.{Identity, dataaccess}
 import org.incal.core.dataaccess._
+import org.ada.server.akka.AkkaStreamUtil
+import reactivemongo.play.json.collection.JSONBatchCommands
+import JSONBatchCommands.AggregationFramework.GroupFunction
+import akka.NotUsed
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 protected class MongoAsyncRepo[E: Format, ID: Format](
     collectionName : String)(
@@ -24,19 +29,23 @@ protected class MongoAsyncRepo[E: Format, ID: Format](
   override def save(entity: E): Future[ID] = {
     val (doc, id) = toJsonAndId(entity)
 
-    collection.insert(ordered = false).one(doc).map {
-      case le if le.ok => id
-      case le => throw new InCalDataAccessException(le.writeErrors.map(_.errmsg).mkString(". "))
-    }.recover(handleExceptions)
+    withCollection(
+      _.insert(ordered = false).one(doc).map {
+        case le if le.ok => id
+        case le => throw new InCalDataAccessException(le.writeErrors.map(_.errmsg).mkString(". "))
+      }.recover(handleExceptions)
+    )
   }
 
   override def save(entities: Traversable[E]): Future[Traversable[ID]] = {
     val docAndIds = entities.map(toJsonAndId)
 
-    collection.insert(ordered = false).many(docAndIds.map(_._1).toStream).map { // bulkSize = 100, bulkByteSize = 16793600
-      case le if le.ok => docAndIds.map(_._2)
-      case le => throw new InCalDataAccessException(le.errmsg.getOrElse(""))
-    }.recover(handleExceptions)
+    withCollection(
+      _.insert(ordered = false).many(docAndIds.map(_._1).toStream).map { // bulkSize = 100, bulkByteSize = 16793600
+        case le if le.ok => docAndIds.map(_._2)
+        case le => throw new InCalDataAccessException(le.errmsg.getOrElse(""))
+      }.recover(handleExceptions)
+    )
   }
 
   private def toJsonAndId(entity: E): (JsObject, ID) = {
@@ -54,7 +63,7 @@ protected class MongoAsyncRepo[E: Format, ID: Format](
   import FSyncCommand._
 
   override def flushOps =
-    collection.db.asInstanceOf[DefaultDB].runCommand(FSyncCommand(), FailoverStrategy.default).map(_ => ())
+    withCollection(_.db.asInstanceOf[DefaultDB].runCommand(FSyncCommand(), FailoverStrategy.default).map(_ => ()))
 }
 
 class MongoAsyncCrudRepo[E: Format, ID: Format](
@@ -64,45 +73,39 @@ class MongoAsyncCrudRepo[E: Format, ID: Format](
 
   import play.api.libs.concurrent.Execution.Implicits.defaultContext
   import reactivemongo.play.json._
-  import collection.BatchCommands.AggregationFramework._
-  import collection.BatchCommands.AggregationFramework.{Sort => AggSort}
   import reactivemongo.play.json.collection.JsCursor._
-
-  //  import reactivemongo.play.json.commands.JSONAggregationFramework.{Match, Group, GroupFunction, Unwind, Sort => AggSort, Cursor => AggCursor, Limit, Skip, Project, SumField, Push, SortOrder, Ascending, Descending}
 
   override def update(entity: E): Future[ID] = {
     val doc = Json.toJson(entity).as[JsObject]
 
-    identity.of(entity).map{ id =>
-      collection.update(ordered = false).one(Json.obj(identity.name -> Json.toJson(id)), doc) map {
-        case le if le.ok => id
-        case le => throw new InCalDataAccessException(le.writeErrors.map(_.errmsg).mkString(". "))
-      }
+    identity.of(entity).map { id =>
+      withCollection(
+        _.update(ordered = false).one(Json.obj(identity.name -> Json.toJson(id)), doc) map {
+          case le if le.ok => id
+          case le => throw new InCalDataAccessException(le.writeErrors.map(_.errmsg).mkString(". "))
+        }
+      )
     }.getOrElse(
       throw new InCalDataAccessException("Id required for update.")
     )
-  }.recover(
-    handleExceptions
-  )
+  }.recover(handleExceptions)
 
   // collection.remove(Json.obj(identity.name -> id), firstMatchOnly = true)
-  override def delete(id: ID): Future[Unit] = {
-    collection.delete(ordered = false).one(Json.obj(identity.name -> Json.toJson(id))) map handleResult
-  }.recover(
-    handleExceptions
-  )
+  override def delete(id: ID): Future[Unit] = withCollection {
+    _.delete(ordered = false).one(Json.obj(identity.name -> Json.toJson(id))) map handleResult
+  }.recover(handleExceptions)
 
-  override def deleteAll: Future[Unit] = {
-    collection.delete(ordered = false).one(Json.obj()) map handleResult
+  override def deleteAll: Future[Unit] = withCollection {
+    _.delete(ordered = false).one(Json.obj()) map handleResult
   }.recover(handleExceptions)
 
   // extra functions which should not be exposed beyond the persistence layer
   override protected[dataaccess] def updateCustom(
     selector: JsObject,
     modifier: JsObject
-  ): Future[Unit] =
-    collection.update(ordered = false).one(selector, modifier)
-      .recover(handleExceptions) map handleResult
+  ): Future[Unit] = withCollection {
+    _.update(ordered = false).one(selector, modifier) map handleResult
+  }.recover(handleExceptions)
 
   override protected[dataaccess] def findAggregate(
     rootCriteria: Seq[Criterion[Any]],
@@ -114,11 +117,22 @@ class MongoAsyncCrudRepo[E: Format, ID: Format](
     unwindFieldName : Option[String],
     limit: Option[Int],
     skip: Option[Int]
-  ): Future[Traversable[JsObject]] = {
+  ): Future[Traversable[JsObject]] = withCollection { collection =>
+    import collection.BatchCommands.AggregationFramework._
+    import collection.BatchCommands.AggregationFramework.{Sort => AggSort}
+
     val jsonRootCriteria = rootCriteria.headOption.map(_ => toMongoCriteria(rootCriteria))
     val jsonSubCriteria = subCriteria.headOption.map(_ => toMongoCriteria((subCriteria)))
 
-    val params = List(
+    def toAggregateSort(sorts: Seq[dataaccess.Sort]) =
+      sorts.map {
+        _ match {
+          case AscSort(fieldName) => Ascending(fieldName)
+          case DescSort(fieldName) => Descending(fieldName)
+        }
+      }
+
+    val params: List[PipelineOperator] = List(
       projection.map(Project(_)),                                     // $project // TODO: should add field names used in criteria to the projection
       jsonRootCriteria.map(Match(_)),                                 // $match
       unwindFieldName.map(Unwind(_)),                                 // $unwind
@@ -131,24 +145,16 @@ class MongoAsyncCrudRepo[E: Format, ID: Format](
 
     import reactivemongo.bson._
 
-    val cursor = collection.aggregatorContext[JsObject](params.head, params.tail).prepared.cursor
+    val cursor: reactivemongo.api.Cursor.WithOps[JsObject] = collection.aggregatorContext[JsObject](params.head, params.tail).prepared.cursor
     cursor.collect[List](-1, reactivemongo.api.Cursor.FailOnError[List[JsObject]]())
   }
-
-  private def toAggregateSort(sorts: Seq[dataaccess.Sort]) =
-    sorts.map {
-      _ match {
-        case AscSort(fieldName) => Ascending(fieldName)
-        case DescSort(fieldName) => Descending(fieldName)
-      }
-    }
 }
 
 trait MongoAsyncCrudExtraRepo[E, ID] extends AsyncCrudRepo[E, ID] {
 
   this: MongoAsyncReadonlyRepo[E, ID] =>
 
-  import collection.BatchCommands.AggregationFramework.GroupFunction
+//  import collection.BatchCommands.AggregationFramework.GroupFunction
 
   /*
    * Special aggregate function closely tight to Mongo db functionality.
@@ -174,7 +180,7 @@ trait MongoAsyncCrudExtraRepo[E, ID] extends AsyncCrudRepo[E, ID] {
    */
   protected[dataaccess] def updateCustom(
     selector: JsObject,
-    modifier : JsObject
+    modifier: JsObject
   ): Future[Unit]
 }
 
@@ -218,7 +224,7 @@ class MongoAsyncStreamRepo[E: Format, ID: Format](
       coll.find(criteria).options(QueryOpts().tailable.awaitData).cursor[E]()
   }
 
-  private lazy val cappedCollection: Future[JSONCollection] = {
+  private lazy val cappedCollection: Future[JSONCollection] = withCollection { collection =>
     collection.stats().flatMap {
       case stats if !stats.capped =>
         // The collection is not capped, so we convert it
