@@ -15,8 +15,6 @@ import org.ada.server.akka.AkkaStreamUtil
 import reactivemongo.play.json.collection.JSONBatchCommands
 import JSONBatchCommands.AggregationFramework.GroupFunction
 import akka.NotUsed
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 
 protected class MongoAsyncRepo[E: Format, ID: Format](
     collectionName : String)(
@@ -196,15 +194,8 @@ class MongoAsyncStreamRepo[E: Format, ID: Format](
 
   @Inject implicit var materializer: Materializer = _
 
-  override lazy val stream: Source[E, Future[State]] = {
-    val futureSource = akkaCursor.map(_.documentSource())
-    Await.result(futureSource, 1 minute)
-  }
-
-//  override lazy val oldStream: Enumerator[E] = {
-//    val enumerator = Enumerator.flatten(akkaCursor.map(_.enumerate()))
-//    Concurrent.broadcast(enumerator)._1
-//  }
+  override lazy val stream: Source[E, NotUsed] =
+    AkkaStreamUtil.fromFutureSource(akkaCursor.map(_.documentSource()))
 
   import reactivemongo.akkastream.cursorProducer
 
