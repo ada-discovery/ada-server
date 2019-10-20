@@ -1,6 +1,5 @@
 package org.ada.server.dataaccess.ignite
 
-
 import java.io.Serializable
 import java.util
 import javax.cache.Cache.Entry

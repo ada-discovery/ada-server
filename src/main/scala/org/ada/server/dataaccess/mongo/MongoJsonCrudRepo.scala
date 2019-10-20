@@ -26,47 +26,53 @@ class MongoJsonCrudRepo @Inject()(
     @Assisted mongoAutoCreateIndexForProjection: Boolean
   ) extends MongoAsyncReadonlyRepo[JsObject, BSONObjectID](collectionName, JsObjectIdentity.name, mongoAutoCreateIndexForProjection) with JsonCrudRepo {
 
-  override def save(entity: JsObject): Future[BSONObjectID] = {
-    val (doc, id) = addId(entity)
+  override def save(entity: JsObject): Future[BSONObjectID] =
+    withCollection { collection =>
+      val (_, id) = addId(entity)
 
-    collection.insert(ordered = false).one(entity).map {
-      case le if le.ok => id
-      case le => throw new InCalDataAccessException(le.writeErrors.map(_.errmsg).mkString(". "))
+      collection.insert(ordered = false).one(entity).map {
+        case le if le.ok => id
+        case le => throw new InCalDataAccessException(le.writeErrors.map(_.errmsg).mkString(". "))
+      }
     }
-  }
 
-  override def save(entities: Traversable[JsObject]): Future[Traversable[BSONObjectID]] = {
-    val docAndIds = entities.map(addId)
+  override def save(entities: Traversable[JsObject]): Future[Traversable[BSONObjectID]] =
+    withCollection { collection =>
+      val docAndIds = entities.map(addId)
 
-    collection.insert(ordered = false).many(docAndIds.map(_._1).toStream).map {
-      case le if le.ok => docAndIds.map(_._2)
-      case le => throw new InCalDataAccessException(le.errmsg.getOrElse(""))
+      collection.insert(ordered = false).many(docAndIds.map(_._1).toStream).map {
+        case le if le.ok => docAndIds.map(_._2)
+        case le => throw new InCalDataAccessException(le.errmsg.getOrElse(""))
+      }
     }
-  }
 
   private def addId(entity: JsObject): (JsObject, BSONObjectID) = {
     val id = BSONObjectID.generate
     (entity ++ Json.obj(identityName -> id), id)
   }
 
-  override def update(entity: JsObject): Future[BSONObjectID] = {
-    val id = (entity \ identityName).as[BSONObjectID]
-    collection.update(ordered = false).one(Json.obj(identityName -> id), entity) map {
-      case le if le.ok => id
-      case le => throw new InCalDataAccessException(le.writeErrors.map(_.errmsg).mkString(". "))
+  override def update(entity: JsObject): Future[BSONObjectID] =
+    withCollection { collection =>
+      val id = (entity \ identityName).as[BSONObjectID]
+      collection.update(ordered = false).one(Json.obj(identityName -> id), entity) map {
+        case le if le.ok => id
+        case le => throw new InCalDataAccessException(le.writeErrors.map(_.errmsg).mkString(". "))
+      }
     }
-  }
 
-  override def delete(id: BSONObjectID) =
-    collection.delete(ordered = false).one(Json.obj(identityName -> id)) map handleResult
+  override def delete(id: BSONObjectID) = withCollection(
+    _.delete(ordered = false).one(Json.obj(identityName -> id)) map handleResult
+  )
 
-  override def deleteAll : Future[Unit] =
-    collection.delete(ordered = false).one(Json.obj()) map handleResult
+  override def deleteAll : Future[Unit] = withCollection(
+    _.delete(ordered = false).one(Json.obj()) map handleResult
+  )
 
   import FSyncCommand._
 
-  override def flushOps =
-    collection.db.asInstanceOf[DefaultDB].runCommand(FSyncCommand(), FailoverStrategy.default).map(_ => ())
+  override def flushOps = withCollection(
+    _.db.asInstanceOf[DefaultDB].runCommand(FSyncCommand(), FailoverStrategy.default).map(_ => ())
+  )
 }
 
 class MongoJsonRepoFactory(

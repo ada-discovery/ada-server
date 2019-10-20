@@ -162,6 +162,10 @@ object AkkaStreamUtil {
       (header, contentSource)
     )
   }
+
+  // TODO: since Akka 2.5.x provided by Source.fromFutureSource... remove once the lib is upgraded
+  def fromFutureSource[out, mat](futureSource: Future[Source[out, mat]]): Source[out, NotUsed] =
+    Source.fromGraph(Source.fromFuture(futureSource).flatMapConcat(identity))
 }
 
 object AkkaTest extends App {

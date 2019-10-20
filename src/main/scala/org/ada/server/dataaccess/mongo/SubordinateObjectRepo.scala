@@ -5,6 +5,7 @@ import org.incal.core.dataaccess._
 import org.incal.core.dataaccess.Criterion.Infix
 import org.ada.server.dataaccess._
 import org.incal.core.Identity
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsObject, _}
 import reactivemongo.play.json.commands.JSONAggregationFramework.{Push, PushField, SumValue}
@@ -17,6 +18,8 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
     implicit identity: Identity[E, ID], rootIdentity: Identity[ROOT_E, ROOT_ID]
   ) extends AsyncCrudRepo[E, ID] {
 
+  protected val logger = Logger
+
   protected def getDefaultRoot: ROOT_E
 
   protected var rootId: Option[Future[ROOT_ID]] = None
@@ -26,7 +29,8 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
   private def getRootIdSafe: Future[ROOT_ID] =
     rootId.getOrElse(synchronized { // use double checking here
       rootId.getOrElse(synchronized {
-        rootId = Some(initRootId); rootId.get
+        rootId = Some(initRootId)
+        rootId.get
       })
     })
 
@@ -37,11 +41,19 @@ abstract class SubordinateObjectMongoAsyncCrudRepo[E: Format, ID: Format, ROOT_E
 
   private def initRootId =
     for {
-      rootObject <- getRootObject
+      // retrieve the Mongo root object
+      rootObject <- {
+        logger.debug(s"Initializing a subordinate mongo repo '${listName}'...")
+        getRootObject
+      }
+
+      // if not available save a default one
       _ <- if (rootObject.isEmpty)
         rootRepo.save(getDefaultRoot)
       else
         Future(())
+
+      // load it again to determine its id
       persistedRootObject <- getRootObject
     } yield {
       val rootObject = persistedRootObject.getOrElse(throw new AdaException(s"No root object found for the subordinate mongo repo '${listName}'."))
