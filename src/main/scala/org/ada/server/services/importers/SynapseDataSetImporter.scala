@@ -33,7 +33,7 @@ private class SynapseDataSetImporter @Inject() (
   private val maxEnumValuesCount = 150
 
   private val synapseFtf = FieldTypeHelper.fieldTypeFactory(FieldTypeHelper.nullAliases ++ Set("nan"))
-  private val fti = FieldTypeHelper.fieldTypeInferrerFactory(synapseFtf, maxEnumValuesCount).apply
+  private val fti = FieldTypeHelper.fieldTypeInferrerFactory(synapseFtf, maxEnumValuesCount).ofString
 
   private val prefixSuffixSeparators = Seq(
     ("\"[\"\"", "\"\"]\""),

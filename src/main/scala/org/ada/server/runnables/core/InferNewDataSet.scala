@@ -1,8 +1,8 @@
 package org.ada.server.runnables.core
 
 import javax.inject.Inject
-
-import org.ada.server.field.{FieldTypeHelper, FieldTypeInferrerFactory}
+import org.ada.server.field.FieldTypeHelper
+import org.ada.server.field.inference.FieldTypeInferrerFactory
 import org.ada.server.models.StorageType
 import org.ada.server.models.DataSetSetting
 import org.incal.core.runnables.InputFutureRunnableExt
@@ -13,16 +13,17 @@ import scala.reflect.runtime.universe.typeOf
 class InferNewDataSet @Inject()(dataSetService: DataSetService) extends InputFutureRunnableExt[InferNewDataSetSpec] {
 
   override def runAsFuture(spec: InferNewDataSetSpec) = {
-    val fieldTypeInferrerFactory = FieldTypeInferrerFactory(
-      FieldTypeHelper.fieldTypeFactory(booleanIncludeNumbers = spec.booleanIncludeNumbers),
+
+    val dataSetSetting = new DataSetSetting(spec.newDataSetId, spec.storageType)
+
+    val fieldTypeInferrerFactory = new FieldTypeInferrerFactory(
+      FieldTypeHelper.fieldTypeFactory(),
       spec.maxEnumValuesCount,
       spec.minAvgValuesPerEnum,
       FieldTypeHelper.arrayDelimiter
     )
 
-    val dataSetSetting = new DataSetSetting(spec.newDataSetId, spec.storageType)
-
-    dataSetService.translateDataAndDictionaryOptimal(
+    dataSetService.inferData(
       spec.originalDataSetId,
       spec.newDataSetId,
       spec.newDataSetName,
@@ -31,7 +32,7 @@ class InferNewDataSet @Inject()(dataSetService: DataSetService) extends InputFut
       spec.saveBatchSize,
       spec.inferenceGroupSize,
       spec.inferenceGroupsInParallel,
-      Some(fieldTypeInferrerFactory.applyJson)
+      Some(fieldTypeInferrerFactory.ofJson)
     )
   }
 }
@@ -41,10 +42,9 @@ case class InferNewDataSetSpec(
   newDataSetId: String,
   newDataSetName: String,
   storageType: StorageType.Value,
-  saveBatchSize: Option[Int],
-  inferenceGroupSize: Option[Int],
-  inferenceGroupsInParallel: Option[Int],
   maxEnumValuesCount: Int,
   minAvgValuesPerEnum: Double,
-  booleanIncludeNumbers: Boolean
+  saveBatchSize: Option[Int],
+  inferenceGroupSize: Option[Int],
+  inferenceGroupsInParallel: Option[Int]
 )

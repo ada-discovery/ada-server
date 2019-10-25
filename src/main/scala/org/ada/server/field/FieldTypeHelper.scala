@@ -1,5 +1,7 @@
 package org.ada.server.field
 
+import org.ada.server.field.inference.FieldTypeInferrerFactory
+
 object FieldTypeHelper {
 
   val nullAliases = Set("", "na", "n/a", "null")
@@ -43,8 +45,8 @@ object FieldTypeHelper {
     maxEnumValuesCount: Int = maxEnumValuesCount,
     minAvgValuesPerEnum: Double = minAvgValuesPerEnum,
     arrayDelimiter: String = arrayDelimiter
-  ) = FieldTypeInferrerFactory(ftf, maxEnumValuesCount, minAvgValuesPerEnum, arrayDelimiter)
+  ) = new FieldTypeInferrerFactory(ftf, maxEnumValuesCount, minAvgValuesPerEnum, arrayDelimiter)
 
-  val fieldTypeInferrer = fieldTypeInferrerFactory().apply
-  val jsonFieldTypeInferrer = fieldTypeInferrerFactory().applyJson
+  val fieldTypeInferrer = fieldTypeInferrerFactory().ofString
+  val jsonFieldTypeInferrer = fieldTypeInferrerFactory().ofJson
 }

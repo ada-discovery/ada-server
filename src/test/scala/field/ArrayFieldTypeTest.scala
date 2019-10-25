@@ -13,7 +13,7 @@ class ArrayFieldTypeTest extends FlatSpec with Matchers {
 
   val ftf = FieldTypeHelper.fieldTypeFactory()
 
-  "Null array field type" should "should treat all non-null values with exception" in {
+  "Null array field type" should "treat all non-null values with exception" in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Null, true)).asInstanceOf[FieldType[Array[Option[Nothing]]]]
 
     fieldType.displayStringToValue("") should be (None)
@@ -73,7 +73,7 @@ class ArrayFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "Int array field type" should "should accept only integers " in {
+  "Int array field type" should "accept only integers " in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Integer, true)).asInstanceOf[FieldType[Array[Option[Long]]]]
 
     fieldType.displayStringToValue("") should be (None)
@@ -224,7 +224,7 @@ class ArrayFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "Double array field type" should "should accept only doubles " in {
+  "Double array field type" should "accept only doubles " in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Double, true)).asInstanceOf[FieldType[Array[Option[Double]]]]
 
     fieldType.displayStringToValue("") should be (None)
@@ -394,7 +394,7 @@ class ArrayFieldTypeTest extends FlatSpec with Matchers {
 
   }
 
-  "Boolean array field type" should "should accept only booleans " in {
+  "Boolean array field type" should "accept only booleans " in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Boolean, true)).asInstanceOf[FieldType[Array[Option[Boolean]]]]
 
     fieldType.displayStringToValue("") should be (None)
@@ -535,7 +535,7 @@ class ArrayFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "Date array field type" should "should accept only dates " in {
+  "Date array field type" should "accept only dates " in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Date, true)).asInstanceOf[FieldType[Array[Option[ju.Date]]]]
     def toDate(text: String): ju.Date =
       new SimpleDateFormat(FieldTypeHelper.displayDateFormat).parse(text)
@@ -684,7 +684,7 @@ class ArrayFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "Enum array field type" should "should accept only enums " in {
+  "Enum array field type" should "accept only enums " in {
     val enumValues = Map(0 -> "Male", 1 -> "Female", 2 -> "Both", 3 -> "None")
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Enum, true, enumValues)).asInstanceOf[FieldType[Array[Option[Int]]]]
 
@@ -857,7 +857,7 @@ class ArrayFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "String array field type" should "should accept only strings " in {
+  "String array field type" should "accept only strings " in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.String, true)).asInstanceOf[FieldType[Array[Option[String]]]]
 
     fieldType.displayStringToValue("") should be (None)
@@ -980,7 +980,7 @@ class ArrayFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "JSON array field type" should "should accept only JSONS" in {
+  "JSON array field type" should "accept only JSONS" in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Json, true)).asInstanceOf[FieldType[Array[Option[JsObject]]]]
 
     val json1 = Json.obj("name" -> JsString("Peter"), "affiliation" -> JsString("LCSB"))

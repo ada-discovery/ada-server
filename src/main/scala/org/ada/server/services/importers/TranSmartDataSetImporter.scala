@@ -5,10 +5,11 @@ import java.util.Date
 import org.ada.server.models.dataimport.TranSmartDataSetImport
 import org.ada.server.AdaParseException
 import org.ada.server.dataaccess.dataset.CategoryRepo._
-import org.ada.server.field.{FieldType, FieldTypeHelper, FieldTypeInferrerFactory}
+import org.ada.server.field.{FieldType, FieldTypeHelper}
 import org.ada.server.dataaccess.RepoTypes.{CategoryRepo, FieldRepo}
 import org.ada.server.models.{Category, Field}
 import org.ada.server.dataaccess.dataset.DataSetAccessor
+import org.ada.server.field.inference.FieldTypeInferrerFactory
 import reactivemongo.bson.BSONObjectID
 import org.incal.core.util.seqFutures
 
@@ -133,12 +134,12 @@ private class TranSmartDataSetImporter extends AbstractDataSetImporter[TranSmart
     val fti =
       if (importInfo.inferenceMaxEnumValuesCount.isDefined || importInfo.inferenceMinAvgValuesPerEnum.isDefined) {
         Some(
-          FieldTypeInferrerFactory(
+          new FieldTypeInferrerFactory(
             FieldTypeHelper.fieldTypeFactory(),
             importInfo.inferenceMaxEnumValuesCount.getOrElse(FieldTypeHelper.maxEnumValuesCount),
             importInfo.inferenceMinAvgValuesPerEnum.getOrElse(FieldTypeHelper.minAvgValuesPerEnum),
             FieldTypeHelper.arrayDelimiter
-          ).apply
+          ).ofString
         )
       } else
         None

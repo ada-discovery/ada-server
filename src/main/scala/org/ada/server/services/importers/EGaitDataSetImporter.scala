@@ -46,7 +46,7 @@ private class EGaitDataSetImporter @Inject()(
   // Field type inferrer
   private val fti = {
     val ftf = FieldTypeHelper.fieldTypeFactory(nullAliases = Set("", "-"))
-    FieldTypeHelper.fieldTypeInferrerFactory(ftf).apply
+    FieldTypeHelper.fieldTypeInferrerFactory(ftf).ofString
   }
 
   private val rawKineticDataDictionary = Seq(

@@ -2,6 +2,7 @@ package org.ada.server.services
 
 import java.{util => ju}
 
+import akka.NotUsed
 import javax.inject.Inject
 import org.ada.server.models.DataSetFormattersAndIds.{CategoryIdentity, FieldIdentity, JsObjectIdentity}
 import org.ada.server.dataaccess.RepoTypes.{FieldRepo, JsonCrudRepo, JsonReadonlyRepo}
@@ -27,10 +28,13 @@ import play.api.Configuration
 import org.ada.server.dataaccess.JsonUtil._
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
-import akka.stream.scaladsl.{Sink, Source, StreamConverters}
+import akka.stream.scaladsl.{Flow, Sink, Source, StreamConverters}
+import org.ada.server.akka.AkkaStreamUtil
+import org.ada.server.akka.AkkaStreamUtil.unzipNFlowsAndApply
+import org.ada.server.field.inference.FieldTypeInferrer
 import org.ada.server.{AdaException, AdaParseException}
 import org.ada.server.models._
-import org.ada.server.field.{FieldType, FieldTypeHelper, FieldTypeInferrer, FieldUtil}
+import org.ada.server.field.{FieldType, FieldTypeHelper, FieldUtil}
 import org.ada.server.models.ml._
 import org.ada.server.models._
 
@@ -118,7 +122,7 @@ trait DataSetService {
     removeNullRows: Boolean
   ): Future[Unit]
 
-  def translateDataAndDictionaryOptimal(
+  def inferData(
     originalDataSetId: String,
     newDataSetId: String,
     newDataSetName: String,
@@ -542,6 +546,29 @@ class DataSetServiceImpl @Inject()(
             inferFieldTypes(jfti, groupFieldNames)
           )
         }.toList
+      )
+    } yield
+      fieldNameAndTypes.flatten
+  }
+
+  private def inferFieldTypesInParallelAsStream(
+    dataRepo: JsonCrudRepo,
+    fieldNames: Traversable[String],
+    groupSize: Int,
+    jsonFieldTypeInferrer: Option[FieldTypeInferrer[JsReadable]] = None
+  ): Future[Traversable[(String, FieldType[_])]] = {
+    val groupedFieldNames = fieldNames.toSeq.grouped(groupSize).toSeq
+    val jfti = jsonFieldTypeInferrer.getOrElse(jsonFti)
+
+    for {
+      fieldNameAndTypes <- Future.sequence(
+        groupedFieldNames.map { groupFieldNames =>
+          for {
+            source <- dataRepo.findAsStream(projection = groupFieldNames)
+            fieldTypes <- inferFieldTypesAsStream(jfti, groupFieldNames)(source)
+          } yield
+            fieldTypes
+        }
       )
     } yield
       fieldNameAndTypes.flatten
@@ -1252,6 +1279,23 @@ class DataSetServiceImpl @Inject()(
       (fieldName, jsonFieldTypeInferrer(jsons))
     }
 
+  private def inferFieldTypesAsStream(
+    jsonFieldTypeInferrer: FieldTypeInferrer[JsReadable],
+    fieldNames: Traversable[String])(
+    source: Source[JsObject, _]
+  ): Future[Traversable[(String, FieldType[_])]] = {
+//    unzipNFlowsAndApply(fieldNames.size)(coreCalc.flow(options))
+//
+//    source
+
+    seqFutures(fieldNames) { fieldName =>
+      val jsonFieldSource = source.map(json => (json \ fieldName))
+      jsonFieldTypeInferrer.apply(jsonFieldSource).map(fieldType =>
+        (fieldName, fieldType)
+      )
+    }
+  }
+
   private def updateFieldSpecs(
     dataSetId: String,
     fieldNameAndTypes: Traversable[(String, FieldTypeSpec)],
@@ -1724,7 +1768,7 @@ class DataSetServiceImpl @Inject()(
     } yield
       ()
 
-  override def translateDataAndDictionaryOptimal(
+  override def inferData(
     originalDataSetId: String,
     newDataSetId: String,
     newDataSetName: String,
@@ -2057,7 +2101,7 @@ class DataSetServiceImpl @Inject()(
     val convertedStringValues = items.map(translate)
 
     val noCommaFtf = FieldTypeHelper.fieldTypeFactory(arrayDelimiter = ",,,", booleanIncludeNumbers = false)
-    val noCommanFti = FieldTypeHelper.fieldTypeInferrerFactory(ftf = noCommaFtf, arrayDelimiter = ",,,").apply
+    val noCommanFti = FieldTypeHelper.fieldTypeInferrerFactory(ftf = noCommaFtf, arrayDelimiter = ",,,").ofString
 
     // infer new types
     val (jsons, fieldTypes) = createJsonsWithFieldTypes(
