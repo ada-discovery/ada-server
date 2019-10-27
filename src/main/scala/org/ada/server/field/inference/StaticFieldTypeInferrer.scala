@@ -6,11 +6,11 @@ import org.ada.server.dataaccess.AdaConversionException
 import org.ada.server.field.FieldType
 import play.api.libs.json.JsReadable
 
-trait StaticFieldTypeInferrerPack[T] extends SingleFieldTypeInferrerPack[T] {
+trait StaticFieldTypeInferrerTypePack[T] extends SingleFieldTypeInferrerTypePack[T] {
   type INTER = Boolean
 }
 
-private trait StaticFieldTypeInferrerImpl[T] extends Calculator[StaticFieldTypeInferrerPack[T]] {
+private trait StaticFieldTypeInferrerImpl[T] extends Calculator[StaticFieldTypeInferrerTypePack[T]] {
 
   protected val fieldType: FieldType[_]
 
@@ -54,7 +54,7 @@ private final class JsonStaticFieldTypeInferrer(val fieldType: FieldType[_]) ext
 
 object StaticFieldTypeInferrer {
 
-  type of[T] = Calculator[StaticFieldTypeInferrerPack[T]]
+  type of[T] = Calculator[StaticFieldTypeInferrerTypePack[T]]
 
   def ofString(fieldType: FieldType[_]): of[String] =
     new StringStaticFieldTypeInferrer(fieldType)

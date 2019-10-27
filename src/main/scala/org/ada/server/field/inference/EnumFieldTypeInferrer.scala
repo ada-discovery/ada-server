@@ -3,14 +3,15 @@ package org.ada.server.field.inference
 import akka.stream.scaladsl.Flow
 import org.ada.server.calc.Calculator
 import org.ada.server.calc.impl.{CountDistinctCalc, CountDistinctCalcTypePack}
+import org.ada.server.dataaccess.AdaConversionException
 import org.ada.server.field._
 import play.api.libs.json.JsReadable
 
-trait EnumFieldTypeInferrerPack[T] extends SingleFieldTypeInferrerPack[T] {
+trait EnumFieldTypeInferrerTypePack[T] extends SingleFieldTypeInferrerTypePack[T] {
   type INTER = CountDistinctCalcTypePack[String]#INTER
 }
 
-private trait EnumFieldTypeInferrer[T] extends Calculator[EnumFieldTypeInferrerPack[T]] {
+private trait EnumFieldTypeInferrer[T] extends Calculator[EnumFieldTypeInferrerTypePack[T]] {
 
   private val countDistinctCalc = CountDistinctCalc[String]
 
@@ -21,9 +22,13 @@ private trait EnumFieldTypeInferrer[T] extends Calculator[EnumFieldTypeInferrerP
   protected def toStrings(value: T): List[String]
 
   override def fun(o: Unit) = { values: Traversable[IN] =>
-    val strings = values.flatMap(toStrings)
-    val counts = countDistinctCalc.fun()(strings)
-    toType(counts)
+    try {
+      val strings = values.flatMap(toStrings)
+      val counts = countDistinctCalc.fun()(strings)
+      toType(counts)
+    } catch {
+      case _: AdaConversionException => None
+    }
   }
 
   override def flow(o: Unit) = {
@@ -115,14 +120,14 @@ object EnumFieldTypeInferrer {
     stringFieldType: FieldType[String],
     maxEnumValuesCount: Int,
     minAvgValuesPerEnum: Double
-  ): Calculator[EnumFieldTypeInferrerPack[String]] =
+  ): Calculator[EnumFieldTypeInferrerTypePack[String]] =
     StringEnumFieldTypeInferrer(stringFieldType, maxEnumValuesCount, minAvgValuesPerEnum)
 
   def ofJson(
     stringFieldType: FieldType[String],
     maxEnumValuesCount: Int,
     minAvgValuesPerEnum: Double
-  ): Calculator[EnumFieldTypeInferrerPack[JsReadable]] =
+  ): Calculator[EnumFieldTypeInferrerTypePack[JsReadable]] =
     JsonEnumFieldTypeInferrer(stringFieldType, maxEnumValuesCount, minAvgValuesPerEnum)
 
   def ofStringArray(
@@ -130,7 +135,7 @@ object EnumFieldTypeInferrer {
     maxEnumValuesCount: Int,
     minAvgValuesPerEnum: Double,
     delimiter: String
-  ): Calculator[EnumFieldTypeInferrerPack[String]] =
+  ): Calculator[EnumFieldTypeInferrerTypePack[String]] =
     StringArrayEnumFieldTypeInferrer(stringArrayFieldType, maxEnumValuesCount, minAvgValuesPerEnum, delimiter)
 
   def ofJsonArray(
@@ -138,6 +143,6 @@ object EnumFieldTypeInferrer {
     maxEnumValuesCount: Int,
     minAvgValuesPerEnum: Double,
     delimiter: String
-  ): Calculator[EnumFieldTypeInferrerPack[JsReadable]] =
+  ): Calculator[EnumFieldTypeInferrerTypePack[JsReadable]] =
     JsonArrayEnumFieldTypeInferrer(stringArrayFieldType, maxEnumValuesCount, minAvgValuesPerEnum, delimiter)
 }

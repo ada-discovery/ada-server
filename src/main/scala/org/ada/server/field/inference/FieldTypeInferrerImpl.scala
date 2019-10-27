@@ -9,9 +9,6 @@ import org.ada.server.field.{FieldType, FieldTypeFactory}
 import org.ada.server.models.{FieldTypeId, FieldTypeSpec}
 import play.api.libs.json.JsReadable
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
 private trait FieldTypeInferrerImpl[T] extends FieldTypeInferrer[T] {
 
   protected val ftf: FieldTypeFactory
@@ -71,41 +68,30 @@ private trait FieldTypeInferrerImpl[T] extends FieldTypeInferrer[T] {
 
   private lazy val fieldTypeInferrerMap = fieldTypeInferrers.toMap
 
-  override def apply(values: Traversable[T]): FieldType[_] = {
-    val fieldTypes = prioritizedFieldTypes.view.map( fieldTypeSpec =>
-      fieldTypeInferrerMap.get(fieldTypeSpec).flatMap(_.fun()(values))
-    )
+  private lazy val orderedInferrers = prioritizedFieldTypes.map { fieldTypeSpec =>
+    fieldTypeInferrerMap.get(fieldTypeSpec).getOrElse(throw new AdaException(s"Field type ${fieldTypeSpec} not recognized."))
+  }
 
+  // calculator impls
+  override def fun(o: Unit) = { values: Traversable[T] =>
+    val fieldTypes = orderedInferrers.map(_.fun()(values))
     selectFirst(fieldTypes)
   }
 
-  override def apply(
-    source: Source[T, _])(
-    implicit materializer: Materializer
-  ): Future[FieldType[_]] = {
-    // inferrers
-    val orderedInferrers = prioritizedFieldTypes.map { fieldTypeSpec =>
-      fieldTypeInferrerMap.get(fieldTypeSpec).getOrElse(throw new AdaException(s"Field type ${fieldTypeSpec} not recognized."))
-    }
-
+  override def flow(o: Unit) = {
     // collect all the flows
     val flows: Seq[Flow[T, Any, NotUsed]] = orderedInferrers.map(_.flow())
 
-    // collect all the post flows
+    // zip the flows
+    AkkaStreamUtil.zipNFlows(flows)
+  }
+
+  override def postFlow(o: Unit) = { values: Seq[Any] =>
+    // collect all the flows
     val postFlows: Seq[Any => Option[FieldType[_]]] = orderedInferrers.map(_.postFlow().asInstanceOf[Any => Option[FieldType[_]]])
 
-    // zip the flows
-    val zippedFlow = AkkaStreamUtil.zipNFlows(flows)
-
-    for {
-      flowOutputs <- source.via(zippedFlow).runWith(Sink.head)
-    } yield {
-      val fieldTypes = flowOutputs.zip(postFlows).par.map { case (flowOutput, postFlow) =>
-        postFlow(flowOutput)
-      }.toList
-
-      selectFirst(fieldTypes)
-    }
+    val fieldTypes = postFlows.zip(values).map { case (postFlow, value) => postFlow(value) }
+    selectFirst(fieldTypes)
   }
 
   private def selectFirst(orderedFieldTypes: Seq[Option[FieldType[_]]]) = {

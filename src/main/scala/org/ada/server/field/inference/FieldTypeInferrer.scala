@@ -1,19 +1,28 @@
 package org.ada.server.field.inference
 
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow, Sink, Source}
+import org.ada.server.calc.{Calculator, CalculatorHelper, NoOptionsCalculatorTypePack}
 import org.ada.server.field._
 import play.api.libs.json.JsReadable
+import CalculatorHelper.NoOptionsExt
 
-import scala.concurrent.Future
+trait FieldTypeInferrerTypePack[T] extends NoOptionsCalculatorTypePack{
+  type IN = T
+  type OUT = FieldType[_]
+  type INTER = Seq[Any]
+}
 
-trait FieldTypeInferrer[T] {
-  def apply(values: Traversable[T]): FieldType[_]
+trait FieldTypeInferrer[T] extends Calculator[FieldTypeInferrerTypePack[T]] {
 
+  // short-hand for convenient execution
+  def apply(values: Traversable[T]) = fun()(values)
+
+  // short-hand for convenient execution
   def apply(
-    values: Source[T, _])(
+    source: Source[T, _])(
     implicit materializer: Materializer
-  ): Future[FieldType[_]]
+  ) = this.runFlow_(source)
 }
 
 class FieldTypeInferrerFactory(

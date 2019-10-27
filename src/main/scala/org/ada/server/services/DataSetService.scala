@@ -30,7 +30,8 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Sink, Source, StreamConverters}
 import org.ada.server.akka.AkkaStreamUtil
-import org.ada.server.akka.AkkaStreamUtil.unzipNFlowsAndApply
+import org.ada.server.calc.CalculatorHelper
+import org.ada.server.calc.impl.MultiAdapterCalc
 import org.ada.server.field.inference.FieldTypeInferrer
 import org.ada.server.{AdaException, AdaParseException}
 import org.ada.server.models._
@@ -43,6 +44,7 @@ import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 import org.ada.server.models.datatrans._
 import org.ada.server.services.ml.IOSeriesUtil
 import org.incal.core.Identity
+import CalculatorHelper.RunExt
 
 import scala.util.Random
 
@@ -120,18 +122,6 @@ trait DataSetService {
     useTranslations: Boolean,
     removeNullColumns: Boolean,
     removeNullRows: Boolean
-  ): Future[Unit]
-
-  def inferData(
-    originalDataSetId: String,
-    newDataSetId: String,
-    newDataSetName: String,
-    newDataSetSetting: Option[DataSetSetting],
-    newDataView: Option[DataView],
-    saveBatchSize: Option[Int],
-    inferenceGroupSize: Option[Int],
-    inferenceGroupsInParallel: Option[Int],
-    jsonFieldTypeInferrer: Option[FieldTypeInferrer[JsReadable]] = None
   ): Future[Unit]
 
   def translateData(
@@ -546,29 +536,6 @@ class DataSetServiceImpl @Inject()(
             inferFieldTypes(jfti, groupFieldNames)
           )
         }.toList
-      )
-    } yield
-      fieldNameAndTypes.flatten
-  }
-
-  private def inferFieldTypesInParallelAsStream(
-    dataRepo: JsonCrudRepo,
-    fieldNames: Traversable[String],
-    groupSize: Int,
-    jsonFieldTypeInferrer: Option[FieldTypeInferrer[JsReadable]] = None
-  ): Future[Traversable[(String, FieldType[_])]] = {
-    val groupedFieldNames = fieldNames.toSeq.grouped(groupSize).toSeq
-    val jfti = jsonFieldTypeInferrer.getOrElse(jsonFti)
-
-    for {
-      fieldNameAndTypes <- Future.sequence(
-        groupedFieldNames.map { groupFieldNames =>
-          for {
-            source <- dataRepo.findAsStream(projection = groupFieldNames)
-            fieldTypes <- inferFieldTypesAsStream(jfti, groupFieldNames)(source)
-          } yield
-            fieldTypes
-        }
       )
     } yield
       fieldNameAndTypes.flatten
@@ -1279,23 +1246,6 @@ class DataSetServiceImpl @Inject()(
       (fieldName, jsonFieldTypeInferrer(jsons))
     }
 
-  private def inferFieldTypesAsStream(
-    jsonFieldTypeInferrer: FieldTypeInferrer[JsReadable],
-    fieldNames: Traversable[String])(
-    source: Source[JsObject, _]
-  ): Future[Traversable[(String, FieldType[_])]] = {
-//    unzipNFlowsAndApply(fieldNames.size)(coreCalc.flow(options))
-//
-//    source
-
-    seqFutures(fieldNames) { fieldName =>
-      val jsonFieldSource = source.map(json => (json \ fieldName))
-      jsonFieldTypeInferrer.apply(jsonFieldSource).map(fieldType =>
-        (fieldName, fieldType)
-      )
-    }
-  }
-
   private def updateFieldSpecs(
     dataSetId: String,
     fieldNameAndTypes: Traversable[(String, FieldTypeSpec)],
@@ -1767,120 +1717,6 @@ class DataSetServiceImpl @Inject()(
       _ <- targetDsa.dataViewRepo.save(newViews)
     } yield
       ()
-
-  override def inferData(
-    originalDataSetId: String,
-    newDataSetId: String,
-    newDataSetName: String,
-    newDataSetSetting: Option[DataSetSetting],
-    newDataView: Option[DataView],
-    saveBatchSize: Option[Int],
-    inferenceGroupSize: Option[Int],
-    inferenceGroupsInParallel: Option[Int],
-    jsonFieldTypeInferrer: Option[FieldTypeInferrer[JsReadable]]
-  ) = {
-    logger.info(s"Translation of the data and dictionary for data set '${originalDataSetId}' initiated.")
-    val originalDsa = dsaf(originalDataSetId).get
-    val originalDataRepo = originalDsa.dataSetRepo
-    val originalDictionaryRepo = originalDsa.fieldRepo
-    val originalCategoryRepo = originalDsa.categoryRepo
-
-    val inferenceGroupsInParallelInit = inferenceGroupsInParallel.getOrElse(2)
-    val inferenceGroupSizeInit = inferenceGroupSize.getOrElse(10)
-
-    for {
-      // original data set info
-      originalDataSetInfo <- originalDsa.metaInfo
-
-      // get the accessor (data repo and field repo) for the newly registered data set
-      newDsa <- dsaf.register(
-        DataSetMetaInfo(id = newDataSetId, name = newDataSetName, dataSpaceId = originalDataSetInfo.dataSpaceId),
-        newDataSetSetting,
-        newDataView
-      )
-      newFieldRepo = newDsa.fieldRepo
-      newCategoryRepo = newDsa.categoryRepo
-
-      // get the original dictionary fields
-      originalFields <- originalDictionaryRepo.find()
-
-      // get the original categories
-      originalCategories <- originalCategoryRepo.find()
-
-      // get the field types
-      originalFieldNameAndTypes = originalFields.toSeq.map(field => (field.name, field.fieldTypeSpec))
-      originalFieldNameMap = originalFields.map(field => (field.name, field)).toMap
-
-      newFieldNameAndTypes <- {
-        logger.info("Inferring new field types started")
-        val fieldNames = originalFieldNameAndTypes.map(_._1).sorted
-
-        seqFutures(fieldNames.grouped(inferenceGroupsInParallelInit * inferenceGroupSizeInit)) { fieldsNames =>
-          logger.info(s"Inferring new field types for ${fieldsNames.size} fields")
-          inferFieldTypesInParallel(originalDataRepo, fieldsNames, inferenceGroupSizeInit, jsonFieldTypeInferrer)
-        }.map(_.flatten)
-      }
-
-      // update the dictionary
-//      _ <- updateDictionary(newFieldRepo, newFieldNameAndTypes.map { case (fieldName, fieldType) => (fieldName, fieldType.spec)}, false, true)
-
-      // delete all the new fields
-      _ <- newFieldRepo.deleteAll
-
-      // save the new fields
-      _ <- {
-        val newFields = newFieldNameAndTypes.map { case (fieldName, fieldType) =>
-          val fieldTypeSpec = fieldType.spec
-          val stringEnums = fieldTypeSpec.enumValues.map { case (from, to) => (from.toString, to)}
-
-          originalFieldNameMap.get(fieldName).map( field =>
-            field.copy(fieldType = fieldTypeSpec.fieldType, isArray = fieldTypeSpec.isArray, enumValues = stringEnums)
-          )
-        }.flatten
-        newFieldRepo.save(newFields)
-      }
-
-      // delete all the new categories
-      _ <- newCategoryRepo.deleteAll
-
-      // save all the new categories
-      _ <- newCategoryRepo.save(originalCategories)
-
-      // since we possible changed the dictionary (the data structure) we need to update the data set repo
-      _ <- newDsa.updateDataSetRepo
-
-      // get the new data set repo
-      newDataRepo = newDsa.dataSetRepo
-
-      // delete all the data
-      _ <- {
-        logger.info(s"Deleting all the data for '${newDataSetId}'.")
-        newDataRepo.deleteAll
-      }
-
-      originalIds <- {
-        logger.info("Getting the original ids")
-        // get the items (from the data set)
-        originalDataRepo.find(
-          projection = Seq(dataSetIdFieldName),
-          sort = Seq(AscSort(dataSetIdFieldName))
-        ).map(_.map(json => (json \ dataSetIdFieldName).as[BSONObjectID]))
-      }
-
-      // save the new items
-      _ <- {
-        logger.info("Saving new items")
-        val newFieldNameAndTypeMap: Map[String, FieldType[_]] = newFieldNameAndTypes.toMap
-        val size = originalIds.size
-        seqFutures(
-          originalIds.toSeq.grouped(saveBatchSize.getOrElse(1)).zipWithIndex
-        )(
-          createNewJsonsAndSave(originalDataRepo, newDataRepo, newFieldNameAndTypeMap, size, saveBatchSize.getOrElse(1))
-        )
-      }
-    } yield
-      messageLogger.info(s"Translation of the data and dictionary for data set '${originalDataSetId}' successfully finished.")
-  }
 
   override def translateData(
     originalDataSetId: String,
