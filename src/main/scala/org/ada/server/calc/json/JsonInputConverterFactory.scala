@@ -8,13 +8,7 @@ import org.ada.server.util.ClassFinderUtil.findClasses
 
 import scala.reflect.runtime.universe._
 
-class JsonInputConverterFactory(libPath: Option[String]) {
-
-  // we scan only the jars starting with this prefix to speed up the class search
-  private val libPrefix = "org.adada"
-
-  // find the converter classes in a package services and create instances
-//  private val converterClasses = findClasses[JsonInputConverter[_]](libPrefix, Some("org.ada.server.calc"), false, None, libPath)
+object JsonInputConverterFactory {
 
   private val converterClasses = findClasses[JsonInputConverter[_]](Some("org.ada.server.calc"))
 
@@ -90,7 +84,7 @@ class JsonInputConverterFactory(libPath: Option[String]) {
 }
 
 object TestFind extends App {
-  val factory = new JsonInputConverterFactory(None)
+  val factory = JsonInputConverterFactory
 
   println("----------------------------")
 

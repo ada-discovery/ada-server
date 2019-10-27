@@ -29,7 +29,7 @@ import org.apache.commons.math3.linear.{Array2DRowRealMatrix, EigenDecomposition
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.collection.JavaConversions._
-import org.ada.server.calc.CalculatorHelper._
+import org.ada.server.calc.CalculatorHelper.{NoOptionsExt, NoOptionsExecExt, RunExt}
 import org.ada.server.calc.impl.SeqBinCountCalc.SeqBinCountCalcTypePack
 import org.ada.server.calc.impl.UniqueDistributionCountsCalc.UniqueDistributionCountsCalcTypePack
 

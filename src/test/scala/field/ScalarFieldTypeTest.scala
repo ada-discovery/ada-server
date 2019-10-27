@@ -13,7 +13,7 @@ class ScalarFieldTypeTest extends FlatSpec with Matchers {
 
   val ftf = FieldTypeHelper.fieldTypeFactory()
 
-  "Null field type" should "should treat all non-null values with exception" in {
+  "Null field type" should "treat all non-null values with exception" in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Null, false)).asInstanceOf[FieldType[Nothing]]
 
     fieldType.displayStringToValue("") should be (None)
@@ -46,7 +46,7 @@ class ScalarFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "Int field type" should "should accept only integers " in {
+  "Int field type" should "accept only integers " in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Integer, false)).asInstanceOf[FieldType[Long]]
 
     fieldType.displayStringToValue("") should be (None)
@@ -143,7 +143,7 @@ class ScalarFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "Double field type" should "should accept only doubles " in {
+  "Double field type" should "accept only doubles " in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Double, false)).asInstanceOf[FieldType[Double]]
 
     fieldType.displayStringToValue("") should be (None)
@@ -230,7 +230,7 @@ class ScalarFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "Boolean field type" should "should accept only booleans " in {
+  "Boolean field type" should "accept only booleans " in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Boolean, false)).asInstanceOf[FieldType[Boolean]]
 
     fieldType.displayStringToValue("") should be (None)
@@ -329,7 +329,7 @@ class ScalarFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "Date field type" should "should accept only dates " in {
+  "Date field type" should "accept only dates " in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Date, false)).asInstanceOf[FieldType[ju.Date]]
     def toDate(text: String): ju.Date =
       new SimpleDateFormat(FieldTypeHelper.displayDateFormat).parse(text)
@@ -419,7 +419,7 @@ class ScalarFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "Enum field type" should "should accept only enums " in {
+  "Enum field type" should "accept only enums " in {
     val enumValues = Map(0 -> "Male", 1 -> "Female", 2 -> "Both", 3 -> "None")
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Enum, false, enumValues)).asInstanceOf[FieldType[Int]]
 
@@ -520,7 +520,7 @@ class ScalarFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "String field type" should "should accept only strings " in {
+  "String field type" should "accept only strings " in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.String, false)).asInstanceOf[FieldType[String]]
 
     fieldType.displayStringToValue("") should be (None)
@@ -586,7 +586,7 @@ class ScalarFieldTypeTest extends FlatSpec with Matchers {
     }
   }
 
-  "JSON field type" should "should accept only JSONS" in {
+  "JSON field type" should "accept only JSONS" in {
     val fieldType = ftf.apply(FieldTypeSpec(FieldTypeId.Json, false)).asInstanceOf[FieldType[JsObject]]
 
     val json1 = Json.obj("name" -> JsString("Peter"), "affiliation" -> JsString("LCSB"))

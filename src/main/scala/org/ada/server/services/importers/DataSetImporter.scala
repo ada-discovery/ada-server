@@ -5,13 +5,14 @@ import java.nio.charset.{Charset, MalformedInputException, UnsupportedCharsetExc
 import javax.inject.Inject
 import org.ada.server.models.dataimport.DataSetImport
 import org.ada.server.AdaParseException
-import org.ada.server.field.{FieldTypeHelper, FieldTypeInferrer}
+import org.ada.server.field.FieldTypeHelper
 import org.ada.server.models._
 import org.ada.server.dataaccess.RepoTypes._
 import org.ada.server.dataaccess.dataset.{DataSetAccessor, DataSetAccessorFactory}
 import org.ada.server.services.DataSetService
 import org.ada.server.util.MessageLogger
 import org.ada.server.field.FieldUtil.specToField
+import org.ada.server.field.inference.FieldTypeInferrer
 import org.incal.core.runnables.InputFutureRunnable
 import org.incal.core.util.seqFutures
 import play.api.libs.json.{JsNumber, JsObject, Json}

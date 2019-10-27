@@ -16,13 +16,12 @@ import scala.reflect.runtime.universe._
 object CalculatorHelper {
 
   private val libPath = "lib"
-  private val jicf = new JsonInputConverterFactory(Some(libPath))
+  private val jicf = JsonInputConverterFactory
 
   implicit class RunExt[C <: CalculatorTypePack] (
     val calculator: Calculator[C])(
     implicit materializer: Materializer
   ) {
-
     def runFlow(
       options2: C#FLOW_OPT,
       options3: C#SINK_OPT)(

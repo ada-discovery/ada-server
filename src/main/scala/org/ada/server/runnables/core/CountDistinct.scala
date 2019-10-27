@@ -5,11 +5,11 @@ import play.api.Logger
 import runnables.DsaInputFutureRunnable
 import org.incal.core.dataaccess.Criterion._
 import org.ada.server.field.FieldUtil.{FieldOps, JsonFieldOps}
+import org.incal.core.runnables.RunnableHtmlOutput
 
-import scala.reflect.runtime.universe.typeOf
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class CountDistinct extends DsaInputFutureRunnable[CountDistinctSpec] {
+class CountDistinct extends DsaInputFutureRunnable[CountDistinctSpec] with RunnableHtmlOutput {
 
   private val logger = Logger // (this.getClass())
 
@@ -32,7 +32,9 @@ class CountDistinct extends DsaInputFutureRunnable[CountDistinctSpec] {
       logger.info("-----------------")
 
       distinctValues.foreach { case (value, items) =>
-        logger.info(value.mkString(", ") + " : " + items.size)
+        val line = value.mkString(", ") + " : " + items.size
+        logger.info(line)
+        addParagraph(line)
       }
     }
   }

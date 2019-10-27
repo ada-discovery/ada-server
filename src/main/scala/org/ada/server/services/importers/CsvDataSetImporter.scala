@@ -2,9 +2,10 @@ package org.ada.server.services.importers
 
 import java.util.Date
 
-import org.ada.server.field.{FieldTypeHelper, FieldTypeInferrerFactory}
+import org.ada.server.field.FieldTypeHelper
 import org.ada.server.models.dataimport.CsvDataSetImport
 import org.ada.server.dataaccess.dataset.DataSetAccessor
+import org.ada.server.field.inference.FieldTypeInferrerFactory
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -63,8 +64,8 @@ private class CsvDataSetImporter extends AbstractDataSetImporter[CsvDataSetImpor
     val minAvgValuesPerEnum = importInfo.inferenceMinAvgValuesPerEnum.getOrElse(FieldTypeHelper.minAvgValuesPerEnum)
 
     val ftf = FieldTypeHelper.fieldTypeFactory(arrayDelimiter = arrayDelimiter, booleanIncludeNumbers = importInfo.booleanIncludeNumbers)
-    val ftif = FieldTypeInferrerFactory(ftf, maxEnumValuesCount, minAvgValuesPerEnum, arrayDelimiter)
+    val ftif = new FieldTypeInferrerFactory(ftf, maxEnumValuesCount, minAvgValuesPerEnum, arrayDelimiter)
 
-    saveStringsAndDictionaryWithTypeInference(dsa, columnNamesAndLabels, values, importInfo.saveBatchSize, Some(ftif.apply))
+    saveStringsAndDictionaryWithTypeInference(dsa, columnNamesAndLabels, values, importInfo.saveBatchSize, Some(ftif.ofString))
   }
 }

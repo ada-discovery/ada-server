@@ -4,10 +4,11 @@ import java.nio.charset.Charset
 import java.util.Date
 
 import org.ada.server.dataaccess._
-import org.ada.server.field.{FieldType, FieldTypeFactory, FieldTypeHelper, FieldTypeInferrerFactory}
+import org.ada.server.field.{FieldType, FieldTypeFactory, FieldTypeHelper}
 import org.ada.server.models.dataimport.JsonDataSetImport
 import play.api.libs.json._
 import org.ada.server.field.FieldUtil.specToField
+import org.ada.server.field.inference.FieldTypeInferrerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -30,8 +31,8 @@ private class JsonDataSetImporter extends AbstractDataSetImporter[JsonDataSetImp
       val minAvgValuesPerEnum = importInfo.inferenceMinAvgValuesPerEnum.getOrElse(FieldTypeHelper.minAvgValuesPerEnum)
 
       val ftf = FieldTypeHelper.fieldTypeFactory(booleanIncludeNumbers = importInfo.booleanIncludeNumbers)
-      val ftif = FieldTypeInferrerFactory(ftf, maxEnumValuesCount, minAvgValuesPerEnum, FieldTypeHelper.arrayDelimiter)
-      val jsonFti = ftif.applyJson
+      val ftif = new FieldTypeInferrerFactory(ftf, maxEnumValuesCount, minAvgValuesPerEnum, FieldTypeHelper.arrayDelimiter)
+      val jsonFti = ftif.ofJson
 
       Json.parse(fileContent) match {
         case JsArray(items) =>

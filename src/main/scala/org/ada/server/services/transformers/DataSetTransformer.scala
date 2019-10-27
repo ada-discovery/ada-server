@@ -4,7 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import javax.inject.Inject
 import org.ada.server.AdaException
-import org.ada.server.field.{FieldTypeHelper, FieldTypeInferrer}
+import org.ada.server.field.FieldTypeHelper
 import org.ada.server.models._
 import org.ada.server.dataaccess.RepoTypes._
 import org.ada.server.dataaccess.dataset.{DataSetAccessor, DataSetAccessorFactory}
