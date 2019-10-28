@@ -74,7 +74,7 @@ private trait FieldTypeInferrerImpl[T] extends FieldTypeInferrer[T] {
 
   // calculator impls
   override def fun(o: Unit) = { values: Traversable[T] =>
-    val fieldTypes = orderedInferrers.map(_.fun()(values))
+    val fieldTypes = orderedInferrers.view.map(_.fun()(values))
     selectFirst(fieldTypes)
   }
 

@@ -80,7 +80,7 @@ private class LinkMultiDataSetsTransformer extends AbstractDataSetTransformer[Li
     spec: LinkedDataSetSpec
   ): Future[LinkedDataSetInfo] = {
     // data set accessor
-    val dsa = dsaf(spec.dataSetId).getOrElse(throw new AdaException(s"Data Set ${spec.dataSetId} not found."))
+    val dsa = dsaSafe(spec.dataSetId)
 
     // determine which fields to load (depending on whether preserve field names are specified)
     val fieldNamesToLoad = spec.explicitFieldNamesToKeep match {

@@ -13,7 +13,7 @@ class FieldTypeInferrerTest extends FlatSpec with Matchers {
 
     shouldBeNullType (Seq())
     shouldBeNullType (Seq(""))
-    shouldBeNullType (Seq(" na"))
+    shouldBeNullType (Seq.fill(1000)(Seq(" na")).flatten)
     shouldBeNullType (Seq("", "N/A", "", "", null))
   }
 
@@ -21,7 +21,7 @@ class FieldTypeInferrerTest extends FlatSpec with Matchers {
     val shouldBeIntType = shouldBeInferredType(FieldTypeSpec(FieldTypeId.Integer, false))_
 
     shouldBeIntType (Seq("128"))
-    shouldBeIntType (Seq(" 8136", "na", null, "12"))
+    shouldBeIntType (Seq.fill(1000)(Seq(" 8136", "na", null, "12")).flatten)
     shouldBeIntType (Seq("    ", " 92"))
   }
 
@@ -29,7 +29,7 @@ class FieldTypeInferrerTest extends FlatSpec with Matchers {
     val shouldBeDoubleType = shouldBeInferredType(FieldTypeSpec(FieldTypeId.Double, false))_
 
     shouldBeDoubleType (Seq("128.0"))
-    shouldBeDoubleType (Seq(" 8136", "na", null, "12.1"))
+    shouldBeDoubleType (Seq.fill(1000)(Seq(" 8136", "na", null, "12.1")).flatten)
     shouldBeDoubleType (Seq("    ", " 92.085"))
   }
 
@@ -37,7 +37,7 @@ class FieldTypeInferrerTest extends FlatSpec with Matchers {
     val shouldBeBooleanType = shouldBeInferredType(FieldTypeSpec(FieldTypeId.Boolean, false))_
 
     shouldBeBooleanType (Seq("true"))
-    shouldBeBooleanType (Seq(" false", "na", null, "1"))
+    shouldBeBooleanType (Seq.fill(1000)(Seq(" false", "na", null, "1")).flatten)
     shouldBeBooleanType (Seq(" 0", "na", "1", "1"))
     shouldBeBooleanType (Seq("1", "0", "", " false", "na"))
   }
@@ -46,7 +46,7 @@ class FieldTypeInferrerTest extends FlatSpec with Matchers {
     val shouldBeDateType = shouldBeInferredType(FieldTypeSpec(FieldTypeId.Date, false))_
 
     shouldBeDateType (Seq("2016-08-10 20:45:12"))
-    shouldBeDateType (Seq(" 1999-12-01 12:12", "na", null, "12.12.2012"))
+    shouldBeDateType (Seq.fill(1000)(Seq(" 1999-12-01 12:12", "na", null, "12.12.2012")).flatten)
     shouldBeDateType (Seq("12.NOV.2012 18:19:20", "2016-08-10 20:45:12", "", " 12.12.2012 10:43", "na"))
   }
 
@@ -54,7 +54,7 @@ class FieldTypeInferrerTest extends FlatSpec with Matchers {
     def shouldBeEnumType(enumValues: Map[Int, String]) = shouldBeInferredType(FieldTypeSpec(FieldTypeId.Enum, false, enumValues))_
 
     shouldBeEnumType(Map(0 -> "Male")) (Seq("Male", " Male"))
-    shouldBeEnumType(Map(0 -> "Both", 1 -> "Female", 2 -> "Male")) (Seq(" Male", "Female", "Male ", "na", null, "Both", "Female"))
+    shouldBeEnumType(Map(0 -> "Both", 1 -> "Female", 2 -> "Male")) (Seq.fill(1000)(Seq(" Male", "Female", "Male ", "na", null, "Both", "Female")).flatten)
     shouldBeEnumType(Map(0 -> "1", 1 -> "Sun")) (Seq("1", " 1", "1", "null", "Sun "))
   }
 

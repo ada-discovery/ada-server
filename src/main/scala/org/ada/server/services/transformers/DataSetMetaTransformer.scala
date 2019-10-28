@@ -2,6 +2,7 @@ package org.ada.server.services.transformers
 
 import akka.stream.Materializer
 import javax.inject.Inject
+import org.ada.server.AdaException
 import org.ada.server.field.FieldTypeHelper
 import org.ada.server.models._
 import org.ada.server.dataaccess.RepoTypes._
@@ -33,6 +34,9 @@ private[transformers] abstract class AbstractDataSetMetaTransformer[T <: DataSet
   protected val defaultCharset = "UTF-8"
   protected val metaDeleteAndSave = true
   protected val deleteNonReferenced = true
+
+  protected def dsaSafe(dataSetId: String) =
+    dsaf(dataSetId).getOrElse(throw new AdaException(s"Data set ${dataSetId} not found"))
 
   override def runAsFuture(spec: T) =
     for {

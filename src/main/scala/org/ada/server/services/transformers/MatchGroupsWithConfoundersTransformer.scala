@@ -29,7 +29,7 @@ private class MatchGroupsWithConfoundersTransformer extends AbstractDataSetTrans
   override protected def execInternal(
     spec: MatchGroupsWithConfoundersTransformation
   ) = {
-    val sourceDsa = dsaf(spec.sourceDataSetId).getOrElse(throw new AdaException(s"Data Set ${spec.sourceDataSetId} not found."))
+    val sourceDsa = dsaSafe(spec.sourceDataSetId)
 
     for {
       // load a filter (if needed)

@@ -15,7 +15,8 @@ private trait StaticFieldTypeInferrerImpl[T] extends Calculator[StaticFieldTypeI
   protected val fieldType: FieldType[_]
 
   override def fun(o: Unit) = { values: Traversable[IN] =>
-    val passed = values.map(check).forall(identity)
+    val passed = values.view.map(check).forall(identity)
+
     if (passed) Some(fieldType) else None
   }
 
