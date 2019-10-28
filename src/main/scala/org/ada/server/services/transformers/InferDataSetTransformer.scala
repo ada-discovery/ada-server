@@ -21,7 +21,7 @@ private class InferDataSetTransformer extends AbstractDataSetTransformer[InferDa
   override protected def execInternal(
     spec: InferDataSetTransformation
   ) = {
-    val sourceDsa = dsaf(spec.sourceDataSetId).get
+    val sourceDsa = dsaSafe(spec.sourceDataSetId)
 
     val fieldTypeInferrerFactory = new FieldTypeInferrerFactory(
       FieldTypeHelper.fieldTypeFactory(booleanIncludeNumbers = spec.booleanIncludeNumbers),

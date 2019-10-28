@@ -6,15 +6,16 @@ import org.ada.server.dataaccess.StreamSpec
 import org.ada.server.json.HasFormat
 import org.ada.server.models.ScheduledTime
 import org.ada.server.models.datatrans.DataSetTransformation._
-import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 import play.api.libs.json.Json
 import reactivemongo.bson.BSONObjectID
+import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 
-case class CopyDataSetTransformation(
+case class FilterDataSetTransformation(
   _id: Option[BSONObjectID] = None,
 
   sourceDataSetId: String,
   resultDataSetSpec: ResultDataSetSpec,
+  filterId: BSONObjectID,
 
   streamSpec: StreamSpec,
   scheduled: Boolean = false,
@@ -40,6 +41,7 @@ case class CopyDataSetTransformation(
   )
 }
 
-object CopyDataSetTransformation extends HasFormat[CopyDataSetTransformation] {
-  val format = Json.format[CopyDataSetTransformation]
+object FilterDataSetTransformation extends HasFormat[FilterDataSetTransformation] {
+  val format = Json.format[FilterDataSetTransformation]
 }
+

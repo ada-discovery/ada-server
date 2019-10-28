@@ -10,7 +10,7 @@ private class ChangeFieldEnumsTransformer extends AbstractDataSetMetaTransformer
   override protected def execInternal(
     spec: ChangeFieldEnumsTransformation
   ) = {
-    val sourceDsa = dsaf(spec.sourceDataSetId).get
+    val sourceDsa = dsaSafe(spec.sourceDataSetId)
     val fieldNameEnumMap = spec.fieldNameOldNewEnums.toGroupMap
     for {
       // all the fields

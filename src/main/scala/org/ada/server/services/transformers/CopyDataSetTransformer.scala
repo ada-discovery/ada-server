@@ -11,7 +11,7 @@ private class CopyDataSetTransformer extends AbstractDataSetTransformer[CopyData
   override protected def execInternal(
     spec: CopyDataSetTransformation
   ) = {
-    val sourceDsa = dsaf(spec.sourceDataSetId).get
+    val sourceDsa = dsaSafe(spec.sourceDataSetId)
 
     for {
       // all the fields

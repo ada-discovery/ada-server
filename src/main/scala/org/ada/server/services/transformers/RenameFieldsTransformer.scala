@@ -13,7 +13,7 @@ private class RenameFieldsTransformer extends AbstractDataSetTransformer[RenameF
   override protected def execInternal(
     spec: RenameFieldsTransformation
   ) = {
-    val sourceDsa = dsaf(spec.sourceDataSetId).get
+    val sourceDsa = dsaSafe(spec.sourceDataSetId)
     val oldNewFieldNameMap = spec.fieldOldNewNames.toMap
 
     for {

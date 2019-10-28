@@ -16,7 +16,7 @@ private class DropFieldsTransformer extends AbstractDataSetTransformer[DropField
   override protected def execInternal(
     spec: DropFieldsTransformation
   ) = {
-    val sourceDsa = dsaf(spec.sourceDataSetId).get
+    val sourceDsa = dsaSafe(spec.sourceDataSetId)
 
     if (spec.fieldNamesToKeep.nonEmpty && spec.fieldNamesToDrop.nonEmpty)
       throw new AdaException("Both 'fields to keep' and 'fields to drop' defined at the same time.")
