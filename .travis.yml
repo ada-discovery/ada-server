@@ -4,7 +4,9 @@ scala:
 jdk:
   - openjdk8
 script:
-  - sbt jacoco
+  - sbt clean
+  - sbt "testOnly *Spec"
+  - sbt jacocoReport
 before_cache:
   # Cleanup the cached directories to avoid unnecessary cache updates
   - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
