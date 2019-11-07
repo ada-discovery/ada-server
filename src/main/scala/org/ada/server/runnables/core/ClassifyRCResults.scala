@@ -15,6 +15,7 @@ import org.ada.server.services.DataSetService
 import org.ada.server.services.ml.MachineLearningService
 import org.ada.server.services.StatsService
 import org.ada.server.field.FieldUtil
+import org.ada.server.models.DataSetFormattersAndIds.FieldIdentity
 import org.incal.core.runnables.{InputFutureRunnable, InputFutureRunnableExt}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -102,36 +103,49 @@ class ClassifyRCResults @Inject() (
       // prepare filter criteria
       criteria <- loadCriteria(dsa, filter)
 
-      // load the data
-      (jsons, fields) <- dataSetService.loadDataAndFields(dsa, weightsFieldNames ++ Seq(spec.outputFieldName), criteria)
+      // load the fields
+      fields <- dsa.fieldRepo.find(Seq(FieldIdentity.name #-> (weightsFieldNames ++ Seq(spec.outputFieldName))))
+
+      // IO spec
+      ioSpec = IOSpec(
+        weightsFieldNames,
+        spec.outputFieldName,
+        filter.map(_._id.get),
+        spec.replicationFilterId
+      )
+
+      // select fields
+      selectedFields <-
+        spec.learningSetting.featuresSelectionNum.map { featuresSelectionNum =>
+          val inputFields = fields.filter(!_.name.equals(ioSpec.outputFieldName)).toSeq
+          val outputField = fields.find(_.name.equals(ioSpec.outputFieldName)).get
+          statsService.selectFeaturesAsAnovaChiSquare(dsa.dataSetRepo, criteria, inputFields, outputField, featuresSelectionNum).map { selectedInputFields =>
+            selectedInputFields ++ Seq(outputField)
+          }
+        }.getOrElse(
+          Future(fields)
+        )
 
       // classify and save the result
       _ <- mlModel match {
         case Some(mlModel) =>
-          // IO
-          val ioSpec = IOSpec(
-            weightsFieldNames,
-            spec.outputFieldName,
-            filter.map(_._id.get),
-            spec.replicationFilterId
-          )
-
+          val fieldNameAndSpecs = selectedFields.toSeq.map(field => (field.name, field.fieldTypeSpec))
           val runSpec = ClassificationRunSpec(ioSpec, spec.mlModelId, spec.learningSetting)
 
-          val selectedFields = spec.learningSetting.featuresSelectionNum.map { featuresSelectionNum =>
-            val inputFields = fields.filter(!_.name.equals(ioSpec.outputFieldName))
-            val outputField = fields.find(_.name.equals(ioSpec.outputFieldName)).get
-            val selectedInputFields = statsService.selectFeaturesAsAnovaChiSquare(jsons, inputFields, outputField, featuresSelectionNum)
-            selectedInputFields ++ Seq(outputField)
-          }.getOrElse(
-            fields
-          )
+          for {
+            // jsons
+            jsons <- dsa.dataSetRepo.find(criteria, projection = selectedFields.map(_.name))
 
-          val fieldNameAndSpecs = selectedFields.map(field => (field.name, field.fieldTypeSpec))
-          mlService.classifyStatic(jsons, fieldNameAndSpecs, spec.outputFieldName, mlModel, runSpec.learningSetting).map { resultsHolder =>
-            val finalResult = MLResultUtil.createStandardClassificationResult(runSpec, MLResultUtil.calcMetricStats(resultsHolder.performanceResults), Nil)
-            dsa.classificationResultRepo.save(finalResult)
-          }
+            // results holder
+            resultsHolder <- mlService.classifyStatic(jsons, fieldNameAndSpecs, spec.outputFieldName, mlModel, runSpec.learningSetting)
+
+            // final results
+            finalResult = MLResultUtil.createStandardClassificationResult(runSpec, MLResultUtil.calcMetricStats(resultsHolder.performanceResults), Nil)
+
+            // save results
+            _ <- dsa.classificationResultRepo.save(finalResult)
+          } yield
+            ()
 
         case None => Future(())
       }

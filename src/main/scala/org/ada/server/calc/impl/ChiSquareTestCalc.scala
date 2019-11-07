@@ -79,17 +79,20 @@ trait ChiSquareHelper[T1, T2] {
   private def chiSquareStatistics(
     counts: Seq[Seq[Int]]
   ): Double = {
-    val colsNum = counts(0).size
+    // because of the limitation of int we convert to double right away
+    val doubleCounts: Seq[Seq[Double]] = counts.map(_.map(_.toDouble))
+
+    val colsNum = doubleCounts(0).size
 
     // row sums, column sums, and total sum
-    val rowSums = counts.map(_.sum)
-    val colSums = (0 to colsNum-1).map(col => counts.map(_(col)).sum)
-    val total = rowSums.sum.toDouble
+    val rowSums = doubleCounts.map(_.sum)
+    val colSums = (0 to colsNum-1).map(col => doubleCounts.map(_(col)).sum)
+    val total = rowSums.sum
 
     // combine together and get a sum of value/expected squares
-    counts.zipWithIndex.flatMap { case (row, rowIndex) =>
+    doubleCounts.zipWithIndex.flatMap { case (row, rowIndex) =>
       row.zipWithIndex.map { case (value, colIndex) =>
-        val expected: Double = (rowSums(rowIndex) * colSums(colIndex)) / total
+        val expected = (rowSums(rowIndex) * colSums(colIndex)) / total
         ((value - expected) * (value - expected)) / expected
       }
     }.sum
