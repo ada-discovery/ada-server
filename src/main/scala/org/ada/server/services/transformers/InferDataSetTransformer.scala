@@ -85,7 +85,10 @@ private class InferDataSetTransformer extends AbstractDataSetTransformer[InferDa
       (sourceDsa, newFields, transformedStream, saveViewsAndFilters)
   }
 
-  private def displayJsonToJson[T](fieldType: FieldType[T], json: JsReadable): JsValue = {
+  private def displayJsonToJson[T](
+    fieldType: FieldType[T],
+    json: JsReadable
+  ): JsValue = {
     val value = fieldType.displayJsonToValue(json)
     fieldType.valueToJson(value)
   }

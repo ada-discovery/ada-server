@@ -202,13 +202,22 @@ trait StatsService extends CalculatorExecutors {
   ////////////////////////
 
   def testIndependence(
-    items: Traversable[JsObject],
+    dataRepo: JsonReadonlyRepo,
+    criteria: Seq[Criterion[Any]],
     inputFields: Seq[Field],
     targetField: Field,
     keepUndefined: Boolean = false
-  ): Seq[Option[IndependenceTestResult]]
+  ): Future[Seq[Option[IndependenceTestResult]]]
 
   def testIndependenceSorted(
+    dataRepo: JsonReadonlyRepo,
+    criteria: Seq[Criterion[Any]],
+    inputFields: Seq[Field],
+    targetField: Field,
+    keepUndefined: Boolean = false
+  ): Future[Seq[(Field, Option[IndependenceTestResult])]]
+
+  def testIndependenceSortedJson(
     items: Traversable[JsObject],
     inputFields: Seq[Field],
     targetField: Field,
@@ -228,12 +237,13 @@ trait StatsService extends CalculatorExecutors {
   ): Future[Seq[(Field, Option[ChiSquareResult])]]
 
   def selectFeaturesAsAnovaChiSquare(
-    data: Traversable[JsObject],
+    dataRepo: JsonReadonlyRepo,
+    criteria: Seq[Criterion[Any]],
     inputFields: Seq[Field],
     targetField: Field,
     featuresToSelectNum: Int,
     keepUndefined: Boolean = false
-  ): Seq[Field]
+  ): Future[Seq[Field]]
 }
 
 @Singleton
@@ -1129,13 +1139,23 @@ class StatsServiceImpl extends StatsService with OneWayAnovaHelper with ChiSquar
   ////////////////////////
 
   override def testIndependenceSorted(
+    dataRepo: JsonReadonlyRepo,
+    criteria: Seq[Criterion[Any]],
+    inputFields: Seq[Field],
+    targetField: Field,
+    keepUndefined: Boolean
+  ): Future[Seq[(Field, Option[IndependenceTestResult])]] =
+    testIndependence(dataRepo, criteria, inputFields, targetField, keepUndefined).map { results =>
+      sortIndependenceTestResults(results, inputFields)
+    }
+
+  override def testIndependenceSortedJson(
     items: Traversable[JsObject],
     inputFields: Seq[Field],
     targetField: Field,
     keepUndefined: Boolean
   ): Seq[(Field, Option[IndependenceTestResult])] = {
     val results = testIndependence(items, inputFields, targetField, keepUndefined)
-
     sortIndependenceTestResults(results, inputFields)
   }
 
@@ -1145,6 +1165,44 @@ class StatsServiceImpl extends StatsService with OneWayAnovaHelper with ChiSquar
   private val nullExcludedAnovaTestExec = nullExcludedMultiOneWayAnovaTestExec[Any]
 
   override def testIndependence(
+    dataRepo: JsonReadonlyRepo,
+    criteria: Seq[Criterion[Any]],
+    inputFields: Seq[Field],
+    targetField: Field,
+    keepUndefined: Boolean
+  ): Future[Seq[Option[IndependenceTestResult]]] = {
+    val numericInputFields = inputFields.filter(_.isNumeric)
+    val nonNumericInputFields = inputFields.filter(!_.isNumeric)
+
+    val chiSquareResultsFuture =
+      if (keepUndefined)
+        chiSquareTestExec.execJsonRepoStreamed_(withProjection = true, Seq(targetField) ++ nonNumericInputFields)(dataRepo, criteria)
+      else
+        nullExcludedChiSquareTestExec.execJsonRepoStreamed_(withProjection = true, Seq(targetField) ++ nonNumericInputFields)(dataRepo, criteria)
+
+    val anovaResultsFuture =
+      if (keepUndefined)
+        anovaTestExec.execJsonRepoStreamed_(withProjection = true, Seq(targetField) ++ numericInputFields)(dataRepo, criteria)
+      else
+        nullExcludedAnovaTestExec.execJsonRepoStreamed_(withProjection = true, Seq(targetField) ++ numericInputFields)(dataRepo, criteria)
+
+    for {
+      chiSquareResults <- chiSquareResultsFuture
+      anovaResults <- anovaResultsFuture
+    } yield {
+      val fieldChiSquareResultMap = nonNumericInputFields.zip(chiSquareResults).toMap
+      val fieldAnovaResultMap = numericInputFields.zip(anovaResults).toMap
+
+      inputFields.map( field =>
+        if (field.isNumeric)
+          fieldAnovaResultMap.get(field).get
+        else
+          fieldChiSquareResultMap.get(field).get
+      )
+    }
+  }
+
+  private def testIndependence(
     items: Traversable[JsObject],
     inputFields: Seq[Field],
     targetField: Field,
@@ -1177,15 +1235,16 @@ class StatsServiceImpl extends StatsService with OneWayAnovaHelper with ChiSquar
   }
 
   override def selectFeaturesAsAnovaChiSquare(
-    data: Traversable[JsObject],
+    dataRepo: JsonReadonlyRepo,
+    criteria: Seq[Criterion[Any]],
     inputFields: Seq[Field],
     targetField: Field,
     featuresToSelectNum: Int,
     keepUndefined: Boolean
-  ): Seq[Field] = {
-    val results = testIndependenceSorted(data, inputFields, targetField, keepUndefined)
-    results.map(_._1).take(featuresToSelectNum)
-  }
+  ): Future[Seq[Field]] =
+    testIndependenceSorted(dataRepo, criteria, inputFields, targetField, keepUndefined).map { results =>
+      results.map(_._1).take(featuresToSelectNum)
+    }
 
   private val multiBasicStatsExec = multiBasicStatsSeqExec
 

@@ -57,11 +57,11 @@ class RunIndependenceTestForDataSpace @Inject()(
     val dsa = dsaf(dataSetId).get
 
     for {
-      jsons <- dsa.dataSetRepo.find(projection = Seq(inputFieldName, targetFieldName))
       inputField <- dsa.fieldRepo.get(inputFieldName)
       targetField <- dsa.fieldRepo.get(targetFieldName)
+      results <- statsService.testIndependence(dsa.dataSetRepo, Nil, Seq(inputField.get), targetField.get)
     } yield
-      statsService.testIndependence(jsons, Seq(inputField.get), targetField.get).head.map(
+      results.head.map(
         _ match {
           case x: ChiSquareResult => Seq(dataSetId, x.pValue, x.statistics, x.degreeOfFreedom, "Chi-Square").mkString(delimiter)
           case x: OneWayAnovaResult => Seq(dataSetId, x.pValue, x.FValue, x.dfwg, "ANOVA").mkString(delimiter)

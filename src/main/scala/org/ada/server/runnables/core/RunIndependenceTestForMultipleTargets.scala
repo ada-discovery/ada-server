@@ -53,7 +53,7 @@ class RunIndependenceTestForMultipleTargets @Inject()(
       val inputFieldsSeq = inputFields.toSeq.sortBy(_.name)
 
       targetFields.map { targetField =>
-        val pValues = statsService.testIndependence(jsons, inputFieldsSeq, targetField).flatten.map(_.pValue)
+        val pValues = statsService.testIndependenceSortedJson(jsons, inputFieldsSeq, targetField).flatMap(_._2.map(_.pValue))
 
         (Seq(targetField.name) ++ pValues).mkString(unescapedDelimiter)
       }
