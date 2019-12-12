@@ -1,6 +1,6 @@
 package org.ada.server.models.datatrans
 
-import org.ada.server.dataaccess.StreamSpec
+import org.incal.core.dataaccess.StreamSpec
 import org.ada.server.json.EnumFormat
 import org.ada.server.models.{ScheduledTime, StorageType}
 import org.incal.spark_ml.models.VectorScalerType

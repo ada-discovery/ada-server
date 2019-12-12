@@ -1,7 +1,7 @@
 package org.ada.server.calc.impl
 
 import org.ada.server.calc.{Calculator, NoOptionsCalculatorTypePack}
-import org.ada.server.akka.AkkaStreamUtil.{seqFlow, countFlow}
+import org.incal.core.akka.AkkaStreamUtil.{seqFlow, countFlow}
 import org.incal.core.util.GroupMapList
 
 trait GroupUniqueDistributionCountsCalcTypePack[G, T] extends NoOptionsCalculatorTypePack {

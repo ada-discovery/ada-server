@@ -3,7 +3,7 @@ package org.ada.server.runnables.core
 import javax.inject.Inject
 import akka.NotUsed
 import akka.stream.scaladsl.Source
-import org.ada.server.dataaccess.StreamSpec
+import org.incal.core.dataaccess.StreamSpec
 import org.ada.server.field.FieldTypeHelper
 import org.ada.server.AdaException
 import org.ada.server.models.DataSetFormattersAndIds.JsObjectIdentity

@@ -4,7 +4,7 @@ import akka.stream.scaladsl.Flow
 import org.ada.server.calc.{Calculator, NoOptionsCalculatorTypePack}
 import org.incal.core.util.GroupMapList
 import org.ada.server.calc.CalculatorHelper._
-import org.ada.server.akka.AkkaStreamUtil.seqFlow
+import org.incal.core.akka.AkkaStreamUtil.seqFlow
 
 trait GroupBasicStatsCalcTypePack[G] extends NoOptionsCalculatorTypePack{
   type IN = (G, Option[Double])

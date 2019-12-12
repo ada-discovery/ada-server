@@ -2,7 +2,7 @@ package org.ada.server.calc.impl
 
 import akka.stream.scaladsl.{Flow, Keep, Sink}
 import org.ada.server.calc.{Calculator, CalculatorTypePack}
-import org.ada.server.akka.AkkaStreamUtil.seqFlow
+import org.incal.core.akka.AkkaStreamUtil.seqFlow
 
 trait StandardizationCalcTypePack extends CalculatorTypePack {
   type IN = Seq[Option[Double]]

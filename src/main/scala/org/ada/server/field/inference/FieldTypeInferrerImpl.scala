@@ -4,7 +4,7 @@ import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import org.ada.server.AdaException
-import org.ada.server.akka.AkkaStreamUtil
+import org.incal.core.akka.AkkaStreamUtil
 import org.ada.server.field.{FieldType, FieldTypeFactory}
 import org.ada.server.models.{FieldTypeId, FieldTypeSpec}
 import play.api.libs.json.JsReadable

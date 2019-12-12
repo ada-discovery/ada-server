@@ -2,7 +2,7 @@ package org.ada.server.calc.impl
 
 import akka.stream.scaladsl.{Flow, Keep, Sink}
 import org.ada.server.calc.{Calculator, NoOptionsCalculatorTypePack}
-import org.ada.server.akka.AkkaStreamUtil._
+import org.incal.core.akka.AkkaStreamUtil._
 import org.incal.core.util.GroupMapList3
 
 trait GroupTupleCalcTypePack[G, A, B] extends NoOptionsCalculatorTypePack {

@@ -3,7 +3,7 @@ package org.ada.server.calc.impl
 import akka.stream.scaladsl.Flow
 import org.ada.server.calc.impl.UniqueDistributionCountsCalc.UniqueDistributionCountsCalcTypePack
 import org.ada.server.calc.{Calculator, NoOptionsCalculatorTypePack}
-import org.ada.server.akka.AkkaStreamUtil.{countFlow, seqFlow}
+import org.incal.core.akka.AkkaStreamUtil.{countFlow, seqFlow}
 
 trait CumulativeOrderedCountsCalcTypePack[T] extends NoOptionsCalculatorTypePack {
   type IN = Option[T]

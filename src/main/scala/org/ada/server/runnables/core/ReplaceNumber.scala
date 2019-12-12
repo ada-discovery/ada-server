@@ -8,12 +8,11 @@ import org.ada.server.field.FieldUtil.FieldOps
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Flow
-import org.ada.server.dataaccess.JsonCrudRepoExtra._
-import org.ada.server.dataaccess.StreamSpec
+import org.incal.core.dataaccess.CrudRepoExtra._
+import org.incal.core.dataaccess.StreamSpec
 import org.incal.core.dataaccess.NotEqualsNullCriterion
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.reflect.runtime.universe.typeOf
 
 class ReplaceNumber extends DsaInputFutureRunnable[ReplaceNumberSpec] {
 
@@ -60,4 +59,10 @@ class ReplaceNumber extends DsaInputFutureRunnable[ReplaceNumberSpec] {
       ()
 }
 
-case class ReplaceNumberSpec(dataSetId: String, fieldName: String, from: Double, to: Double, updateStreamSpec: StreamSpec)
+case class ReplaceNumberSpec(
+  dataSetId: String,
+  fieldName: String,
+  from: Double,
+  to: Double,
+  updateStreamSpec: StreamSpec
+)

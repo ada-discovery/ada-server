@@ -2,7 +2,7 @@ package org.ada.server.calc.impl
 
 import akka.stream.scaladsl.Flow
 import org.ada.server.calc.{Calculator, CalculatorTypePack}
-import org.ada.server.akka.AkkaStreamUtil.{groupFlow, seqFlow}
+import org.incal.core.akka.AkkaStreamUtil.{groupFlow, seqFlow}
 import org.incal.core.util.GroupMapList
 
 trait GroupQuartilesCalcTypePack[G, T] extends CalculatorTypePack {

@@ -2,7 +2,7 @@ package org.ada.server.calc.impl
 
 import akka.stream.scaladsl.Flow
 import org.ada.server.calc.{Calculator, CalculatorTypePack, NoOptionsCalculatorTypePack}
-import org.ada.server.akka.AkkaStreamUtil._
+import org.incal.core.akka.AkkaStreamUtil._
 
 trait TupleCalcTypePack[A, B] extends NoOptionsCalculatorTypePack {
   type IN = (Option[A], Option[B])

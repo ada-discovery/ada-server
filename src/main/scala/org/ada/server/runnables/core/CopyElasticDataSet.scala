@@ -3,10 +3,11 @@ package org.ada.server.runnables.core
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import javax.inject.{Inject, Named}
-import org.ada.server.dataaccess.{ElasticJsonCrudRepoFactory, StreamSpec}
-import org.ada.server.dataaccess.JsonCrudRepoExtra.CrudInfixOps
+import org.ada.server.dataaccess.ElasticJsonCrudRepoFactory
 import org.ada.server.dataaccess.dataset.FieldRepoFactory
+import org.incal.core.dataaccess.CrudRepoExtra.CrudInfixOps
 import org.incal.access.elastic.{ElasticCrudRepoExtra, ElasticSetting, RefreshPolicy}
+import org.incal.core.dataaccess.StreamSpec
 import org.incal.core.runnables.InputFutureRunnableExt
 import play.api.{Configuration, Logger}
 

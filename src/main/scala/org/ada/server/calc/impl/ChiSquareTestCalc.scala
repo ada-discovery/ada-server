@@ -3,7 +3,7 @@ package org.ada.server.calc.impl
 import org.apache.commons.math3.exception.MaxCountExceededException
 import play.api.Logger
 import org.ada.server.calc.{Calculator, CommonsMathUtil, NoOptionsCalculatorTypePack}
-import org.ada.server.akka.AkkaStreamUtil.{countFlow, seqFlow}
+import org.incal.core.akka.AkkaStreamUtil.{countFlow, seqFlow}
 import Seq.fill
 
 trait ChiSquareTestCalcTypePack[T1, T2] extends NoOptionsCalculatorTypePack{

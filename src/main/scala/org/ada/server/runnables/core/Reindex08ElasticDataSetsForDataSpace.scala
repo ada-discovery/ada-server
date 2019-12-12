@@ -2,12 +2,13 @@ package org.ada.server.runnables.core
 
 import javax.inject.{Inject, Named}
 import org.ada.server.AdaException
-import org.ada.server.dataaccess.{ElasticJsonCrudRepoFactory, StreamSpec}
+import org.ada.server.dataaccess.ElasticJsonCrudRepoFactory
 import org.ada.server.dataaccess.RepoTypes.{DataSetSettingRepo, DataSpaceMetaInfoRepo}
 import org.ada.server.dataaccess.elastic.format.ElasticIdRenameUtil
 import org.ada.server.models.StorageType
 import org.incal.access.elastic.{ElasticCrudRepoExtra, RefreshPolicy}
 import org.incal.core.dataaccess.Criterion._
+import org.incal.core.dataaccess.StreamSpec
 import org.incal.core.runnables.{FutureRunnable, InputFutureRunnableExt, RunnableHtmlOutput}
 import reactivemongo.bson.BSONObjectID
 import org.incal.core.util.seqFutures

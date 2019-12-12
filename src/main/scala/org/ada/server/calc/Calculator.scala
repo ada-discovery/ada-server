@@ -2,7 +2,7 @@ package org.ada.server.calc
 
 import akka.NotUsed
 import akka.stream.scaladsl.Flow
-import org.ada.server.akka.AkkaStreamUtil.seqFlow
+import org.incal.core.akka.AkkaStreamUtil.seqFlow
 
 trait Calculator[C <: CalculatorTypePack] {
 
