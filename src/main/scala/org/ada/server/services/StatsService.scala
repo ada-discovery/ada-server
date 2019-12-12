@@ -17,7 +17,7 @@ import com.jujutsu.tsne.barneshut.{BHTSne, ParallelBHTsne}
 import org.ada.server.dataaccess.RepoTypes.JsonReadonlyRepo
 import org.ada.server.field.{FieldType, FieldTypeHelper}
 import org.ada.server.models._
-import org.ada.server.akka.AkkaStreamUtil
+import org.incal.core.akka.AkkaStreamUtil
 import org.ada.server.calc.CalculatorExecutors
 import org.ada.server.field.FieldUtil.FieldOps
 import org.ada.server.dataaccess.JsonReadonlyRepoExtra._

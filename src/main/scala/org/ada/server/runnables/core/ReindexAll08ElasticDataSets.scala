@@ -2,7 +2,7 @@ package org.ada.server.runnables.core
 
 import javax.inject.Inject
 import org.ada.server.dataaccess.RepoTypes.DataSpaceMetaInfoRepo
-import org.ada.server.dataaccess.StreamSpec
+import org.incal.core.dataaccess.StreamSpec
 import org.incal.access.elastic.RefreshPolicy
 import org.incal.core.runnables.{InputFutureRunnableExt, RunnableHtmlOutput}
 import org.incal.core.util.seqFutures

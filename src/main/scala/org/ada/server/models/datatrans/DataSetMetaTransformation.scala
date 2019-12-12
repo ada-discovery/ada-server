@@ -2,10 +2,11 @@ package org.ada.server.models.datatrans
 
 import java.util.Date
 
-import org.ada.server.dataaccess.{BSONObjectIdentity, StreamSpec}
+import org.ada.server.dataaccess.BSONObjectIdentity
 import org.ada.server.json._
 import org.ada.server.models.{Schedulable, ScheduledTime, StorageType, WeekDay}
 import org.ada.server.services.StaticLookupCentralImpl
+import org.incal.core.dataaccess.StreamSpec
 import play.api.libs.json.{Format, Json}
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.play.json.BSONFormats._

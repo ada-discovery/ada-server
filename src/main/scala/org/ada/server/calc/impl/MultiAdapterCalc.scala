@@ -2,7 +2,7 @@ package org.ada.server.calc.impl
 
 import akka.stream.scaladsl.{Flow, Source}
 import org.ada.server.calc.{Calculator, CalculatorTypePack, NoOptionsCalculatorTypePack}
-import org.ada.server.akka.AkkaStreamUtil.unzipNFlowsAndApply
+import org.incal.core.akka.AkkaStreamUtil.unzipNFlowsAndApply
 import org.ada.server.calc.CalculatorHelper._
 
 trait MultiCalcTypePack[C <: CalculatorTypePack] extends CalculatorTypePack {

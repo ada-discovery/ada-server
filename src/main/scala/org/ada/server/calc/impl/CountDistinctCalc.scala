@@ -1,7 +1,7 @@
 package org.ada.server.calc.impl
 
 import org.ada.server.calc.{Calculator, NoOptionsCalculatorTypePack}
-import org.ada.server.akka.AkkaStreamUtil.{countFlow, seqFlow}
+import org.incal.core.akka.AkkaStreamUtil.{countFlow, seqFlow}
 
 trait CountDistinctCalcTypePack[T] extends NoOptionsCalculatorTypePack{
   type IN = T

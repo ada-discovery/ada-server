@@ -2,7 +2,7 @@ package org.ada.server.calc.impl
 
 import akka.stream.scaladsl.Flow
 import org.ada.server.calc.Calculator
-import org.ada.server.akka.AkkaStreamUtil._
+import org.incal.core.akka.AkkaStreamUtil._
 
 private class UniqueTuple3Calc[A, B, C] extends Calculator[Tuple3CalcTypePack[A, B, C]] {
 

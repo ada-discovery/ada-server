@@ -2,7 +2,7 @@ package org.ada.server.models.datatrans
 
 import java.util.Date
 
-import org.ada.server.dataaccess.StreamSpec
+import org.incal.core.dataaccess.StreamSpec
 import org.ada.server.json.HasFormat
 import org.ada.server.models.{Field, ScheduledTime}
 import org.ada.server.models.DataSetFormattersAndIds.fieldFormat

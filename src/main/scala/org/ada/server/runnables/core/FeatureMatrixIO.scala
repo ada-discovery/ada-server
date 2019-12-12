@@ -1,13 +1,11 @@
 package org.ada.server.runnables.core
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
 
-import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Framing, Sink, Source}
-import org.ada.server.akka.AkkaStreamUtil.fileHeaderAndContentSource
+import org.incal.core.akka.AkkaFileIO.headerAndFileSource
 import org.incal.core.util.writeByteArrayStream
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -93,7 +91,7 @@ object FeatureMatrixIO {
     delimiter: String = ","
   ): Future[(Source[Array[Double], _], Seq[String])] =
     for {
-      (header, contentSource) <- fileHeaderAndContentSource(fileName)
+      (header, contentSource) <- headerAndFileSource(fileName)
     } yield {
       val skipFirstColumns = skipFirstColumnsOption.getOrElse(0)
       val fieldNames = header.split(delimiter, -1).toSeq.drop(skipFirstColumns).map(_.trim)
@@ -120,7 +118,7 @@ object FeatureMatrixIO {
     delimiter: String = ","
   ): Future[(Source[(String, Array[Double]), _], Seq[String])] =
     for {
-      (header, contentSource) <- fileHeaderAndContentSource(fileName)
+      (header, contentSource) <- headerAndFileSource(fileName)
     } yield {
       val fieldNames = header.split(delimiter, -1).map(_.trim)
 

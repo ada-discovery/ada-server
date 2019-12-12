@@ -3,7 +3,7 @@ package org.ada.server.calc.impl
 import akka.stream.scaladsl.Flow
 import org.ada.server.calc.{Calculator, CalculatorTypePack}
 import org.incal.core.util.GroupMapList
-import org.ada.server.akka.AkkaStreamUtil._
+import org.incal.core.akka.AkkaStreamUtil._
 
 trait GroupNumericDistributionCountsCalcTypePack[G] extends CalculatorTypePack {
   type IN = (Option[G], Option[Double])

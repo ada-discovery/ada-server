@@ -7,8 +7,7 @@ import javax.inject.Inject
 import org.ada.server.models.DataSetFormattersAndIds.{CategoryIdentity, FieldIdentity, JsObjectIdentity}
 import org.ada.server.dataaccess.RepoTypes.{FieldRepo, JsonCrudRepo, JsonReadonlyRepo}
 import org.ada.server.dataaccess.JsonReadonlyRepoExtra._
-import org.ada.server.dataaccess.JsonCrudRepoExtra._
-import org.ada.server.dataaccess.{JsonUtil, StreamSpec}
+import org.ada.server.dataaccess.JsonUtil
 import org.ada.server.util.MessageLogger
 import org.ada.server.field.FieldUtil.{FieldOps, JsonFieldOps, fieldTypeOrdering, isNumeric, specToField, toDataSetCriteria}
 import com.google.inject.ImplementedBy
@@ -18,8 +17,9 @@ import play.api.Logger
 import play.api.libs.json.{JsObject, _}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import reactivemongo.bson.BSONObjectID
+import org.incal.core.dataaccess.CrudRepoExtra._
 import org.incal.core.dataaccess.Criterion.Infix
-import org.incal.core.dataaccess.{AscSort, AsyncCrudRepo, Criterion}
+import org.incal.core.dataaccess.{AscSort, AsyncCrudRepo, Criterion, StreamSpec}
 import org.incal.core.util.{GroupMapList, crossProduct, nonAlphanumericToUnderscore, retry, seqFutures}
 
 import scala.collection.mutable.ListBuffer
@@ -29,7 +29,7 @@ import org.ada.server.dataaccess.JsonUtil._
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Sink, Source, StreamConverters}
-import org.ada.server.akka.AkkaStreamUtil
+import org.incal.core.akka.AkkaStreamUtil
 import org.ada.server.calc.CalculatorHelper
 import org.ada.server.calc.impl.MultiAdapterCalc
 import org.ada.server.field.inference.FieldTypeInferrer

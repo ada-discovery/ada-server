@@ -3,7 +3,7 @@ package org.ada.server.calc.impl
 import akka.stream.scaladsl.{Flow, Source}
 import org.ada.server.calc.{Calculator, NoOptionsCalculatorTypePack}
 import org.ada.server.calc.CalculatorHelper._
-import org.ada.server.akka.AkkaStreamUtil.unzipNFlowsAndApply
+import org.incal.core.akka.AkkaStreamUtil.unzipNFlowsAndApply
 
 trait NullExcludedMultiChiSquareTestCalcTypePack[G, T] extends NoOptionsCalculatorTypePack {
   type IN = (Option[G], Seq[Option[T]])
