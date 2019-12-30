@@ -646,7 +646,7 @@ class DataSetServiceImpl @Inject()(
     resultDataSetSpec: ResultDataSetSpec,
     streamSpec: StreamSpec
   ): Future[Unit] = {
-    val dsafs = sourceDataSetIds.map(dsaf(_).get)
+    val dsafs = sourceDataSetIds.map(id => dsaf(id).getOrElse(throw new AdaException(s"No data set '${id}' found.")))
     val fieldRepos = dsafs.map(_.fieldRepo)
 
     for {
@@ -1648,8 +1648,14 @@ class DataSetServiceImpl @Inject()(
         targetDsa.dataSetRepo.saveAsStream(inputSource, streamSpec)
       }
 
-      // handle the filters and views (if needed)
-      _ <- if (saveViewsAndFiltersFlag) saveViewsAndFilters(sourceDsa, targetDsa, fields) else Future(())
+      // checks if filters exist for the new data set
+      noFilters <- targetDsa.filterRepo.count().map(_ == 0)
+
+      // checks if views exist for the new data set
+      noViews <- targetDsa.dataViewRepo.count().map(_ == 0)
+
+      // save the filters and views (if needed)
+      _ <- if (saveViewsAndFiltersFlag && noFilters && noViews) saveViewsAndFilters(sourceDsa, targetDsa, fields) else Future(())
     } yield
       ()
   }
@@ -1658,7 +1664,7 @@ class DataSetServiceImpl @Inject()(
     sourceDsa: DataSetAccessor,
     targetDsa: DataSetAccessor,
     fields: Traversable[Field]
-  ): Future[Unit] =
+  ) =
     for {
       // get the original filters
       oldFilters <- sourceDsa.filterRepo.find()
