@@ -1399,22 +1399,46 @@ class DataSetServiceImpl @Inject()(
       // register a new data set
       targetDsa <- registerDerivedDataSet(sourceDsa, derivedDataSetSpec)
 
-      // reference category ids from the original data set
-      refCategoryIds = fields.flatMap(_.categoryId).toSet.toSeq
-
       // delete all the new categories (if any)
       _ <- targetDsa.categoryRepo.deleteAll
       _ <- targetDsa.categoryRepo.flushOps
 
       // get the categories referenced by the fields
-      oldRefCategories <- sourceDsa.categoryRepo.find(Seq(CategoryIdentity.name #-> refCategoryIds.map(Some(_))))
+      sourceCategories <- sourceDsa.categoryRepo.find()
 
       // save the referenced categories and collect new ids
-      // important note: we save only referenced categories (with at least one field associated)
-      newCategoryIds <- targetDsa.categoryRepo.save(oldRefCategories.map(_.copy(_id = None)))
+      newCategoryIds <- {
+        val sourceCategoriesWithoutIds = sourceCategories.map(_.copy(_id = None, parentId = None))
+        targetDsa.categoryRepo.save(sourceCategoriesWithoutIds)
+      }
 
       // old -> new category id map
-      oldNewCategoryIdMap = oldRefCategories.toSeq.map(_._id.get).zip(newCategoryIds.toSeq).toMap
+      oldNewCategoryIdMap = sourceCategories.toSeq.map(_._id.get).zip(newCategoryIds.toSeq).toMap
+
+      // collect new parent category ids
+      newCategoryParentIds = sourceCategories.filter(_.parentId.isDefined).map { sourceCategory =>
+        val newCategoryId = oldNewCategoryIdMap.get(sourceCategory._id.get).getOrElse(
+          throw new AdaException(s"Category '${sourceCategory._id.get}' not found")
+        )
+
+        val newParentCategoryId = oldNewCategoryIdMap.get(sourceCategory.parentId.get).getOrElse(
+          throw new AdaException(s"Parent category '${sourceCategory.parentId.get}' not found")
+        )
+
+        (newCategoryId, newParentCategoryId)
+      }.toSeq
+
+      // pull new categories to have parents
+      newCategoriesToHaveParents <- targetDsa.categoryRepo.find(Seq(CategoryIdentity.name #-> newCategoryParentIds.map(_._1).map(Some(_))))
+
+      // set the parents and update the categories
+      _ <- {
+        val newCategoryParentIdMap = newCategoryParentIds.toMap
+        val newCategoriesWithParents = newCategoriesToHaveParents.map { newCategory =>
+          newCategory.copy(parentId = newCategoryParentIdMap.get(newCategory._id.get))
+        }
+        targetDsa.categoryRepo.update(newCategoriesWithParents)
+      }
 
       // new fields (with replaced category ids)
       newFields = fields.map(field => field.copy(categoryId = field.categoryId.flatMap(oldNewCategoryIdMap.get)))
