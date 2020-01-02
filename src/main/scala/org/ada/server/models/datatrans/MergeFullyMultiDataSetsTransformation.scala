@@ -2,8 +2,12 @@ package org.ada.server.models.datatrans
 
 import java.util.Date
 
+import org.ada.server.json.HasFormat
 import org.ada.server.models.ScheduledTime
 import org.incal.core.dataaccess.StreamSpec
+import org.ada.server.models.datatrans.DataSetTransformation._
+import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
+import play.api.libs.json.Json
 import reactivemongo.bson.BSONObjectID
 
 case class MergeFullyMultiDataSetsTransformation(
@@ -33,4 +37,8 @@ case class MergeFullyMultiDataSetsTransformation(
     scheduled = _scheduled,
     scheduledTime = _scheduledTime
   )
+}
+
+object MergeFullyMultiDataSetsTransformation extends HasFormat[MergeFullyMultiDataSetsTransformation] {
+  val format = Json.format[MergeFullyMultiDataSetsTransformation]
 }
