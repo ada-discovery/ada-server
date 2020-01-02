@@ -82,11 +82,10 @@ private class MergeMultiDataSetsTransformer extends AbstractDataSetTransformer[M
           fieldOption.map(field => (field.name, newField.name))
         }.toMap
 
-        dataSetRepo.findAsStream().map { originalStream =>
+        dataSetRepo.findAsStream(projection = fields.flatten.map(_.name)).map { originalStream =>
 
           originalStream.map { json =>
             val newFieldValues = json.fields
-              .filterNot(_._1.equals(JsObjectIdentity.name))
               .map { case (fieldName, jsValue) =>
                 val newFieldName = fieldNewFieldNameMap.get(fieldName).getOrElse(throw new AdaException(s"Field $fieldName not found."))
                 (newFieldName, jsValue)
