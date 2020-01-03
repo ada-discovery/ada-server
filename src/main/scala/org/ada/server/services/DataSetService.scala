@@ -51,13 +51,6 @@ import scala.util.Random
 @ImplementedBy(classOf[DataSetServiceImpl])
 trait DataSetService {
 
-  @Deprecated
-  def inferDictionaryAndUpdateRecords(
-    dataSetId: String,
-    fieldGroupSize: Int,
-    fieldTypeIdsToExclude: Traversable[FieldTypeId.Value] = Nil
-  ): Future[Unit]
-
   def updateFields(
     dataSetId: String,
     newFields: Traversable[Field],
@@ -153,21 +146,6 @@ trait DataSetService {
     resultDataSetSpec: ResultDataSetSpec,
     dataSetIds: Seq[String],
     fieldNameMappings: Seq[Seq[String]]
-  ): Future[Unit]
-
-  def mergeDataSetsWoInference(
-    sourceDataSetIds: Seq[String],
-    fieldNameMappings: Seq[Seq[Option[String]]],
-    addSourceDataSetId: Boolean,
-    resultDataSetSpec: ResultDataSetSpec,
-    streamSpec: StreamSpec
-  ): Future[Unit]
-
-  def mergeDataSetsFullyWoInference(
-    sourceDataSetIds: Seq[String],
-    addSourceDataSetId: Boolean,
-    resultDataSetSpec: ResultDataSetSpec,
-    streamSpec: StreamSpec
   ): Future[Unit]
 
   def processSeriesAndSaveDataSet(
@@ -468,58 +446,6 @@ class DataSetServiceImpl @Inject()(
     }
   }
 
-  @Deprecated
-  override def inferDictionaryAndUpdateRecords(
-    dataSetId: String,
-    fieldGroupSize: Int,
-    fieldTypeIdsToExclude: Traversable[FieldTypeId.Value]
-  ): Future[Unit] = {
-    logger.info(s"Dictionary inference for data set '${dataSetId}' initiated.")
-
-    val dsa = dsaf(dataSetId).get
-    val dataRepo = dsa.dataSetRepo
-    val fieldRepo = dsa.fieldRepo
-
-    // helper functions to parse jsons
-    def displayJsonToJson[T](fieldType: FieldType[T], json: JsReadable): JsValue = {
-      val value = fieldType.displayJsonToValue(json)
-      fieldType.valueToJson(value)
-    }
-
-    for {
-      // get the fields to process
-      fields <-
-        fieldRepo.find(Seq("fieldType" #!-> fieldTypeIdsToExclude.map(_.toString).toSeq))
-
-      // infer field types
-      fieldNameAndTypes <-
-        inferFieldTypesInParallel(dataRepo, fields.map(_.name), fieldGroupSize)
-
-      // get all the items
-      items <- dataRepo.find()
-
-      // save or update the items
-      _ <- {
-        val newItems  = items.map { item =>
-          val fieldNameJsons = fieldNameAndTypes.map { case (fieldName, fieldType) =>
-            val newJson = displayJsonToJson(fieldType, (item \ fieldName))
-            (fieldName, newJson)
-          }
-          item ++ JsObject(fieldNameJsons.toSeq)
-        }
-
-        saveOrUpdateRecords(dataRepo, newItems.toSeq, Some(dataSetIdFieldName), true)
-      }
-
-      // save, update, or delete the fields
-      _ <- {
-        val fieldNameAndTypeSpecs = fieldNameAndTypes.map { case (fieldName, fieldType) => (fieldName, fieldType.spec)}
-        updateFieldSpecs(fieldRepo, fieldNameAndTypeSpecs, false, false)
-      }
-    } yield
-      messageLogger.info(s"Dictionary inference for data set '${dataSetId}' successfully finished.")
-  }
-
   private def inferFieldTypesInParallel(
     dataRepo: JsonCrudRepo,
     fieldNames: Traversable[String],
@@ -636,142 +562,6 @@ class DataSetServiceImpl @Inject()(
           }
         )
       }
-    } yield
-      ()
-  }
-
-  override def mergeDataSetsFullyWoInference(
-    sourceDataSetIds: Seq[String],
-    addSourceDataSetId: Boolean,
-    resultDataSetSpec: ResultDataSetSpec,
-    streamSpec: StreamSpec
-  ): Future[Unit] = {
-    val dsafs = sourceDataSetIds.map(dsaf(_).get)
-    val fieldRepos = dsafs.map(_.fieldRepo)
-
-    for {
-      // collect all the field names
-      allFieldNameSets <- Future.sequence(
-        fieldRepos.map(
-          _.find().map(
-            _.map(_.name).toSet
-          ))
-        )
-
-      // merge all field names
-      allFieldNames = allFieldNameSets.flatten.toSet
-
-      // create field name mappings
-      fieldNameMappings = allFieldNames.map(fieldName =>
-        allFieldNameSets.map(set =>
-          if (set.contains(fieldName)) Some(fieldName) else None
-        )
-      ).toSeq
-
-      // merge data sets
-      _ <- mergeDataSetsWoInference(
-        sourceDataSetIds,
-        fieldNameMappings,
-        addSourceDataSetId,
-        resultDataSetSpec,
-        streamSpec
-      )
-    } yield
-      ()
-  }
-
-  override def mergeDataSetsWoInference(
-    sourceDataSetIds: Seq[String],
-    fieldNameMappings: Seq[Seq[Option[String]]],
-    addSourceDataSetId: Boolean,
-    resultDataSetSpec: ResultDataSetSpec,
-    streamSpec: StreamSpec
-  ): Future[Unit] = {
-    val dsafs = sourceDataSetIds.map(dsaf(_).get)
-    val dataSetRepos = dsafs.map(_.dataSetRepo)
-    val fieldRepos = dsafs.map(_.fieldRepo)
-
-    logger.info(
-      s"Merging the data sets ${sourceDataSetIds.mkString(", ")} (without inference) using the ${fieldNameMappings.size} mappings \n: ${fieldNameMappings.map(_.mkString(",")).mkString("\n")}"
-    )
-
-    for {
-      // collect all the fields
-      allFields <- Future.sequence(
-        fieldRepos.zipWithIndex.map { case (fieldRepo, index) =>
-          val names = fieldNameMappings.map(_(index))
-
-          fieldRepo.find(Seq(FieldIdentity.name #-> names.flatten)).map { fields =>
-            val nameFieldMap = fields.map(field => (field.name, field)).toMap
-
-            names.map(_.flatMap(nameFieldMap.get))
-          }
-        }
-      )
-
-      // new fields
-      newFields = allFields.transpose.map { case fields =>
-        // check if all the field specs are the same
-        def equalFieldTypes(field1: Field)(field2: Field): Boolean = {
-          val enums1 = field1.enumValues.toSeq.sortBy(_._1)
-          val enums2 = field2.enumValues.toSeq.sortBy(_._1)
-
-          field1.fieldType == field2.fieldType &&
-            field1.isArray == field2.isArray &&
-            enums1.size == enums2.size &&
-            enums1.zip(enums2).forall { case ((a1, b1), (a2, b2)) => a1.equals(a2) && b1.equals(b2) }
-        }
-
-        val nonEmptyFields = fields.flatten
-        val headField = nonEmptyFields.head
-        val equalFieldSpecTypes = nonEmptyFields.tail.forall(equalFieldTypes(headField))
-        if (!equalFieldSpecTypes)
-          throw new AdaException(s"The data types for the field ${headField.name} differ: ${nonEmptyFields.mkString(",")}")
-
-        headField
-      }
-
-      // add source_data_id to the new fields (if needed)
-      finalNewFields =
-        if (addSourceDataSetId) {
-          val dataSetIdEnums = sourceDataSetIds.zipWithIndex.map { case (dataSetId, index) => (index.toString, dataSetId) }.toMap
-          val sourceDataSetIdField = Field("source_data_set_id", Some("Source Data Set Id"), FieldTypeId.Enum, false, dataSetIdEnums)
-
-          newFields ++ Seq(sourceDataSetIdField)
-        } else
-          newFields
-
-      // collect all the source streams
-      streams <- seqFutures(dataSetRepos.zip(allFields).zipWithIndex) { case ((dataSetRepo, fields), index) =>
-
-        // create a map of old to new field names
-        val fieldNewFieldNameMap = fields.zip(newFields).flatMap { case (fieldOption, newField) =>
-          fieldOption.map(field => (field.name, newField.name))
-        }.toMap
-
-        dataSetRepo.findAsStream().map { originalStream =>
-
-          originalStream.map { json =>
-
-            val newFieldValues = json.fields
-              .filterNot(_._1.equals(JsObjectIdentity.name))
-              .map { case (fieldName, jsValue) =>
-                val newFieldName = fieldNewFieldNameMap.get(fieldName).getOrElse(throw new AdaException(s"Field $fieldName not found."))
-                (newFieldName, jsValue)
-              }
-
-            val extraFieldValues = if (addSourceDataSetId) Seq(("source_data_set_id", JsNumber(index))) else Nil
-
-            JsObject(newFieldValues ++ extraFieldValues)
-          }
-        }
-      }
-
-      // concatenate all the streams
-      mergedStream = streams.tail.foldLeft(streams.head)(_.concat(_))
-
-      // finally save the derived data sets with a given stream and fields
-      _ <- saveDerivedDataSet(dsafs.head, resultDataSetSpec, mergedStream, finalNewFields, streamSpec, false)
     } yield
       ()
   }
@@ -1609,22 +1399,46 @@ class DataSetServiceImpl @Inject()(
       // register a new data set
       targetDsa <- registerDerivedDataSet(sourceDsa, derivedDataSetSpec)
 
-      // reference category ids from the original data set
-      refCategoryIds = fields.flatMap(_.categoryId).toSet.toSeq
-
       // delete all the new categories (if any)
       _ <- targetDsa.categoryRepo.deleteAll
       _ <- targetDsa.categoryRepo.flushOps
 
       // get the categories referenced by the fields
-      oldRefCategories <- sourceDsa.categoryRepo.find(Seq(CategoryIdentity.name #-> refCategoryIds.map(Some(_))))
+      sourceCategories <- sourceDsa.categoryRepo.find()
 
       // save the referenced categories and collect new ids
-      // important note: we save only referenced categories (with at least one field associated)
-      newCategoryIds <- targetDsa.categoryRepo.save(oldRefCategories.map(_.copy(_id = None)))
+      newCategoryIds <- {
+        val sourceCategoriesWithoutIds = sourceCategories.map(_.copy(_id = None, parentId = None))
+        targetDsa.categoryRepo.save(sourceCategoriesWithoutIds)
+      }
 
       // old -> new category id map
-      oldNewCategoryIdMap = oldRefCategories.toSeq.map(_._id.get).zip(newCategoryIds.toSeq).toMap
+      oldNewCategoryIdMap = sourceCategories.toSeq.map(_._id.get).zip(newCategoryIds.toSeq).toMap
+
+      // collect new parent category ids
+      newCategoryParentIds = sourceCategories.filter(_.parentId.isDefined).map { sourceCategory =>
+        val newCategoryId = oldNewCategoryIdMap.get(sourceCategory._id.get).getOrElse(
+          throw new AdaException(s"Category '${sourceCategory._id.get}' not found")
+        )
+
+        val newParentCategoryId = oldNewCategoryIdMap.get(sourceCategory.parentId.get).getOrElse(
+          throw new AdaException(s"Parent category '${sourceCategory.parentId.get}' not found")
+        )
+
+        (newCategoryId, newParentCategoryId)
+      }.toSeq
+
+      // pull new categories to have parents
+      newCategoriesToHaveParents <- targetDsa.categoryRepo.find(Seq(CategoryIdentity.name #-> newCategoryParentIds.map(_._1).map(Some(_))))
+
+      // set the parents and update the categories
+      _ <- {
+        val newCategoryParentIdMap = newCategoryParentIds.toMap
+        val newCategoriesWithParents = newCategoriesToHaveParents.map { newCategory =>
+          newCategory.copy(parentId = newCategoryParentIdMap.get(newCategory._id.get))
+        }
+        targetDsa.categoryRepo.update(newCategoriesWithParents)
+      }
 
       // new fields (with replaced category ids)
       newFields = fields.map(field => field.copy(categoryId = field.categoryId.flatMap(oldNewCategoryIdMap.get)))
@@ -1648,8 +1462,14 @@ class DataSetServiceImpl @Inject()(
         targetDsa.dataSetRepo.saveAsStream(inputSource, streamSpec)
       }
 
-      // handle the filters and views (if needed)
-      _ <- if (saveViewsAndFiltersFlag) saveViewsAndFilters(sourceDsa, targetDsa, fields) else Future(())
+      // checks if filters exist for the new data set
+      noFilters <- targetDsa.filterRepo.count().map(_ == 0)
+
+      // checks if views exist for the new data set
+      noViews <- targetDsa.dataViewRepo.count().map(_ == 0)
+
+      // save the filters and views (if needed)
+      _ <- if (saveViewsAndFiltersFlag && noFilters && noViews) saveViewsAndFilters(sourceDsa, targetDsa, fields) else Future(())
     } yield
       ()
   }
@@ -1658,7 +1478,7 @@ class DataSetServiceImpl @Inject()(
     sourceDsa: DataSetAccessor,
     targetDsa: DataSetAccessor,
     fields: Traversable[Field]
-  ): Future[Unit] =
+  ) =
     for {
       // get the original filters
       oldFilters <- sourceDsa.filterRepo.find()
