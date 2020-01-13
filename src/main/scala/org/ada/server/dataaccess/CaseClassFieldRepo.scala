@@ -4,6 +4,7 @@ import org.ada.server.dataaccess.RepoTypes.FieldRepo
 import org.ada.server.field.FieldUtil.caseClassToFlatFieldTypes
 import org.ada.server.models.Field
 import org.incal.core.util.toHumanReadableCamel
+
 import scala.reflect.runtime.universe.TypeTag
 
 object CaseClassFieldRepo {
