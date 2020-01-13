@@ -42,11 +42,19 @@ case class DistributionWidgetSpec(
   groupFieldName: Option[String],
   subFilterId: Option[BSONObjectID] = None,
   relativeValues: Boolean = false,
-  numericBinCount: Option[Int] = None,
+  numericBinCount: Option[Int] = None, // TODO: rename to binCount
   useDateMonthBins: Boolean = false,
   displayOptions: MultiChartDisplayOptions = MultiChartDisplayOptions()
 ) extends WidgetSpec {
   override val fieldNames = Seq(groupFieldName, Some(fieldName)).flatten
+}
+
+case class CategoricalCheckboxWidgetSpec(
+  fieldName: String,
+  subFilterId: Option[BSONObjectID] = None,
+  displayOptions: BasicDisplayOptions = BasicDisplayOptions()
+) extends WidgetSpec {
+  override val fieldNames = Seq(fieldName)
 }
 
 case class CumulativeCountWidgetSpec(

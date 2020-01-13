@@ -62,7 +62,7 @@ object FilterRepoExtra {
           .groupBy { case (condition, index) => (condition.fieldName, condition.conditionType) }
           .flatMap { case ((_, conditionType), conditions) =>
             conditionType match {
-              case ConditionType.NotEquals | ConditionType.In | ConditionType.NotIn => conditions
+              case ConditionType.NotEquals | ConditionType.NotIn => conditions
               case _ => Seq(conditions.last)
             }
           }.toSeq.sortBy(_._2).map(_._1)
