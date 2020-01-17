@@ -9,7 +9,7 @@ import play.api.libs.json.Json
 import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 
 object HtmlSnippetId extends Enumeration {
-  val Homepage, Contact, Links = Value
+  val Homepage, Contact, Links, Issues = Value
 }
 
 case class HtmlSnippet(
