@@ -1,14 +1,11 @@
 package org.ada.server.services.transformers
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.StreamConverters
 import org.ada.server.AdaException
 import org.ada.server.dataaccess.dataset.DataSetAccessor
-import org.ada.server.field.FieldType
 import org.ada.server.field.FieldUtil.{FieldOps, JsonFieldOps, NamedFieldType, fieldTypeOrdering}
 import org.ada.server.models.DataSetFormattersAndIds.{FieldIdentity, JsObjectIdentity}
 import org.ada.server.models.Field
-import org.ada.server.models.datatrans.{LinkMultiDataSetsTransformation, LinkedDataSetSpec}
+import org.ada.server.models.datatrans.{DataSetTransformation, LinkMultiDataSetsTransformation, LinkedDataSetSpec}
 import org.incal.core.dataaccess.{AscSort, NotEqualsNullCriterion}
 import org.incal.core.util.crossProduct
 import org.incal.core.dataaccess.Criterion._
@@ -20,7 +17,9 @@ import reactivemongo.bson.BSONObjectID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-private class LinkMultiDataSetsTransformer extends AbstractDataSetTransformer[LinkMultiDataSetsTransformation] {
+private class LinkMultiDataSetsTransformer
+  extends AbstractDataSetTransformer[LinkMultiDataSetsTransformation]
+    with LinkDataSetsHelper[LinkMultiDataSetsTransformation] {
 
   override protected def execInternal(
     spec: LinkMultiDataSetsTransformation
@@ -45,23 +44,7 @@ private class LinkMultiDataSetsTransformer extends AbstractDataSetTransformer[Li
       )
 
       // collect all the fields for the new data set
-      newFields = {
-        val rightFieldsWoLink = rightDataSetInfos.flatMap { rightDataSetInfo =>
-
-          val linkFieldNameSet = rightDataSetInfo.linkFieldNames.toSet
-          val fieldsWoLink = rightDataSetInfo.fields.filterNot {field => linkFieldNameSet.contains(field.name)}.toSeq
-
-          if (spec.addDataSetIdToRightFieldNames)
-            fieldsWoLink.map { field =>
-              val newFieldName = rightDataSetInfo.dsa.dataSetId.replace('.', '_') + "-" + field.name
-              field.copy(name = newFieldName)
-            }
-          else
-            fieldsWoLink
-        }
-
-        leftDataSetInfo.fields ++ rightFieldsWoLink
-      }
+      newFields = createResultFields(leftDataSetInfo, rightDataSetInfos, spec.addDataSetIdToRightFieldNames)
 
       // create an input stream for the left data set
       originalStream <- leftDataSetInfo.dsa.dataSetRepo.findAsStream(projection = leftDataSetInfo.fieldNames)
@@ -74,47 +57,6 @@ private class LinkMultiDataSetsTransformer extends AbstractDataSetTransformer[Li
 
       (leftDataSetInfo.dsa, newFields, finalStream, saveViewsAndFilters)
     }
-  }
-
-  private def createDataSetInfo(
-    spec: LinkedDataSetSpec
-  ): Future[LinkedDataSetInfo] = {
-    // data set accessor
-    val dsa = dsaSafe(spec.dataSetId)
-
-    // determine which fields to load (depending on whether preserve field names are specified)
-    val fieldNamesToLoad = spec.explicitFieldNamesToKeep match {
-      case Nil => Nil
-      case _ => (spec.explicitFieldNamesToKeep ++ spec.linkFieldNames).toSet
-    }
-
-    for {
-      // load fields
-      fields <- fieldNamesToLoad match {
-        case Nil => dsa.fieldRepo.find()
-        case _ => dsa.fieldRepo.find(Seq(FieldIdentity.name #-> fieldNamesToLoad.toSeq))
-      }
-    } yield {
-      // collect field types (in order) for the link
-      val nameFieldMap = fields.map(field => (field.name, field)).toMap
-
-      val linkFieldTypes = spec.linkFieldNames.map { fieldName =>
-        nameFieldMap.get(fieldName).map(_.toNamedTypeAny).getOrElse(
-          throw new AdaException(s"Link field $fieldName not found.")
-        )
-      }
-
-      LinkedDataSetInfo(dsa, spec.linkFieldNames, fields, linkFieldTypes)
-    }
-  }
-
-  case class LinkedDataSetInfo(
-    dsa: DataSetAccessor,
-    linkFieldNames: Seq[String],
-    fields: Traversable[Field],
-    linkFieldTypes: Seq[NamedFieldType[Any]]
-  ) {
-    val fieldNames = fields.map(_.name)
   }
 
   private def link(
@@ -159,119 +101,16 @@ private class LinkMultiDataSetsTransformer extends AbstractDataSetTransformer[Li
       )
     } yield {
       val linkFieldNameSet = dataSetInfo.linkFieldNames.toSet
+      val dataSetIdPrefixToAdd = if (addDataSetIdToRightFieldNames) Some(dataSetInfo.dsa.dataSetId) else None
+
       jsons.map { json =>
         // create a link as a sequence of display strings
         val link = json.toDisplayStrings(dataSetInfo.linkFieldTypes)
 
-        // remove the link fields from a json
-        val strippedJson = json.fields.filterNot { case (fieldName, _) => linkFieldNameSet.contains(fieldName) }
+        // strip json (and rename if necessary)
+        val renamedJson = stripJson(linkFieldNameSet, dataSetIdPrefixToAdd)(json)
 
-        // rename if necessary
-        val renamedJson = if (addDataSetIdToRightFieldNames) {
-          strippedJson.map { case (fieldName, jsValue) =>
-            val newFieldName = dataSetInfo.dsa.dataSetId.replace('.', '_') + "-" + fieldName
-            (newFieldName, jsValue)
-          }
-        } else
-          strippedJson
-
-        (link, JsObject(renamedJson))
+        (link, renamedJson)
       }.toGroupMap
     }
-
-  // TODO: alternative implementation with pointers and sorting
-  private def linkImproved(
-    spec: LinkMultiDataSetsTransformation)(
-    implicit materializer: akka.stream.Materializer
-  ) = {
-
-    // aux function that creates a data stream for a given dsa
-    def createStream(info: LinkedDataSetInfo) = {
-      if(info.fieldNames.nonEmpty)
-        logger.info(s"Creating a stream for these fields ${info.fieldNames.mkString(",")}.")
-      else
-        logger.info(s"Creating a stream for all available fields.")
-
-      info.dsa.dataSetRepo.findAsStream(
-        sort = info.linkFieldNames.map(AscSort(_)),
-        projection = info.fieldNames
-      )
-    }
-
-    // aux function to create orderings for the link fields
-    def linkOrderings(
-      info: LinkedDataSetInfo
-    ): Seq[Ordering[Any]] =
-      info.linkFieldTypes.map { namedFieldType =>
-        val fieldType = namedFieldType._2
-        fieldTypeOrdering(fieldType.spec.fieldType).getOrElse(
-          throw new AdaException(s"No ordering available for the field type ${fieldType.spec.fieldType}.")
-        )
-      }
-
-    for {
-      // prepare data set infos with initialized accessors and load fields
-      dataSetInfos <- Future.sequence(spec.linkedDataSetSpecs.map(createDataSetInfo))
-
-      // split into the left and right sides
-      leftDataSetInfo = dataSetInfos.head
-      rightDataSetInfos = dataSetInfos.tail
-
-//      // register the result data set (if not registered already)
-//      linkedDsa <- dataSetService.registerDerivedDataSet(leftDataSetInfo.dsa, spec.resultDataSetSpec)
-
-      // left link fields' orderings
-      leftLinkOrderings = linkOrderings(leftDataSetInfo)
-
-      // right link fields' orderings
-      rightLinkOrderings = rightDataSetInfos.map(linkOrderings)
-
-      // left stream
-      leftStream <- createStream(leftDataSetInfo)
-
-      // right streams
-      rightSources <- Future.sequence(rightDataSetInfos.map(createStream))
-
-      _ <- {
-        val rightIterators = rightSources.map(_.runWith(StreamConverters.asJavaStream[JsObject]).iterator())
-
-        var currentRightJson: Option[JsObject] = None
-        var currentRightKey: Seq[Any] = Nil
-
-        def findEqualLinkValues(
-          info: LinkedDataSetInfo,
-          fieldTypeMap: Map[String, FieldType[_]],
-          linkOrderings: Seq[Ordering[Any]],
-          jsonIterator: Iterator[JsObject])(
-          leftLink: Seq[Option[Any]]
-        ) = {
-
-          jsonIterator.takeWhile { rightJson =>
-            val rightLink = rightJson.toValues(info.linkFieldTypes)
-
-            val isEqual = (leftLink.zip(rightLink)).zip(linkOrderings).forall { case ((leftValue, rightValue), ordering: Ordering[Any]) =>
-              ordering.equiv(leftValue, rightValue)
-            }
-            isEqual
-          }
-        }
-
-        leftStream.map { leftJson =>
-
-          //          if (currentRightJson.isEmpty && rightIterator.hasNext) {
-          //            currentRightJson = Some(rightIterator.next())
-          //            currentRightKey = key(currentRightJson.get)
-          //          }
-
-          val leftLink = leftJson.toValues(leftDataSetInfo.linkFieldTypes)
-
-
-
-          leftJson
-        }
-        Future(())
-      }
-    } yield
-      ()
-  }
 }
