@@ -1,12 +1,10 @@
 package org.ada.server.services.transformers
 
 import org.ada.server.AdaException
-import org.ada.server.dataaccess.dataset.DataSetAccessor
-import org.ada.server.field.FieldUtil.{FieldOps, JsonFieldOps, NamedFieldType, fieldTypeOrdering}
+import org.ada.server.field.FieldUtil.{FieldOps, JsonFieldOps}
 import org.ada.server.models.DataSetFormattersAndIds.{FieldIdentity, JsObjectIdentity}
-import org.ada.server.models.Field
 import org.ada.server.models.datatrans.{DataSetTransformation, LinkMultiDataSetsTransformation, LinkedDataSetSpec}
-import org.incal.core.dataaccess.{AscSort, NotEqualsNullCriterion}
+import org.incal.core.dataaccess.NotEqualsNullCriterion
 import org.incal.core.util.crossProduct
 import org.incal.core.dataaccess.Criterion._
 import play.api.libs.json.{JsObject, Json}
@@ -24,7 +22,6 @@ private class LinkMultiDataSetsTransformer
   override protected def execInternal(
     spec: LinkMultiDataSetsTransformation
   ) = {
-
     if (spec.linkedDataSetSpecs.size < 2)
       throw new AdaException(s"LinkMultiDataSetsTransformer expects at least two data sets but got ${spec.linkedDataSetSpecs.size}.")
 
