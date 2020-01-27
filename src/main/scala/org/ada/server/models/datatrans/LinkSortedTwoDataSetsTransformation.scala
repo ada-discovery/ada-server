@@ -10,11 +10,15 @@ import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 import play.api.libs.json.Json
 import reactivemongo.bson.BSONObjectID
 
-case class LinkMultiDataSetsTransformation(
+case class LinkSortedTwoDataSetsTransformation(
   _id: Option[BSONObjectID] = None,
 
-  linkedDataSetSpecs: Seq[LinkedDataSetSpec],
-  addDataSetIdToRightFieldNames: Boolean,
+  leftSourceDataSetId: String,
+  rightSourceDataSetId: String,
+  linkFieldNames: Seq[(String, String)],
+  leftFieldNamesToKeep: Traversable[String] = Nil,
+  rightFieldNamesToKeep: Traversable[String] = Nil,
+  addDataSetIdToRightFieldNames: Boolean = true,
 
   resultDataSetSpec: ResultDataSetSpec,
   streamSpec: StreamSpec,
@@ -22,9 +26,9 @@ case class LinkMultiDataSetsTransformation(
   scheduledTime: Option[ScheduledTime] = None,
   timeCreated: Date = new Date(),
   timeLastExecuted: Option[Date] = None
-) extends DataSetTransformation with CoreLinkMultiDataSetsTransformation {
+) extends DataSetTransformation with CoreLinkTwoDataSetsTransformation {
 
-  override val sourceDataSetIds = linkedDataSetSpecs.map(_.dataSetId)
+  override val sourceDataSetIds = Seq(leftSourceDataSetId, rightSourceDataSetId)
 
   override def copyCore(
     __id: Option[BSONObjectID],
@@ -41,7 +45,6 @@ case class LinkMultiDataSetsTransformation(
   )
 }
 
-object LinkMultiDataSetsTransformation extends HasFormat[LinkMultiDataSetsTransformation] {
-  implicit val linkedDataSetSpecFormat = Json.format[LinkedDataSetSpec]
-  val format = Json.format[LinkMultiDataSetsTransformation]
+object LinkSortedTwoDataSetsTransformation extends HasFormat[LinkSortedTwoDataSetsTransformation] {
+  val format = Json.format[LinkSortedTwoDataSetsTransformation]
 }

@@ -194,6 +194,9 @@ class MongoAsyncStreamRepo[E: Format, ID: Format](
 
   @Inject implicit var materializer: Materializer = _
 
+  private val maxSize = 1024000
+  private val maxDocsSize = 10000
+
   override lazy val stream: Source[E, NotUsed] =
     AkkaStreamUtil.fromFutureSource(akkaCursor.map(_.documentSource()))
 
@@ -219,12 +222,12 @@ class MongoAsyncStreamRepo[E: Format, ID: Format](
     collection.stats().flatMap {
       case stats if !stats.capped =>
         // The collection is not capped, so we convert it
-        collection.convertToCapped(102400, Some(1000))
+        collection.convertToCapped(maxSize, Some(maxDocsSize))
       case _ => Future(collection)
     }.recover {
       // The collection mustn't exist, create it
       case _ =>
-        collection.createCapped(102400, Some(1000))
+        collection.createCapped(maxSize, Some(maxDocsSize))
     }.flatMap( _ =>
       if (timestampFieldName.isDefined) {
         collection.indexesManager.ensure(Index(

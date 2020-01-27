@@ -10,7 +10,7 @@ import reactivemongo.play.json.BSONFormats.BSONObjectIDFormat
 import play.api.libs.json.Json
 import reactivemongo.bson.BSONObjectID
 
-case class LinkMultiDataSetsTransformation(
+case class LinkSortedMultiDataSetsTransformation(
   _id: Option[BSONObjectID] = None,
 
   linkedDataSetSpecs: Seq[LinkedDataSetSpec],
@@ -41,7 +41,7 @@ case class LinkMultiDataSetsTransformation(
   )
 }
 
-object LinkMultiDataSetsTransformation extends HasFormat[LinkMultiDataSetsTransformation] {
+object LinkSortedMultiDataSetsTransformation extends HasFormat[LinkSortedMultiDataSetsTransformation] {
   implicit val linkedDataSetSpecFormat = Json.format[LinkedDataSetSpec]
-  val format = Json.format[LinkMultiDataSetsTransformation]
+  val format = Json.format[LinkSortedMultiDataSetsTransformation]
 }

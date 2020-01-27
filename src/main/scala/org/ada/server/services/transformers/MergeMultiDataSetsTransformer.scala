@@ -1,6 +1,7 @@
 package org.ada.server.services.transformers
 
 import org.ada.server.AdaException
+import org.ada.server.field.FieldUtil
 import org.ada.server.models.DataSetFormattersAndIds.{FieldIdentity, JsObjectIdentity}
 import org.ada.server.models.{Field, FieldTypeId}
 import org.ada.server.models.datatrans.MergeMultiDataSetsTransformation
@@ -26,7 +27,7 @@ private class MergeMultiDataSetsTransformer extends AbstractDataSetTransformer[M
     val dataSetRepos = dsafs.map(_.dataSetRepo)
     val fieldRepos = dsafs.map(_.fieldRepo)
 
-    logger.info(s"Merging the data sets '${spec.sourceDataSetIds.mkString("', '")}' using the ${spec.fieldNameMappings.size} mappings.")
+    logger.info(s"Merging the data sets '${spec.sourceDataSetIds.mkString("', '")}' using ${spec.fieldNameMappings.size} mappings.")
 
     for {
       // collect all the fields
@@ -44,20 +45,11 @@ private class MergeMultiDataSetsTransformer extends AbstractDataSetTransformer[M
 
       // new fields
       newFields = allFields.transpose.map { case fields =>
-        // check if all the field specs are the same
-        def equalFieldTypes(field1: Field)(field2: Field): Boolean = {
-          val enums1 = field1.enumValues.toSeq.sortBy(_._1)
-          val enums2 = field2.enumValues.toSeq.sortBy(_._1)
-
-          field1.fieldType == field2.fieldType &&
-            field1.isArray == field2.isArray &&
-            enums1.size == enums2.size &&
-            enums1.zip(enums2).forall { case ((a1, b1), (a2, b2)) => a1.equals(a2) && b1.equals(b2) }
-        }
-
         val nonEmptyFields = fields.flatten
         val headField = nonEmptyFields.head
-        val equalFieldSpecTypes = nonEmptyFields.tail.forall(equalFieldTypes(headField))
+
+        // check if all the field specs are the same
+        val equalFieldSpecTypes = nonEmptyFields.tail.forall(FieldUtil.areFieldTypesEqual(headField))
         if (!equalFieldSpecTypes)
           throw new AdaException(s"The data types for the field ${headField.name} differ: ${nonEmptyFields.mkString(",")}")
 

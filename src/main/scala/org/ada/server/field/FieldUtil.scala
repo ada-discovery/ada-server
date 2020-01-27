@@ -325,6 +325,18 @@ object FieldUtil {
       case FilterShowFieldStyle.NamesAndLabels => field.labelOrElseName
     }
 
+  // checks if field specs are the same
+  // TODO: an alternative function can be introduced with relaxed criteria (i.e. checks if compatible)
+  def areFieldTypesEqual(field1: Field)(field2: Field): Boolean = {
+    val enums1 = field1.enumValues.toSeq.sortBy(_._1)
+    val enums2 = field2.enumValues.toSeq.sortBy(_._1)
+
+    field1.fieldType == field2.fieldType &&
+      field1.isArray == field2.isArray &&
+      enums1.size == enums2.size &&
+      enums1.zip(enums2).forall { case ((a1, b1), (a2, b2)) => a1.equals(a2) && b1.equals(b2) }
+  }
+
   def specToField(
     name: String,
     label: Option[String],

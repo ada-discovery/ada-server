@@ -26,7 +26,7 @@ case class LinkTwoDataSetsTransformation(
   scheduledTime: Option[ScheduledTime] = None,
   timeCreated: Date = new Date(),
   timeLastExecuted: Option[Date] = None
-) extends DataSetTransformation {
+) extends DataSetTransformation with CoreLinkTwoDataSetsTransformation {
 
   override val sourceDataSetIds = Seq(leftSourceDataSetId, rightSourceDataSetId)
 
