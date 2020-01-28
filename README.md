@@ -1,4 +1,4 @@
-# Ada Server [![version](https://img.shields.io/badge/version-0.8.0-green.svg)](https://ada-discovery.github.io) [![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![Build Status](https://travis-ci.com/ada-discovery/ada-server.svg?branch=master)](https://travis-ci.com/ada-discovery/ada-server)
+# Ada Server [![version](https://img.shields.io/badge/version-0.8.1-green.svg)](https://ada-discovery.github.io) [![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![Build Status](https://travis-ci.com/ada-discovery/ada-server.svg?branch=master)](https://travis-ci.com/ada-discovery/ada-server)
 
 <img src="https://ada-discovery.github.io/images/logo.png" width="450px">
 
@@ -16,7 +16,7 @@ The project serves as a server part of Ada Discovery Analytics platform providin
 If you want to use *Ada Server* in your own project all you need is **Scala 2.11**. To pull the library you have to add the following dependency to *build.sbt*
 
 ```
-"org.adada" %% "ada-server" % "0.8.0"
+"org.adada" %% "ada-server" % "0.8.1"
 ```
 
 or to *pom.xml* (if you use maven)
@@ -25,7 +25,7 @@ or to *pom.xml* (if you use maven)
 <dependency>
     <groupId>org.adada</groupId>
     <artifactId>ada-server_2.11</artifactId>
-    <version>0.8.0</version>
+    <version>0.8.1</version>
 </dependency>
 ```
 
