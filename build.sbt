@@ -164,7 +164,10 @@ publishMavenStyle := true
 
 scmInfo := Some(ScmInfo(url("https://github.com/ada-discovery/ada-server"), "scm:git@github.com:ada-discovery/ada-server.git"))
 
-developers := List()
+developers := List(
+  Developer("bnd", "Peter Banda", "peter.banda@protonmail.com", url("https://peterbanda.net")),
+  Developer("sherzinger", "Sascha Herzinger", "sascha.herzinger@uni.lu", url("https://wwwfr.uni.lu/lcsb/people/sascha_herzinger"))
+)
 
 licenses += "Apache 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
 
